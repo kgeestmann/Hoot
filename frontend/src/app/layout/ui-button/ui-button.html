@@ -1,0 +1,11 @@
+<button
+  class="ui-button"
+  [ngClass]="[
+    'ui-button-' + variant,
+    'ui-button-' + size
+  ]"
+  [disabled]="disabled"
+  [type]="type"
+>
+  <ng-content></ng-content>
+</button>

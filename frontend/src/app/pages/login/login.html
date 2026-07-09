@@ -1,0 +1,39 @@
+<div class="login-page">
+  <ui-card title="Login" elevation="medium">
+    <form class="login-form" (ngSubmit)="onLogin()">
+
+      <div class="form-field">
+        <label for="email">E-Mail</label>
+        <input
+          id="email"
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="maxmustermann@email.de"
+          required
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="password">Passwort</label>
+        <input
+          id="password"
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="••••••••"
+          required
+        />
+      </div>
+
+      <div class="form-error" *ngIf="error">{{ error }}</div>
+
+      <div class="login-actions">
+        <ui-button type="submit" variant="default">
+          Anmelden
+        </ui-button>
+      </div>
+
+    </form>
+  </ui-card>
+</div>

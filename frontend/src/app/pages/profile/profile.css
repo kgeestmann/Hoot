@@ -1,0 +1,45 @@
+.profile-page {
+  max-width: 600px;
+}
+
+.profile-page h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.profile-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.profile-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--bg));
+  border: 1px solid hsl(var(--border));
+  transition: all var(--transition);
+}
+
+.profile-field:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+}
+
+.value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
