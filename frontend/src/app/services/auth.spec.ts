@@ -7,7 +7,7 @@ import { API_URL } from '../api';
 import { AuthService } from './auth';
 
 describe('AuthService', () => {
-  const user = { id: 1, email: 'user@example.com' };
+  const user = { id: 1, login: 'octocat' };
   let service: AuthService;
   let http: HttpTestingController;
 
@@ -43,20 +43,6 @@ describe('AuthService', () => {
 
     expect(result).toBeNull();
     expect(service.isLoggedIn()).toBe(false);
-  });
-
-  it('logs in with form data and then loads the user', () => {
-    service.login('user@example.com', 'secret').subscribe();
-
-    const loginRequest = http.expectOne(`${API_URL}/login`);
-    expect(loginRequest.request.headers.get('Content-Type')).toBe(
-      'application/x-www-form-urlencoded',
-    );
-    expect(loginRequest.request.body).toBe('username=user%40example.com&password=secret');
-    loginRequest.flush(null, { status: 204, statusText: 'No Content' });
-    http.expectOne(`${API_URL}/profile`).flush(user);
-
-    expect(service.user()).toEqual(user);
   });
 
   it('logout ends the session on the backend and navigates to /login', () => {

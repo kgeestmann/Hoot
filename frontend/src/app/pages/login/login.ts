@@ -1,37 +1,19 @@
-import { Component, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth';
-import { UiButtonComponent } from '../../layout/ui-button/ui-button';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { API_URL } from '../../api';
 import { UiCardComponent } from '../../layout/ui-card/ui-card';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, CommonModule, UiButtonComponent, UiCardComponent],
+  imports: [UiCardComponent],
   templateUrl: './login.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./login.css'],
 })
 export class Login {
-  email = '';
-  password = '';
-  error = '';
-
-  constructor(
-    private auth: AuthService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {}
-
-  onLogin() {
-    this.auth.login(this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/']),
-      error: () => {
-        this.error = 'Login fehlgeschlagen';
-        this.cdr.detectChanges();
-      },
-    });
-  }
+  /** A full page navigation: the backend redirects on to GitHub and back. */
+  readonly signInUrl = `${API_URL}/auth/github/login`;
+  /** The backend sends the browser back with ?error=github when the sign-in failed. */
+  readonly signInFailed = inject(ActivatedRoute).snapshot.queryParamMap.get('error') === 'github';
 }

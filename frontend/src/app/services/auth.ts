@@ -1,13 +1,14 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, finalize, Observable, of, switchMap, tap } from 'rxjs';
+import { catchError, finalize, Observable, of, tap } from 'rxjs';
 
 import { API_URL } from '../api';
 
 export interface User {
   id: number;
-  email: string;
+  /** GitHub login (username). */
+  login: string;
 }
 
 /**
@@ -26,19 +27,6 @@ export class AuthService {
 
   readonly user = computed(() => this.currentUser() ?? null);
   readonly isLoggedIn = computed(() => !!this.currentUser());
-
-  /** Log in with email and password, then load the user of the new session. */
-  login(email: string, password: string): Observable<User | null> {
-    const body = new URLSearchParams();
-    body.set('username', email);
-    body.set('password', password);
-
-    return this.http
-      .post(`${API_URL}/login`, body.toString(), {
-        headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
-      })
-      .pipe(switchMap(() => this.fetchUser()));
-  }
 
   /** Return the logged-in user; the backend is only asked the first time. */
   loadSession(): Observable<User | null> {

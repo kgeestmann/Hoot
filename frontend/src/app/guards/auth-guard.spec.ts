@@ -26,7 +26,7 @@ describe('authGuard', () => {
   }
 
   it('lets logged-in users through', async () => {
-    expect(await runGuard({ id: 1, email: 'user@example.com' })).toBe(true);
+    expect(await runGuard({ id: 1, login: 'octocat' })).toBe(true);
   });
 
   it('sends everyone else to /login', async () => {
