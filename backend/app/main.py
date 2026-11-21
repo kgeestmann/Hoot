@@ -222,7 +222,7 @@ def github_failed(request: Request, error: github.GitHubError) -> JSONResponse:
 
 @app.get("/")
 def read_root():
-    return {"message": "Backend läuft!"}
+    return {"message": "Hoot backend is running."}
 
 
 @app.get("/auth/github/login")

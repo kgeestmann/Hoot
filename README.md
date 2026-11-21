@@ -435,7 +435,7 @@ Root
 GET /
 ```
 
-Returns a simple status message.
+Returns a simple status message: `{"message": "Hoot backend is running."}`
 
 ---
 
