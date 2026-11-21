@@ -1,0 +1,45 @@
+@if (access(); as access) {
+  @if (access.installations.length === 0) {
+    <ui-card
+      title="Install Hoot on GitHub"
+      description="Hoot can't see any of your repositories yet."
+      elevation="medium"
+    >
+      <div class="github-access">
+        <p class="explanation">
+          Install Hoot on your GitHub account and on the organizations you work in. Hoot only gets
+          read access to issues, pull requests and their checks.
+        </p>
+        <a class="install-link" [href]="access.install_url">Install Hoot on GitHub</a>
+      </div>
+    </ui-card>
+  } @else {
+    <ui-card
+      title="GitHub access"
+      description="Hoot only sees repositories in these accounts."
+      elevation="low"
+    >
+      <div class="github-access">
+        <ul class="installations">
+          @for (installation of access.installations; track installation.account) {
+            <li class="installation">
+              <span class="account">{{ installation.account }}</span>
+              <span class="scope">
+                {{ installation.all_repositories ? 'All repositories' : 'Selected repositories' }}
+              </span>
+              <a class="manage-link" [href]="installation.settings_url">Manage</a>
+            </li>
+          }
+        </ul>
+        <a class="add-link" [href]="access.install_url">Add an account or organization</a>
+        <p class="hint">
+          Not an owner of the organization? GitHub then asks its owners to approve Hoot.
+        </p>
+      </div>
+    </ui-card>
+  }
+} @else if (loadFailed()) {
+  <div class="load-error" role="alert">
+    Couldn't load where Hoot is installed on GitHub. Please reload the page.
+  </div>
+}

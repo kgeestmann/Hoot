@@ -6,7 +6,12 @@ from urllib.parse import urlencode
 
 import httpx
 
-from .config import GITHUB_CALLBACK_URL, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
+from .config import (
+    GITHUB_APP_SLUG,
+    GITHUB_CALLBACK_URL,
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +19,8 @@ AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
 TOKEN_URL = "https://github.com/login/oauth/access_token"
 USER_URL = "https://api.github.com/user"
 GRAPHQL_URL = "https://api.github.com/graphql"
+INSTALLATIONS_URL = "https://api.github.com/user/installations"
+INSTALL_URL = f"https://github.com/apps/{GITHUB_APP_SLUG}/installations/new"
 API_HEADERS = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 
@@ -39,6 +46,16 @@ class GitHubTokens:
 class GitHubUser:
     id: int
     login: str
+
+
+@dataclass(frozen=True)
+class Installation:
+    """An account (user or organization) where the user can use Hoot."""
+
+    account: str
+    account_type: str
+    all_repositories: bool
+    settings_url: str
 
 
 def code_challenge(verifier: str) -> str:
@@ -111,6 +128,33 @@ def fetch_user(client: httpx.Client, access_token: str) -> GitHubUser:
     if not isinstance(body.get("id"), int) or not isinstance(body.get("login"), str):
         raise GitHubError("GitHub user response is missing id or login")
     return GitHubUser(id=body["id"], login=body["login"])
+
+
+def fetch_installations(client: httpx.Client, access_token: str) -> list[Installation]:
+    """List the accounts where Hoot is installed and the user can access it.
+
+    Enterprise installations have no account login and are left out.
+    """
+    body = _request_json(
+        client,
+        "GET",
+        INSTALLATIONS_URL,
+        headers={**API_HEADERS, "Authorization": f"Bearer {access_token}"},
+        params={"per_page": 100},
+    )
+    try:
+        return [
+            Installation(
+                account=installation["account"]["login"],
+                account_type=installation["account"]["type"],
+                all_repositories=installation["repository_selection"] == "all",
+                settings_url=installation["html_url"],
+            )
+            for installation in body["installations"]
+            if "login" in installation["account"]
+        ]
+    except (KeyError, TypeError) as error:
+        raise GitHubError("GitHub's installations response has an unexpected shape") from error
 
 
 def graphql(client: httpx.Client, access_token: str, query: str, variables: dict) -> dict:

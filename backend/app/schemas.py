@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class UserResponse(BaseModel):
     id: int
@@ -38,3 +38,22 @@ class Overview(BaseModel):
     pull_requests: list[PullRequestItem]
     review_requests: list[OverviewItem]
     mentions: list[OverviewItem]
+
+
+class Installation(BaseModel):
+    """An account (user or organization) where Hoot is installed."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    account: str
+    # GitHub's account type: "User" or "Organization".
+    account_type: str
+    all_repositories: bool
+    settings_url: str
+
+
+class GitHubAccess(BaseModel):
+    """Where Hoot can see the user's repositories, and the page to install it on more accounts."""
+
+    install_url: str
+    installations: list[Installation]
