@@ -513,6 +513,14 @@ Start backend (creates the SQLite database on first start):
 uvicorn backend.app.main:app --reload
 ```
 
+Run the backend tests from the repo root (they use a temporary SQLite database, not `backend/hoot.db`):
+
+```
+pytest
+```
+
+Both backend and frontend tests also run in CI on every pull request (`.github/workflows/tests.yml`).
+
 Backend URL:
 
 ```
