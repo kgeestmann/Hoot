@@ -9,6 +9,8 @@ Hoot shows everything that is waiting on the user on GitHub (assigned issues, op
 ```bash
 pip install -r backend/requirements.txt               # in a venv (backend/venv/ is gitignored)
 uvicorn backend.app.main:app --reload                 # from the repo root → http://localhost:8000
+pytest                                                # backend tests (backend/tests/, temp SQLite DB)
+pytest backend/tests/test_auth.py::test_profile_returns_the_logged_in_user   # single test
 
 cd frontend
 npm install                                           # needs Node 24 LTS; Node >= 25 breaks localStorage in the jsdom tests
@@ -17,7 +19,7 @@ npm test                                              # ng test (Vitest + jsdom)
 npm run build
 ```
 
-The backend reads a `.env` in the repo root via `backend/app/config.py`. Only `SECRET_KEY` is required, and the backend refuses to start without it. `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `CORS_ORIGINS` (comma-separated) have defaults that are documented in the README. Prettier is configured in `frontend/.prettierrc`, and the backend has no tests or linter.
+The backend reads a `.env` in the repo root via `backend/app/config.py`. Only `SECRET_KEY` is required, and the backend refuses to start without it. `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `CORS_ORIGINS` (comma-separated) have defaults that are documented in the README. Prettier is configured in `frontend/.prettierrc`; there is no linter. The `Tests` workflow (`.github/workflows/tests.yml`) runs `pytest` and the frontend tests on every PR and on pushes to `main`. Don't merge while it is red.
 
 ## Code comments
 
@@ -51,7 +53,7 @@ Every change (feature, fix or docs) starts from a GitHub issue and gets its own 
    ```
    This links the branch under the issue's *Development* section. `<type>` is the Conventional Commit type (`feat`, `fix`, `docs`, …). Never commit directly to `main`.
 3. **Commit** using Conventional Commits.
-4. **Before the PR:** run `npm test` in `frontend/` when the frontend changed.
+4. **Before the PR:** run `pytest` and, when the frontend changed, `npm test` in `frontend/`.
 5. **PR:** put `Closes #<n>` in the description so the merge closes the issue and links it to the PR.
 6. **Review and merge:** the `claude-code-review` workflow reviews each PR automatically. For an on-demand review or a question, write `@claude` in a PR or issue comment. Act on valid findings, then merge with `gh pr merge <n> --merge --delete-branch`.
 
