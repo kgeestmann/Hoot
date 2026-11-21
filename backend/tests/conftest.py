@@ -6,7 +6,7 @@ import pytest
 
 # The app reads its settings and opens the database at import time,
 # so the test environment has to be in place before it is imported.
-os.environ["SECRET_KEY"] = "test-secret"
+os.environ["SECRET_KEY"] = "test-secret-key-for-the-backend-tests"
 os.environ["DATABASE_URL"] = f"sqlite:///{Path(tempfile.mkdtemp(), 'test.db').as_posix()}"
 
 from fastapi.testclient import TestClient

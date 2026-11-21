@@ -19,7 +19,7 @@ npm test                                              # ng test (Vitest + jsdom)
 npm run build
 ```
 
-The backend reads a `.env` in the repo root via `backend/app/config.py`. Only `SECRET_KEY` is required, and the backend refuses to start without it. `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `CORS_ORIGINS` (comma-separated) have defaults that are documented in the README. Prettier is configured in `frontend/.prettierrc`; there is no linter. The `Tests` workflow (`.github/workflows/tests.yml`) runs `pytest` and the frontend tests on every PR and on pushes to `main`. Don't merge while it is red.
+The backend reads a `.env` in the repo root via `backend/app/config.py`. Only `SECRET_KEY` is required, and the backend refuses to start without it or with one shorter than 32 bytes. `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `CORS_ORIGINS` (comma-separated) have defaults that are documented in the README. Prettier is configured in `frontend/.prettierrc`; there is no linter. The `Tests` workflow (`.github/workflows/tests.yml`) runs `pytest` and the frontend tests on every PR and on pushes to `main`. Don't merge while it is red.
 
 ## Code comments
 
