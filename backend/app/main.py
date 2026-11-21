@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import APIKeyCookie
 from sqlalchemy.orm import Session
 
-from . import github, github_tokens, models, overview, schemas
+from . import github, github_tokens, models, overview, overview_filters, schemas
 from .config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
@@ -299,6 +299,26 @@ def get_overview(
         current_user,
         lambda access_token: overview.fetch_overview(github_client, access_token),
     )
+
+
+@app.get("/overview/filters", response_model=schemas.OverviewFilters)
+def get_overview_filters(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the owners and repositories the user hid from the overview."""
+    return {"hidden": overview_filters.hidden_scopes(db, current_user)}
+
+
+@app.put("/overview/filters", response_model=schemas.OverviewFilters)
+def put_overview_filters(
+    filters: schemas.OverviewFilters,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Replace the user's overview filters and return them as stored."""
+    overview_filters.replace_hidden_scopes(db, current_user, filters.hidden)
+    return {"hidden": overview_filters.hidden_scopes(db, current_user)}
 
 
 @app.get("/github/installations", response_model=schemas.GitHubAccess)
