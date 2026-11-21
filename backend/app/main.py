@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+import bcrypt
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 
@@ -12,6 +12,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from .config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, CORS_ORIGINS, SECRET_KEY
 from .database import engine, SessionLocal
 from . import models, schemas
+from .schemas import MAX_PASSWORD_BYTES
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -25,7 +26,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def hash_password(password: str) -> str:
+    """Hash a plain-text password with bcrypt."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(password: str, hashed_password: str) -> bool:
+    """Check a plain-text password against a stored bcrypt hash."""
+    password_bytes = password.encode("utf-8")
+    if len(password_bytes) > MAX_PASSWORD_BYTES:
+        return False
+    return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -79,7 +91,7 @@ def read_root():
 
 @app.post("/register", response_model=schemas.UserResponse)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    hashed_password = pwd_context.hash(user.password)
+    hashed_password = hash_password(user.password)
 
     new_user = models.User(
         email=user.email,
@@ -115,7 +127,7 @@ def login(
             detail="Invalid credentials"
         )
 
-    if not pwd_context.verify(form_data.password, db_user.hashed_password):
+    if not verify_password(form_data.password, db_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"

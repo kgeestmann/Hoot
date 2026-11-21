@@ -68,7 +68,7 @@ Main technologies:
 * FastAPI
 * SQLAlchemy
 * SQLite
-* Passlib (password hashing)
+* bcrypt (password hashing)
 * python-jose (JWT)
 * dotenv (environment variables)
 
@@ -251,23 +251,21 @@ Without this, browsers block requests.
 
 # Password Hashing
 
-Passwords are hashed using **bcrypt**.
-
-```
-pwd_context = CryptContext(schemes=["bcrypt"])
-```
+Passwords are hashed using **bcrypt** (`hash_password` / `verify_password` in `main.py`).
 
 Hashing:
 
 ```
-hashed_password = pwd_context.hash(user.password)
+hashed_password = hash_password(user.password)
 ```
 
 Verification:
 
 ```
-pwd_context.verify(password, hashed_password)
+verify_password(password, hashed_password)
 ```
+
+bcrypt only accepts up to 72 bytes, so `/register` rejects longer passwords with `422`.
 
 ---
 
