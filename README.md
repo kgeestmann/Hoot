@@ -378,6 +378,7 @@ GitHub user tokens expire after 8 hours; the refresh token lasts 6 months. Every
 * If GitHub still answers `401`, the token is refreshed once more and the call retried.
 * If there is no refresh token, it has expired, GitHub rejects it, or the retried call gets `401` again (e.g. the user revoked Hoot on GitHub), the stored tokens are deleted, the session cookie is cleared and the route answers `401`. The frontend then sends the user to the sign-in.
 * If GitHub can't be reached or answers with an error, the route answers `502` and the tokens stay.
+* Refresh tokens work only once, so parallel requests of one user refresh one at a time (a lock per user): a request that waited uses the token the other one just stored instead of refreshing again. The lock covers one backend process, which is how Hoot runs.
 
 ---
 

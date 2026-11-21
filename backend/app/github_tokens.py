@@ -1,3 +1,4 @@
+import threading
 import time
 from collections.abc import Callable
 from typing import TypeVar
@@ -12,6 +13,11 @@ Result = TypeVar("Result")
 
 # Refresh a little early, so a token doesn't expire between the check and GitHub's answer.
 EXPIRY_MARGIN_SECONDS = 60
+
+# GitHub refresh tokens work only once, so parallel requests of one user must not refresh at the
+# same time (#91). The locks only cover one process, which is how Hoot runs (one uvicorn, SQLite).
+_refresh_locks: dict[int, threading.Lock] = {}
+_refresh_locks_guard = threading.Lock()
 
 
 class SignInRequired(Exception):
@@ -42,30 +48,58 @@ def call_as_user(
     if user.github_access_token is None:
         raise SignInRequired
     if _has_expired(user.github_access_token_expires_at):
-        _refresh(db, client, user)
+        _refresh(db, client, user, stale_token=user.github_access_token)
     try:
         return request(decrypt_token(user.github_access_token))
     except github.GitHubTokenRejected:
-        _refresh(db, client, user)
+        _refresh(db, client, user, stale_token=user.github_access_token)
+    rejected_token = user.github_access_token
     try:
-        return request(decrypt_token(user.github_access_token))
+        return request(decrypt_token(rejected_token))
     except github.GitHubTokenRejected as error:
-        _forget_tokens(db, user)
+        _forget_tokens_unless_replaced(db, user, rejected_token)
         raise SignInRequired from error
 
 
-def _refresh(db: Session, client: httpx.Client, user: models.User) -> None:
-    """Replace the user's tokens with a refreshed pair, or forget them and raise SignInRequired."""
-    if user.github_refresh_token is None or _has_expired(user.github_refresh_token_expires_at):
-        _forget_tokens(db, user)
-        raise SignInRequired
-    try:
-        tokens = github.refresh_tokens(client, decrypt_token(user.github_refresh_token))
-    except github.GitHubTokenRejected as error:
-        _forget_tokens(db, user)
-        raise SignInRequired from error
-    store_tokens(user, tokens)
-    db.commit()
+def _refresh(db: Session, client: httpx.Client, user: models.User, stale_token: str) -> None:
+    """Give the user an access token newer than `stale_token` (as stored, encrypted).
+
+    If another request refreshed while this one waited for the lock, its token is used.
+    Otherwise the refresh token is spent; if GitHub rejects it, the tokens are forgotten and
+    SignInRequired is raised.
+    """
+    with _lock_for(user.id):
+        db.refresh(user)
+        if user.github_access_token is None:
+            raise SignInRequired
+        if user.github_access_token != stale_token and not _has_expired(
+            user.github_access_token_expires_at
+        ):
+            return
+        if user.github_refresh_token is None or _has_expired(user.github_refresh_token_expires_at):
+            _forget_tokens(db, user)
+            raise SignInRequired
+        try:
+            tokens = github.refresh_tokens(client, decrypt_token(user.github_refresh_token))
+        except github.GitHubTokenRejected as error:
+            _forget_tokens(db, user)
+            raise SignInRequired from error
+        store_tokens(user, tokens)
+        db.commit()
+
+
+def _forget_tokens_unless_replaced(db: Session, user: models.User, rejected_token: str) -> None:
+    """Forget the tokens after GitHub rejected a fresh one, unless another request replaced it."""
+    with _lock_for(user.id):
+        db.refresh(user)
+        if user.github_access_token == rejected_token:
+            _forget_tokens(db, user)
+
+
+def _lock_for(user_id: int) -> threading.Lock:
+    """The lock that serializes token refreshes of one user."""
+    with _refresh_locks_guard:
+        return _refresh_locks.setdefault(user_id, threading.Lock())
 
 
 def _forget_tokens(db: Session, user: models.User) -> None:
