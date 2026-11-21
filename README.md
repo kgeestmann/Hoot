@@ -1,7 +1,10 @@
-# Mini Auth Project
+# Hoot
 
-A minimal full-stack authentication system built with **FastAPI**, **SQLite**, **Angular**, and **JWT authentication**.
-The project demonstrates a modern authentication flow including user registration, login, token generation, and protected routes.
+One page for everything that is waiting on you on GitHub: assigned issues, your open pull requests, review requests and mentions, across all your repositories and organizations.
+
+Built with **FastAPI**, **SQLite**, **Angular** and **JWT** sessions.
+
+> **Status:** early. The current code is the authentication foundation (email/password login with JWT). Next up is signing in with GitHub and the overview page; see the open issues.
 
 ---
 
@@ -11,7 +14,7 @@ This project consists of three main components:
 
 * **Backend**: FastAPI application handling authentication and database access
 * **Frontend**: Angular application providing login and profile UI
-* **Database**: SQLite file (`backend/mini_auth.db`) for persistent user storage, created automatically on first start
+* **Database**: SQLite file (`backend/hoot.db`) for persistent user storage, created automatically on first start
 
 Authentication is implemented using **JWT (JSON Web Tokens)**.
 
@@ -29,7 +32,7 @@ Flow:
 # Project Structure
 
 ```
-mini-auth-project
+Hoot
 │
 ├── backend
 │   └── app
@@ -124,7 +127,7 @@ CORS_ORIGINS
 Comma-separated list of frontend origins allowed to call the API. Default: `http://localhost:4200,http://127.0.0.1:4200`.
 
 DATABASE_URL
-Optional SQLAlchemy connection string. Default: the SQLite file `backend/mini_auth.db`.
+Optional SQLAlchemy connection string. Default: the SQLite file `backend/hoot.db`.
 
 ---
 
@@ -152,7 +155,7 @@ Base class for database models.
 Connection string: read from `DATABASE_URL` in `.env` (see *Environment Variables*). Default:
 
 ```
-sqlite:///<repo>/backend/mini_auth.db
+sqlite:///<repo>/backend/hoot.db
 ```
 
 The file and the `users` table are created automatically on first start. Delete the file to start with an empty database.

@@ -14,7 +14,7 @@ frontend/dist/
 .env
 
 # SQLite database
-backend/mini_auth.db
+backend/hoot.db
 
 # OS
 Thumbs.db
