@@ -8,7 +8,7 @@ Hoot shows everything that is waiting on the user on GitHub (assigned issues, op
 
 ```bash
 pip install -r backend/requirements.txt               # in a venv (backend/venv/ is gitignored)
-uvicorn backend.app.main:app --reload                 # from the repo root → http://localhost:8000
+python backend/app/main.py                            # → http://localhost:8000 with reload; same as uvicorn backend.app.main:app --reload
 pytest                                                # backend tests (backend/tests/, temp SQLite DB)
 pytest backend/tests/test_auth.py::test_profile_returns_the_logged_in_user   # single test
 
