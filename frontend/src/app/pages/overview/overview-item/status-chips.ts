@@ -1,7 +1,15 @@
+import { IconName } from '../../../layout/icon/icon';
 import { OverviewItem, PullRequestItem } from '../../../services/overview';
 
 /** Colour role of a status chip; the label always says the same in words. */
 export type StatusTone = 'success' | 'danger' | 'neutral';
+
+/** The icon that goes with each colour role, so a chip never relies on colour alone (#55). */
+export const TONE_ICONS: Record<StatusTone, IconName> = {
+  success: 'check',
+  danger: 'close',
+  neutral: 'schedule',
+};
 
 export interface StatusChip {
   label: string;

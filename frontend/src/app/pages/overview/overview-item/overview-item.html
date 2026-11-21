@@ -18,7 +18,10 @@
   @if (statuses().length > 0) {
     <ul class="statuses">
       @for (status of statuses(); track status.label) {
-        <li [class]="'status status-' + status.tone">{{ status.label }}</li>
+        <li [class]="'status status-' + status.tone">
+          <app-icon [name]="toneIcons[status.tone]" />
+          {{ status.label }}
+        </li>
       }
     </ul>
   }
