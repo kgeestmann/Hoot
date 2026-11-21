@@ -2,12 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Mini Auth Project is a minimal full-stack JWT login demo: a FastAPI + SQLAlchemy backend on PostgreSQL and an Angular 21 (Material) frontend. The default branch is `main`, and the main dev machine is Windows.
+Mini Auth Project is a minimal full-stack JWT login demo: a FastAPI + SQLAlchemy backend on SQLite and an Angular 21 (Material) frontend. The default branch is `main`, and the main dev machine is Windows.
 
 ## Commands
 
 ```bash
-docker compose --env-file .env -f docker/docker-compose.yml up -d     # PostgreSQL 15 on localhost:5432
 pip install -r backend/requirements.txt               # in a venv (backend/venv/ is gitignored)
 uvicorn backend.app.main:app --reload                 # from the repo root → http://localhost:8000
 
