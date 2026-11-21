@@ -115,14 +115,19 @@ Hoot signs users in through a GitHub App. For local development, register your o
 1. GitHub → Settings → Developer settings → GitHub Apps → **New GitHub App**
 2. **GitHub App name:** must be unique on GitHub, e.g. `Hoot dev <your-username>`
 3. **Homepage URL:** `http://localhost:4200`
-4. **Callback URL:** `http://localhost:8000/auth/github/callback`
-5. Keep **Expire user authorization tokens** checked, and check **Request user authorization (OAuth) during installation**
+4. Under *Identifying and authorizing users*:
+   * **Redirect URI:** `http://localhost:8000/auth/github/callback`
+   * **Allow wildcard matching:** off
+   * **Expire user authorization tokens:** on
+   * **Request user authorization (OAuth) during installation:** **off**. With it on, GitHub sends the browser to the callback right after installing, without Hoot's `state`, and the callback rejects that (`400`). Signing in always starts from Hoot's "Sign in with GitHub" button.
+   * **Enable Device Flow:** off
+5. *Post installation*: leave **Setup URL** empty
 6. **Webhook:** uncheck *Active*
-7. **Repository permissions:** Issues → *Read-only*, Pull requests → *Read-only* (Metadata is set automatically)
-8. Create the app, then **Generate a new client secret**
-9. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
-
-Hoot only sees repositories where the app is installed. Install it on your account (and any organization) from the app's page.
+7. **Repository permissions:** Issues → *Read-only*, Pull requests → *Read-only* (Metadata is set automatically); everything else stays *No access*
+8. **Where can this GitHub App be installed?** *Only on this account* for development; *Any account* if it should also be installed on organizations
+9. Create the app, then **Generate a new client secret** (GitHub shows it only once)
+10. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+11. In the app's settings, **Install App** on your account. Hoot only sees repositories where the app is installed.
 
 ---
 
