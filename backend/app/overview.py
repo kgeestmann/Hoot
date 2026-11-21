@@ -63,16 +63,16 @@ def fetch_overview(client: httpx.Client, access_token: str) -> schemas.Overview:
 
 def build_overview(data: dict) -> schemas.Overview:
     """Turn the GraphQL search results into the overview."""
-    mentions = [node for node in _nodes(data["mentions"]) if not _latest_activity_by_bot(node)]
+    mentions = [node for node in search_nodes(data["mentions"]) if not _latest_activity_by_bot(node)]
     return schemas.Overview(
-        assigned_issues=[_item(node) for node in _nodes(data["assigned_issues"])],
-        pull_requests=[_pull_request_item(node) for node in _nodes(data["pull_requests"])],
-        review_requests=[_item(node) for node in _nodes(data["review_requests"])],
+        assigned_issues=[_item(node) for node in search_nodes(data["assigned_issues"])],
+        pull_requests=[_pull_request_item(node) for node in search_nodes(data["pull_requests"])],
+        review_requests=[_item(node) for node in search_nodes(data["review_requests"])],
         mentions=[_item(node) for node in mentions],
     )
 
 
-def _nodes(search: dict | None) -> list[dict]:
+def search_nodes(search: dict | None) -> list[dict]:
     """Return the issues and pull requests of a search.
 
     GitHub sends null for a search or item it couldn't load (partial errors); those are skipped.
@@ -91,21 +91,26 @@ def _latest_activity_by_bot(node: dict) -> bool:
 
 def _item(node: dict) -> schemas.OverviewItem:
     """Turn a search result into an overview item."""
-    return schemas.OverviewItem(**_item_fields(node))
+    return schemas.OverviewItem(**item_fields(node))
 
 
 def _pull_request_item(node: dict) -> schemas.PullRequestItem:
     """Turn a pull request search result into an item with CI status and review state."""
-    commits = node["commits"]["nodes"]
-    status_rollup = commits[0]["commit"]["statusCheckRollup"] if commits else None
     return schemas.PullRequestItem(
-        **_item_fields(node),
-        ci_status=status_rollup["state"] if status_rollup else None,
+        **item_fields(node),
+        ci_status=ci_status(node),
         review_decision=node["reviewDecision"],
     )
 
 
-def _item_fields(node: dict) -> dict:
+def ci_status(pull_request: dict) -> str | None:
+    """The combined check state of the pull request's last commit, None without checks."""
+    commits = pull_request["commits"]["nodes"]
+    status_rollup = commits[0]["commit"]["statusCheckRollup"] if commits else None
+    return status_rollup["state"] if status_rollup else None
+
+
+def item_fields(node: dict) -> dict:
     """The fields that issues and pull requests share."""
     return {
         "kind": KINDS[node["__typename"]],

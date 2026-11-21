@@ -1,0 +1,45 @@
+<div class="organization-page">
+  <header class="header">
+    <h1 class="page-title">{{ overview()?.organization ?? organization() }}</h1>
+    <p class="subtitle">
+      What needs the team's attention. Lists of work only, no statistics per person.
+    </p>
+  </header>
+
+  @if (overview(); as overview) {
+    <div class="sections">
+      <app-overview-section
+        heading="Waiting for review"
+        [items]="overview.waiting_for_review.items"
+        [total]="overview.waiting_for_review.total"
+        [moreUrl]="overview.waiting_for_review.search_url"
+        emptyText="No pull request is waiting for a review."
+      />
+      <app-overview-section
+        heading="Failing CI"
+        [items]="overview.failing_ci.items"
+        [total]="overview.failing_ci.total"
+        [moreUrl]="overview.failing_ci.search_url"
+        emptyText="No open pull request has failing checks."
+      />
+      <app-overview-section
+        heading="Unassigned issues"
+        [items]="overview.unassigned_issues.items"
+        [total]="overview.unassigned_issues.total"
+        [moreUrl]="overview.unassigned_issues.search_url"
+        emptyText="Every open issue has someone assigned."
+      />
+      <app-overview-section
+        [heading]="'No update for ' + overview.stale_after_days + ' days'"
+        [items]="overview.stale.items"
+        [total]="overview.stale.total"
+        [moreUrl]="overview.stale.search_url"
+        [emptyText]="'Nothing open has been left alone for ' + overview.stale_after_days + ' days.'"
+      />
+    </div>
+  } @else if (loadError(); as message) {
+    <app-load-error [message]="message" (retry)="load()" />
+  } @else {
+    <app-sections-skeleton [label]="'Loading the team view of ' + organization()" />
+  }
+</div>

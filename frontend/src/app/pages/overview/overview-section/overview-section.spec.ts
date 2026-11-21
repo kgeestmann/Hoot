@@ -15,12 +15,18 @@ describe('OverviewSection', () => {
     };
   }
 
-  async function render(items: OverviewItem[]) {
+  async function render(items: OverviewItem[], total?: number, moreUrl?: string) {
     await TestBed.configureTestingModule({ imports: [OverviewSection] }).compileComponents();
     const fixture = TestBed.createComponent(OverviewSection);
     fixture.componentRef.setInput('heading', 'Assigned issues');
     fixture.componentRef.setInput('items', items);
     fixture.componentRef.setInput('emptyText', 'No open issues are assigned to you.');
+    if (total !== undefined) {
+      fixture.componentRef.setInput('total', total);
+    }
+    if (moreUrl !== undefined) {
+      fixture.componentRef.setInput('moreUrl', moreUrl);
+    }
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
   }
@@ -42,5 +48,20 @@ describe('OverviewSection', () => {
       'No open issues are assigned to you.',
     );
     expect(element.querySelector('.items')).toBeNull();
+  });
+
+  it('counts the total and links to the rest when only some items are loaded', async () => {
+    const element = await render([item(1)], 42, 'https://github.com/search?q=x');
+
+    expect(element.querySelector('.count')?.textContent?.trim()).toBe('42');
+    const more = element.querySelector<HTMLAnchorElement>('.more-link');
+    expect(more?.textContent?.trim()).toBe('Show all 42 on GitHub');
+    expect(more?.href).toBe('https://github.com/search?q=x');
+  });
+
+  it('has no link to more when every item is loaded', async () => {
+    const element = await render([item(1)], 1, 'https://github.com/search?q=x');
+
+    expect(element.querySelector('.more-link')).toBeNull();
   });
 });

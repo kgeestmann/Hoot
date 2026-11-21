@@ -37,3 +37,9 @@
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
 }
+
+.more-link {
+  align-self: flex-start;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-primary);
+}

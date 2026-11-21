@@ -63,6 +63,11 @@
   color: var(--hoot-on-brand);
 }
 
+/* Team views sit indented under Overview. */
+.nav-organization {
+  padding-left: var(--hoot-space-8);
+}
+
 .nav-btn.danger {
   color: var(--mat-sys-error);
 }
