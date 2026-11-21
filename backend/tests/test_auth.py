@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from backend.app.config import ALGORITHM, SECRET_KEY
+from backend.app.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 
 
 def login(client, email, password):
@@ -66,6 +66,14 @@ def test_login_with_unknown_email_is_unauthorized(client):
     response = login(client, "nobody@example.com", "geheim123")
 
     assert response.status_code == 401
+
+
+def test_login_token_expires_after_the_configured_minutes_in_utc(client, registered_user):
+    token = login(client, registered_user["email"], registered_user["password"]).json()["access_token"]
+
+    expires_at = datetime.fromtimestamp(jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])["exp"], timezone.utc)
+
+    assert abs(expires_at - in_minutes(ACCESS_TOKEN_EXPIRE_MINUTES)) < timedelta(seconds=10)
 
 
 def test_profile_returns_the_logged_in_user(client, registered_user):
