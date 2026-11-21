@@ -46,6 +46,8 @@ If you find a bug, a gap or a docs/code mismatch outside the current task, **fil
 
 Label every issue and PR (`--label` on `gh issue create` / `gh pr create`): one type (`bug`, `enhancement`, `documentation`), the area (`backend`, `frontend`), and `security` or `dependencies` where they apply. A PR carries the labels of the issue it closes. Create a new label only when none of these fits.
 
+Assign every issue to whoever opens it. When you file one, that's the account `gh` is signed in as, so pass `--assignee @me` to `gh issue create`.
+
 ## Git & PR workflow
 
 Every change (feature, fix or docs) starts from a GitHub issue and gets its own branch and PR:
