@@ -1,10 +1,8 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'ui-card',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './ui-card.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./ui-card.css'],
