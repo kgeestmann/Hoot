@@ -106,7 +106,7 @@ pip install -r backend/requirements.txt
 Example `.env` file:
 
 ```
-SECRET_KEY=supersecretkey
+SECRET_KEY=<output of the command below>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
@@ -115,7 +115,11 @@ CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 Explanation:
 
 SECRET_KEY
-Used to sign JWT tokens. **Required** — the backend refuses to start without it.
+Used to sign JWT tokens. **Required** — the backend refuses to start without it or if it is shorter than 32 bytes. Anyone who knows or guesses it can sign tokens for any user, so generate a random one:
+
+```
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
 ALGORITHM
 JWT encryption algorithm. Default: `HS256`.
