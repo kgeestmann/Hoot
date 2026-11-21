@@ -5,10 +5,16 @@
   @if (installedNowhere() && gitHubAccess) {
     <app-github-access [access]="gitHubAccess" />
   } @else {
-    @if (overview(); as overview) {
+    @if (visible(); as overview) {
       @if (nothingWaiting()) {
         <p class="all-clear">Nothing waiting on you 🎉</p>
       } @else {
+        <app-overview-filters
+          [options]="filterOptions()"
+          [hiddenCount]="hiddenCount()"
+          [saveFailed]="filterSaveFailed()"
+          (toggle)="toggleFilter($event)"
+        />
         <div class="sections">
           <app-overview-section
             heading="Your pull requests"

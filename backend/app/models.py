@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
 from .database import Base
 
 class User(Base):
@@ -14,3 +14,15 @@ class User(Base):
     github_access_token_expires_at = Column(Integer)
     github_refresh_token = Column(String)
     github_refresh_token_expires_at = Column(Integer)
+
+
+class HiddenScope(Base):
+    """An owner ("octo-org") or repository ("octo-org/hoot") the user hid from the overview."""
+
+    __tablename__ = "hidden_scopes"
+    __table_args__ = (UniqueConstraint("user_id", "scope"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    # Lowercase, because GitHub owner and repository names are case-insensitive.
+    scope = Column(String, nullable=False)

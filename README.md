@@ -4,7 +4,7 @@ One page for everything that is waiting on you on GitHub: assigned issues, your 
 
 Built with **FastAPI**, **SQLite**, **Angular** and **JWT** sessions.
 
-> **Status:** early. Signing in with GitHub and the overview page work; filters and an organization view are next (see the open issues).
+> **Status:** early. Signing in with GitHub, the overview page and its filters work; an organization view is next (see the open issues).
 
 ---
 
@@ -41,6 +41,7 @@ Hoot
 │       ├── github.py      calls to GitHub (authorize URL, tokens, user, GraphQL)
 │       ├── github_tokens.py  storing and refreshing the users' GitHub tokens
 │       ├── overview.py    GraphQL searches behind GET /overview
+│       ├── overview_filters.py  the owners/repositories a user hid from the overview
 │       ├── crypto.py      encryption of the stored GitHub tokens
 │       ├── config.py      settings from .env
 │       ├── models.py
@@ -58,6 +59,7 @@ Hoot
 │       │   ├── auth.ts
 │       │   ├── github-access.ts
 │       │   ├── overview.ts
+│       │   ├── overview-filters.ts
 │       │   └── session-interceptor.ts
 │       │
 │       └── api.ts         backend URL
@@ -265,6 +267,16 @@ Table structure:
 
 GitHub tokens are **never stored in plain text** and never leave the backend.
 
+Table `hidden_scopes` holds the overview filters, one row per hidden owner or repository:
+
+| Column  | Description                                                   |
+| ------- | ------------------------------------------------------------- |
+| id      | Primary key                                                   |
+| user_id | The user (`users.id`)                                         |
+| scope   | Lowercase owner (`octo-org`) or repository (`octo-org/hoot`)  |
+
+A new table is created on the next start, so this needs no fresh database.
+
 ---
 
 # Pydantic Schemas
@@ -292,6 +304,16 @@ number
 url
 updated_at
 ```
+
+OverviewFilters
+
+Returned and accepted by `/overview/filters`.
+
+```
+hidden    list of owners ("octo-org") or repositories ("octo-org/hoot"), at most 500
+```
+
+Entries are trimmed, lowercased (GitHub names are case-insensitive), de-duplicated and sorted. Anything else answers `422`.
 
 GitHubAccess
 
@@ -498,6 +520,23 @@ Returns `401` (and clears the session cookie) when the GitHub tokens can't be re
 
 ---
 
+Overview filters (Protected Route)
+
+```
+GET /overview/filters
+PUT /overview/filters
+```
+
+Requires a valid session cookie. `GET` returns what the user hid from the overview, `PUT` replaces it and returns it as stored:
+
+```
+{ "hidden": ["dipt-pa1469-ht26", "kgeestmann/old-repo"] }
+```
+
+The frontend applies the filters to the loaded overview; `/overview` itself always returns everything.
+
+---
+
 GitHub access (Protected Route)
 
 ```
@@ -558,6 +597,7 @@ Overview Page
 The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` and `GET /github/installations` side by side:
 
 * **Four sections:** your pull requests, review requests, assigned issues and mentions, each with the number of items. An item shows its title (linking to GitHub), whether it is an issue or a pull request, `owner/repo#number` and how long ago it was updated ("3 hours ago"). Your pull requests also get chips for CI (`CI passing`, `CI failing`, `CI running`) and review (`Approved`, `Changes requested`, `Review required`), always as text with a colour, never colour alone.
+* **Filter:** a collapsible panel lists every owner and repository in the overview (and hidden ones without items) as checkboxes. Unchecking hides it; new owners and repositories show up automatically. The section counts follow the filter, and the panel says how many items are hidden. Changes are saved per user with `PUT /overview/filters`, one after the other; if saving fails, the filter still applies until the page is reloaded.
 * **States:** a skeleton while loading, an empty message per section, "Nothing waiting on you 🎉" when all four are empty, and an error with **Try again** that says whether Hoot's server or GitHub failed.
 * **GitHub access card** (`pages/overview/github-access`): if the app is installed nowhere, it replaces the sections and asks the user to install it, since every list would otherwise be empty. Otherwise it sits below the sections and lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
 

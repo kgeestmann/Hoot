@@ -4,6 +4,7 @@ import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { Overview, OverviewItem, OverviewService } from '../../services/overview';
+import { OverviewFiltersService } from '../../services/overview-filters';
 import { OverviewPage } from './overview';
 
 const INSTALLED: GitHubAccess = {
@@ -37,6 +38,14 @@ const EMPTY: Overview = {
 
 describe('OverviewPage', () => {
   let fixture: ComponentFixture<OverviewPage>;
+  let filters: {
+    load: () => Observable<string[]>;
+    save: ReturnType<typeof vi.fn<(hidden: string[]) => Observable<string[]>>>;
+  };
+
+  beforeEach(() => {
+    filters = { load: () => of([]), save: vi.fn((hidden: string[]) => of(hidden)) };
+  });
 
   async function render(overview: () => Observable<Overview>, access: Observable<GitHubAccess>) {
     await TestBed.configureTestingModule({
@@ -44,6 +53,7 @@ describe('OverviewPage', () => {
       providers: [
         { provide: OverviewService, useValue: { load: overview } },
         { provide: GitHubAccessService, useValue: { load: () => access } },
+        { provide: OverviewFiltersService, useValue: filters },
       ],
     }).compileComponents();
 
@@ -154,5 +164,96 @@ describe('OverviewPage', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('[aria-busy="true"]')).not.toBeNull();
+  });
+
+  describe('with filters', () => {
+    const OVERVIEW: Overview = {
+      ...EMPTY,
+      assigned_issues: [
+        { ...ISSUE, repository: 'dipt-pa1469-ht26/team-14', number: 3 },
+        { ...ISSUE, repository: 'kgeestmann/hoot', number: 4 },
+      ],
+      mentions: [{ ...ISSUE, repository: 'kgeestmann/old-repo', number: 5 }],
+    };
+
+    function filterCheckbox(element: HTMLElement, label: string): HTMLInputElement {
+      const option = Array.from(element.querySelectorAll('app-overview-filters label')).find(
+        (candidate) => candidate.textContent!.trim() === label,
+      );
+      return option!.querySelector('input')!;
+    }
+
+    it('leaves out what the user hid and says how much is hidden', async () => {
+      filters.load = () => of(['dipt-pa1469-ht26', 'kgeestmann/old-repo']);
+
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      expect(headings(element)).toEqual([
+        'Your pull requests 0',
+        'Review requests 0',
+        'Assigned issues 1',
+        'Mentions 0',
+      ]);
+      expect(element.querySelector('.hidden-count')!.textContent!.trim()).toBe('2 hidden');
+    });
+
+    it('hides an owner when its checkbox is unchecked and saves that', async () => {
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      filterCheckbox(element, 'dipt-pa1469-ht26').click();
+      await fixture.whenStable();
+
+      expect(headings(element)).toContain('Assigned issues 1');
+      expect(filters.save).toHaveBeenCalledWith(['dipt-pa1469-ht26']);
+    });
+
+    it('shows a hidden repository again when its checkbox is checked', async () => {
+      filters.load = () => of(['kgeestmann/old-repo']);
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      filterCheckbox(element, 'kgeestmann/old-repo').click();
+      await fixture.whenStable();
+
+      expect(headings(element)).toContain('Mentions 1');
+      expect(filters.save).toHaveBeenCalledWith([]);
+    });
+
+    it('shows everything when the filters cannot be loaded', async () => {
+      filters.load = () => throwError(() => new HttpErrorResponse({ status: 500 }));
+
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      expect(headings(element)).toContain('Assigned issues 2');
+    });
+
+    it('warns when a filter change cannot be saved, but keeps applying it', async () => {
+      filters.save = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500 })));
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      filterCheckbox(element, 'dipt-pa1469-ht26').click();
+      await fixture.whenStable();
+
+      expect(element.querySelector('app-overview-filters [role="alert"]')).not.toBeNull();
+      expect(headings(element)).toContain('Assigned issues 1');
+    });
+
+    it('saves changes one after the other, so the last one is stored', async () => {
+      const pending: Subject<string[]>[] = [];
+      filters.save = vi.fn(() => {
+        const save = new Subject<string[]>();
+        pending.push(save);
+        return save;
+      });
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      filterCheckbox(element, 'dipt-pa1469-ht26').click();
+      filterCheckbox(element, 'kgeestmann/hoot').click();
+      expect(filters.save).toHaveBeenCalledTimes(1);
+
+      pending[0].next([]);
+      pending[0].complete();
+
+      expect(filters.save).toHaveBeenLastCalledWith(['dipt-pa1469-ht26', 'kgeestmann/hoot']);
+    });
   });
 });

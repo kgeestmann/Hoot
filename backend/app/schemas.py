@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 class UserResponse(BaseModel):
     id: int
@@ -57,3 +57,27 @@ class GitHubAccess(BaseModel):
 
     install_url: str
     installations: list[Installation]
+
+
+# "owner" or "owner/repository" as GitHub allows them, compared in lowercase.
+Scope = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        to_lower=True,
+        max_length=140,
+        pattern=r"^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:/[A-Za-z0-9._-]+)?$",
+    ),
+]
+
+
+class OverviewFilters(BaseModel):
+    """What the user hid from the overview; everything else is shown."""
+
+    hidden: list[Scope] = Field(max_length=500)
+
+    @field_validator("hidden")
+    @classmethod
+    def sorted_without_duplicates(cls, hidden: list[str]) -> list[str]:
+        """Store each scope once, in a stable order."""
+        return sorted(set(hidden))
