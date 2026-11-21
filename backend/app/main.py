@@ -1,10 +1,21 @@
 import logging
 import secrets
+import sys
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+# Started as a script (python backend/app/main.py): load this file as part of the
+# backend.app package, so that the relative imports below resolve (PEP 366).
+if not __package__:
+    sys.path.insert(0, str(REPO_ROOT))
+    __package__ = "backend.app"
 
 import httpx
 import jwt
+import uvicorn
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -264,3 +275,17 @@ def logout(response: Response):
 @app.get("/profile", response_model=schemas.UserResponse)
 def get_profile(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+def run_dev_server() -> None:
+    """Start the API on http://localhost:8000 and restart it when backend code changes."""
+    uvicorn.run(
+        "backend.app.main:app",
+        reload=True,
+        reload_dirs=[str(REPO_ROOT / "backend")],
+        app_dir=str(REPO_ROOT),
+    )
+
+
+if __name__ == "__main__":
+    run_dev_server()
