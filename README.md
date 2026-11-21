@@ -4,7 +4,7 @@ One page for everything that is waiting on you on GitHub: assigned issues, your 
 
 Built with **FastAPI**, **SQLite**, **Angular** and **JWT** sessions.
 
-> **Status:** early. Signing in with GitHub and the overview API (`GET /overview`) work; the overview page is next (see the open issues).
+> **Status:** early. Signing in with GitHub and the overview page work; filters and an organization view are next (see the open issues).
 
 ---
 
@@ -50,13 +50,14 @@ Hoot
 ├── frontend
 │   └── src/app
 │       ├── pages
-│       │   ├── home   (with the GitHub access card)
+│       │   ├── overview   start page: the four lists and the GitHub access card
 │       │   ├── login
 │       │   └── profile
 │       │
 │       ├── services
 │       │   ├── auth.ts
 │       │   ├── github-access.ts
+│       │   ├── overview.ts
 │       │   └── session-interceptor.ts
 │       │
 │       └── api.ts         backend URL
@@ -127,7 +128,7 @@ python backend/setup_github_app.py
 
 It opens `http://localhost:8000` in the browser and sends GitHub a description of the app ([manifest](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest)) with the settings below (*Expire user authorization tokens* can't be set in a manifest; it's on by default, and Hoot works either way). On GitHub, check the name and click **Create GitHub App**. GitHub sends you back, and the script writes `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` and `GITHUB_APP_SLUG` to `.env`, plus a generated `SECRET_KEY` and `TOKEN_ENCRYPTION_KEY` if they are missing. Existing settings are never overwritten. If `.env` already has a `GITHUB_CLIENT_ID`, the script only adds missing keys; remove the `GITHUB_*` lines to create a new app.
 
-Then start Hoot (see *Running the Project*), sign in, and install the app on your account from Hoot's home page.
+Then start Hoot (see *Running the Project*), sign in, and install the app on your account from Hoot's overview page.
 
 ## Manual setup
 
@@ -146,7 +147,7 @@ Then start Hoot (see *Running the Project*), sign in, and install the app on you
 8. **Where can this GitHub App be installed?** *Only on this account* for development; *Any account* if it should also be installed on organizations
 9. Create the app, then **Generate a new client secret** (GitHub shows it only once)
 10. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, and the app's URL name as `GITHUB_APP_SLUG` (the last part of its public page `https://github.com/apps/<slug>`)
-11. Install the app on your account: after signing in, Hoot's home page links to GitHub's install page. Hoot only sees repositories in accounts where the app is installed. Members who aren't owners of an organization can request the app there, and GitHub asks the owners to approve it.
+11. Install the app on your account: after signing in, Hoot's overview page links to GitHub's install page. Hoot only sees repositories in accounts where the app is installed. Members who aren't owners of an organization can request the app there, and GitHub asks the owners to approve it.
 
 ---
 
@@ -528,7 +529,7 @@ Enterprise installations are left out. Errors as for `/overview`.
 The Angular frontend provides:
 
 * Sign-in page
-* Home page that shows where Hoot can see your repositories
+* Overview page with everything waiting on you, and where Hoot can see your repositories
 * Profile page
 * Auth service for API communication
 
@@ -548,13 +549,17 @@ Shows a "Sign in with GitHub" button. It is a plain link to `/auth/github/login`
 
 ---
 
-Home Page
+Overview Page
 
 ```
 /
 ```
 
-For a logged-in user it shows the GitHub access card (`pages/home/github-access`), loaded from `GET /github/installations`. If the app is installed nowhere, it asks the user to install it and links to GitHub's install page. Otherwise it lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
+The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` and `GET /github/installations` side by side:
+
+* **Four sections:** your pull requests, review requests, assigned issues and mentions, each with the number of items. An item shows its title (linking to GitHub), whether it is an issue or a pull request, `owner/repo#number` and how long ago it was updated ("3 hours ago"). Your pull requests also get chips for CI (`CI passing`, `CI failing`, `CI running`) and review (`Approved`, `Changes requested`, `Review required`), always as text with a colour, never colour alone.
+* **States:** a skeleton while loading, an empty message per section, "Nothing waiting on you 🎉" when all four are empty, and an error with **Try again** that says whether Hoot's server or GitHub failed.
+* **GitHub access card** (`pages/overview/github-access`): if the app is installed nowhere, it replaces the sections and asks the user to install it, since every list would otherwise be empty. Otherwise it sits below the sections and lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
 
 ---
 
@@ -676,7 +681,7 @@ http://localhost:4200
 5. FastAPI checks the state, exchanges the code, stores the encrypted GitHub tokens
 6. FastAPI sets the HttpOnly session cookie and redirects to the frontend
 7. Angular requests `/profile`; the browser sends the cookie
-8. Backend returns user data
+8. Backend returns user data, and the overview page loads
 9. Logout calls `POST /logout`, which deletes the cookie
 
 ---

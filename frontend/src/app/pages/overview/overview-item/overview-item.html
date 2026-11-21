@@ -1,0 +1,17 @@
+<article class="item">
+  <a class="title" [href]="item().url">{{ item().title }}</a>
+  <p class="meta">
+    <span>{{ kindLabel() }}</span>
+    <span class="reference">{{ item().repository }}#{{ item().number }}</span>
+    <time [attr.datetime]="item().updated_at" [title]="item().updated_at">
+      updated {{ updatedAgo() }}
+    </time>
+  </p>
+  @if (statuses().length > 0) {
+    <ul class="statuses">
+      @for (status of statuses(); track status.label) {
+        <li [class]="'status status-' + status.tone">{{ status.label }}</li>
+      }
+    </ul>
+  }
+</article>

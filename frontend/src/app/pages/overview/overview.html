@@ -1,0 +1,56 @@
+<div class="overview-page">
+  <h1 class="page-title">Overview</h1>
+
+  @let gitHubAccess = access();
+  @if (installedNowhere() && gitHubAccess) {
+    <app-github-access [access]="gitHubAccess" />
+  } @else {
+    @if (overview(); as overview) {
+      @if (nothingWaiting()) {
+        <p class="all-clear">Nothing waiting on you 🎉</p>
+      } @else {
+        <div class="sections">
+          <app-overview-section
+            heading="Your pull requests"
+            [items]="overview.pull_requests"
+            emptyText="You have no open pull requests."
+          />
+          <app-overview-section
+            heading="Review requests"
+            [items]="overview.review_requests"
+            emptyText="No reviews are waiting on you."
+          />
+          <app-overview-section
+            heading="Assigned issues"
+            [items]="overview.assigned_issues"
+            emptyText="No open issues are assigned to you."
+          />
+          <app-overview-section
+            heading="Mentions"
+            [items]="overview.mentions"
+            emptyText="Nobody mentioned you in an open issue or pull request."
+          />
+        </div>
+      }
+    } @else if (loadError(); as message) {
+      <div class="load-error" role="alert">
+        <p>{{ message }}</p>
+        <button type="button" class="retry" (click)="load()">Try again</button>
+      </div>
+    } @else {
+      <div class="sections" aria-busy="true" aria-label="Loading your overview">
+        @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+          <div class="skeleton-section">
+            <div class="skeleton-line skeleton-heading"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (gitHubAccess) {
+      <app-github-access [access]="gitHubAccess" />
+    }
+  }
+</div>

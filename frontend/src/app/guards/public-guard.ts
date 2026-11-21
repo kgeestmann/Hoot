@@ -4,11 +4,11 @@ import { map } from 'rxjs';
 
 import { AuthService } from '../services/auth';
 
-/** Keeps logged-in users away from pages like /login and sends them to /profile. */
+/** Keeps logged-in users away from pages like /login and sends them to the overview. */
 export const publicGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   return inject(AuthService)
     .loadSession()
-    .pipe(map((user) => (user ? router.createUrlTree(['/profile']) : true)));
+    .pipe(map((user) => (user ? router.createUrlTree(['/']) : true)));
 };

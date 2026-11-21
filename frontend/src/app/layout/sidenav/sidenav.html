@@ -10,8 +10,9 @@
         routerLink="/"
         routerLinkActive="active-link"
         [routerLinkActiveOptions]="{ exact: true }"
+        *ngIf="auth.isLoggedIn()"
       >
-        Home
+        Overview
       </a>
 
       <a
