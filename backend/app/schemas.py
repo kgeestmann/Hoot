@@ -4,11 +4,10 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     login: str
-
-    class Config:
-        from_attributes = True
 
 
 class OverviewItem(BaseModel):
