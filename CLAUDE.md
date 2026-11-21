@@ -7,7 +7,7 @@ Hoot shows everything that is waiting on the user on GitHub (assigned issues, op
 ## Commands
 
 ```bash
-pip install -r backend/requirements.txt               # in venv/ in the repo root (gitignored)
+pip install -r backend/requirements-dev.txt           # in venv/ in the repo root (gitignored); runtime deps are in requirements.txt
 python backend/setup_github_app.py                    # once: creates the GitHub App from a manifest and fills .env
 python backend/app/main.py                            # → http://localhost:8000 with reload; same as uvicorn backend.app.main:app --reload
 pytest                                                # backend tests (backend/tests/, temp SQLite DB)
