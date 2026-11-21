@@ -42,6 +42,8 @@ The README is the documentation, covering setup, `.env`, routes and the architec
 
 If you find a bug, a gap or a docs/code mismatch outside the current task, **file it right away** with `gh issue create`. Don't silently fix it inside an unrelated change. Include the `file:line`, a concrete failure scenario and the expected behaviour. Mention the issue number in your summary or PR description.
 
+Label every issue and PR (`--label` on `gh issue create` / `gh pr create`): one type (`bug`, `enhancement`, `documentation`), the area (`backend`, `frontend`), and `security` or `dependencies` where they apply. A PR carries the labels of the issue it closes. Create a new label only when none of these fits.
+
 ## Git & PR workflow
 
 Every change (feature, fix or docs) starts from a GitHub issue and gets its own branch and PR:
