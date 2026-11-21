@@ -110,6 +110,7 @@ SECRET_KEY=supersecretkey
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
+DATABASE_URL=postgresql://admin:admin@localhost:5432/mini_auth
 ```
 
 Explanation:
@@ -125,6 +126,12 @@ Defines how long a login token remains valid. Default: `60`.
 
 CORS_ORIGINS
 Comma-separated list of frontend origins allowed to call the API. Default: `http://localhost:4200,http://127.0.0.1:4200`.
+
+DATABASE_URL
+SQLAlchemy connection string. Default: `postgresql://admin:admin@localhost:5432/mini_auth` (the local Docker database).
+
+POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+Credentials for the Docker database (see *Docker*). Defaults: `admin` / `admin` / `mini_auth`. If you change them, change `DATABASE_URL` to match.
 
 ---
 
@@ -149,7 +156,7 @@ Creates a database session for each request.
 Base
 Base class for database models.
 
-Connection string:
+Connection string: read from `DATABASE_URL` in `.env` (see *Environment Variables*). Default:
 
 ```
 postgresql://admin:admin@localhost:5432/mini_auth
@@ -516,24 +523,12 @@ File:
 docker/docker-compose.yml
 ```
 
-Example structure:
+The credentials come from `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` in `.env` and fall back to `admin` / `admin` / `mini_auth`.
+
+Start container (from the repo root):
 
 ```
-services:
-  postgres:
-    image: postgres
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: mini_auth
-    ports:
-      - "5432:5432"
-```
-
-Start container:
-
-```
-docker compose up -d
+docker compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 
 ---
@@ -543,7 +538,7 @@ docker compose up -d
 Start database:
 
 ```
-docker compose up -d
+docker compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 
 Start backend:
