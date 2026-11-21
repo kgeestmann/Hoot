@@ -109,18 +109,22 @@ Example `.env` file:
 SECRET_KEY=supersecretkey
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
+CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 ```
 
 Explanation:
 
 SECRET_KEY
-Used to sign JWT tokens.
+Used to sign JWT tokens. **Required** — the backend refuses to start without it.
 
 ALGORITHM
-JWT encryption algorithm.
+JWT encryption algorithm. Default: `HS256`.
 
 ACCESS_TOKEN_EXPIRE_MINUTES
-Defines how long a login token remains valid.
+Defines how long a login token remains valid. Default: `60`.
+
+CORS_ORIGINS
+Comma-separated list of frontend origins allowed to call the API. Default: `http://localhost:4200,http://127.0.0.1:4200`.
 
 ---
 

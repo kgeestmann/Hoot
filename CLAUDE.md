@@ -18,7 +18,7 @@ npm test                                              # ng test (Vitest + jsdom)
 npm run build
 ```
 
-The backend reads a `.env` in the repo root and needs `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `CORS_ORIGINS` (comma-separated). If any of them is missing, the import fails at startup. Prettier is configured in `frontend/.prettierrc`, and the backend has no tests or linter.
+The backend reads a `.env` in the repo root via `backend/app/config.py`. Only `SECRET_KEY` is required, and the backend refuses to start without it. `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `CORS_ORIGINS` (comma-separated) have defaults that are documented in the README. Prettier is configured in `frontend/.prettierrc`, and the backend has no tests or linter.
 
 ## Code comments
 
@@ -26,7 +26,7 @@ Don't add comments or docstrings to new or changed code. Explanations go into th
 
 ## Architecture
 
-- **Backend (`backend/app/`)** is a single FastAPI module. `main.py` holds the config, CORS, bcrypt hashing (passlib), JWT creation and validation (python-jose) and all routes: `/register`, `/login` (OAuth2 *form* data, with `username` = email) and `/profile` (protected). Tables are created with `Base.metadata.create_all` on import. There are no migrations, so a model change needs a fresh DB or a manual `ALTER`.
+- **Backend (`backend/app/`)** is a small FastAPI app. `config.py` loads `.env` and holds all settings. `main.py` holds CORS, bcrypt hashing (passlib), JWT creation and validation (python-jose) and all routes: `/register`, `/login` (OAuth2 *form* data, with `username` = email) and `/profile` (protected). Tables are created with `Base.metadata.create_all` on import. There are no migrations, so a model change needs a fresh DB or a manual `ALTER`.
 - **Auth flow:** `/login` returns `{access_token, token_type}` with `sub` = the user id as a string. `get_current_user` decodes the token and loads the user, and protected routes depend on it.
 - **Frontend (`frontend/src/app/`)** uses standalone components. `services/auth.ts` keeps the JWT in `localStorage` (`token`) and calls the backend at the hard-coded `http://localhost:8000`. `guards/auth-guard.ts` protects `/profile`, and `guards/public-guard.ts` keeps logged-in users away from `/login` (routes are in `app.routes.ts`). Shared UI lives in `layout/` (sidenav, ui-button, ui-card).
 - **Contract between the two halves:** the login request is `application/x-www-form-urlencoded` (because of `OAuth2PasswordRequestForm`), not JSON. If you change the backend auth or the CORS origins, check `auth.ts` and `CORS_ORIGINS` as well.
