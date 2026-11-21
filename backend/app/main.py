@@ -1,18 +1,29 @@
-from fastapi import FastAPI, Depends, HTTPException, Response, status
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
-import bcrypt
+import logging
+import secrets
+import time
 from datetime import datetime, timedelta, timezone
+
+import httpx
 import jwt
-
-from fastapi.security import APIKeyCookie
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import RedirectResponse
+from fastapi.security import APIKeyCookie
+from sqlalchemy.orm import Session
 
-from .config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, COOKIE_SECURE, CORS_ORIGINS, SECRET_KEY
+from . import github, models, schemas
+from .config import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
+    COOKIE_SECURE,
+    CORS_ORIGINS,
+    FRONTEND_URL,
+    SECRET_KEY,
+)
+from .crypto import encrypt_token
 from .database import engine, SessionLocal
-from . import models, schemas
-from .schemas import MAX_PASSWORD_BYTES
+
+logger = logging.getLogger(__name__)
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -26,23 +37,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def hash_password(password: str) -> str:
-    """Hash a plain-text password with bcrypt."""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-
-def verify_password(password: str, hashed_password: str) -> bool:
-    """Check a plain-text password against a stored bcrypt hash."""
-    password_bytes = password.encode("utf-8")
-    if len(password_bytes) > MAX_PASSWORD_BYTES:
-        return False
-    return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
-
-
 SESSION_COOKIE_NAME = "hoot_session"
 
 # auto_error=False so that a missing cookie gets the same 401 as an invalid one.
 session_cookie = APIKeyCookie(name=SESSION_COOKIE_NAME, auto_error=False)
+
+# Holds state and PKCE verifier between /auth/github/login and the callback.
+OAUTH_COOKIE_NAME = "hoot_oauth"
+OAUTH_COOKIE_PATH = "/auth/github"
+OAUTH_COOKIE_MINUTES = 10
+# An audience keeps OAuth cookies and session tokens from being accepted in place of each other.
+OAUTH_AUDIENCE = "hoot:github-oauth"
+
+SIGN_IN_FAILED_URL = f"{FRONTEND_URL}/login?error=github"
 
 
 def set_session_cookie(response: Response, token: str) -> None:
@@ -75,6 +82,12 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_github_client():
+    """HTTP client for calls to GitHub; tests replace it with a mock transport."""
+    with httpx.Client(timeout=10) as client:
+        yield client
 
 
 def create_access_token(data: dict):
@@ -117,61 +130,129 @@ def get_current_user(
     return user
 
 
+def create_oauth_cookie(state: str, verifier: str) -> str:
+    """Sign state and PKCE verifier so the callback can trust them for a few minutes."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=OAUTH_COOKIE_MINUTES)
+    claims = {"state": state, "verifier": verifier, "aud": OAUTH_AUDIENCE, "exp": expire}
+    return jwt.encode(claims, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verified_code_verifier(oauth_cookie: str | None, state: str | None) -> str:
+    """Return the PKCE verifier if the callback's state matches the signed cookie, else raise 400."""
+    invalid_state = HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Invalid or expired sign-in attempt. Please start again.",
+    )
+    if oauth_cookie is None or state is None:
+        raise invalid_state
+    try:
+        claims = jwt.decode(
+            oauth_cookie,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            audience=OAUTH_AUDIENCE,
+            options={"require": ["exp", "aud", "state", "verifier"]},
+        )
+    except jwt.PyJWTError:
+        raise invalid_state
+    if not secrets.compare_digest(str(claims["state"]), state):
+        raise invalid_state
+    return str(claims["verifier"])
+
+
+def expires_at(seconds_from_now: int | None) -> int | None:
+    """Turn GitHub's "expires in" seconds into a Unix timestamp."""
+    return None if seconds_from_now is None else int(time.time()) + seconds_from_now
+
+
+def save_github_user(
+    db: Session, github_user: github.GitHubUser, tokens: github.GitHubTokens
+) -> models.User:
+    """Create or update the user for a GitHub account and store its tokens encrypted."""
+    user = db.query(models.User).filter(models.User.github_id == github_user.id).first()
+    if user is None:
+        user = models.User(github_id=github_user.id)
+        db.add(user)
+
+    user.login = github_user.login
+    user.github_access_token = encrypt_token(tokens.access_token)
+    user.github_access_token_expires_at = expires_at(tokens.access_token_expires_in)
+    user.github_refresh_token = (
+        encrypt_token(tokens.refresh_token) if tokens.refresh_token else None
+    )
+    user.github_refresh_token_expires_at = expires_at(tokens.refresh_token_expires_in)
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def redirect_after_sign_in(url: str) -> RedirectResponse:
+    """Redirect to a fixed frontend URL and drop the one-time OAuth cookie."""
+    response = RedirectResponse(url, status_code=status.HTTP_302_FOUND)
+    response.delete_cookie(
+        key=OAUTH_COOKIE_NAME,
+        path=OAUTH_COOKIE_PATH,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+    )
+    return response
+
+
 @app.get("/")
 def read_root():
     return {"message": "Backend läuft!"}
 
 
-@app.post("/register", response_model=schemas.UserResponse)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    hashed_password = hash_password(user.password)
+@app.get("/auth/github/login")
+def github_login():
+    """Send the browser to GitHub to authorize Hoot (OAuth with state and PKCE)."""
+    state = secrets.token_urlsafe(32)
+    verifier = secrets.token_urlsafe(64)
 
-    new_user = models.User(
-        email=user.email,
-        hashed_password=hashed_password
+    response = RedirectResponse(
+        github.authorize_url(state, verifier), status_code=status.HTTP_302_FOUND
     )
-
-    db.add(new_user)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered"
-        )
-    db.refresh(new_user)
-
-    return new_user
+    response.set_cookie(
+        key=OAUTH_COOKIE_NAME,
+        value=create_oauth_cookie(state, verifier),
+        max_age=OAUTH_COOKIE_MINUTES * 60,
+        path=OAUTH_COOKIE_PATH,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+    )
+    return response
 
 
-@app.post("/login", status_code=status.HTTP_204_NO_CONTENT)
-def login(
-    response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+@app.get("/auth/github/callback")
+def github_callback(
+    state: str | None = None,
+    code: str | None = None,
+    oauth_cookie: str | None = Cookie(default=None, alias=OAUTH_COOKIE_NAME),
+    db: Session = Depends(get_db),
+    github_client: httpx.Client = Depends(get_github_client),
 ):
-    """Check email and password and start a session via the session cookie."""
-    db_user = db.query(models.User).filter(
-        models.User.email == form_data.username
-    ).first()
+    """Finish the GitHub sign-in: check state, exchange the code, start a Hoot session."""
+    verifier = verified_code_verifier(oauth_cookie, state)
 
-    if not db_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
-        )
+    # Without a code the user cancelled on GitHub (GitHub then sends ?error=access_denied).
+    if code is None:
+        return redirect_after_sign_in(SIGN_IN_FAILED_URL)
 
-    if not verify_password(form_data.password, db_user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
-        )
+    try:
+        tokens = github.exchange_code(github_client, code, verifier)
+        github_user = github.fetch_user(github_client, tokens.access_token)
+    except github.GitHubError as error:
+        logger.warning("GitHub sign-in failed: %s", error)
+        return redirect_after_sign_in(SIGN_IN_FAILED_URL)
 
-    access_token = create_access_token(
-        data={"sub": str(db_user.id)}
-    )
-    set_session_cookie(response, access_token)
+    user = save_github_user(db, github_user, tokens)
+
+    response = redirect_after_sign_in(f"{FRONTEND_URL}/")
+    set_session_cookie(response, create_access_token(data={"sub": str(user.id)}))
+    return response
 
 
 @app.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

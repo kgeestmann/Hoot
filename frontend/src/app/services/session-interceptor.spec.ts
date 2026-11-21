@@ -49,7 +49,7 @@ describe('sessionInterceptor', () => {
 
   it('sends the user to /login when the session expires', () => {
     auth.loadSession().subscribe();
-    controller.expectOne(`${API_URL}/profile`).flush({ id: 1, email: 'user@example.com' });
+    controller.expectOne(`${API_URL}/profile`).flush({ id: 1, login: 'octocat' });
 
     http.get(`${API_URL}/overview`).subscribe(ignoreErrors());
     controller
@@ -61,9 +61,9 @@ describe('sessionInterceptor', () => {
   });
 
   it('leaves a 401 alone when nobody is logged in', () => {
-    http.post(`${API_URL}/login`, '').subscribe(ignoreErrors());
+    http.get(`${API_URL}/profile`).subscribe(ignoreErrors());
     controller
-      .expectOne(`${API_URL}/login`)
+      .expectOne(`${API_URL}/profile`)
       .flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(navigate).not.toHaveBeenCalled();

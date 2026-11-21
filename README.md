@@ -4,7 +4,7 @@ One page for everything that is waiting on you on GitHub: assigned issues, your 
 
 Built with **FastAPI**, **SQLite**, **Angular** and **JWT** sessions.
 
-> **Status:** early. The current code is the authentication foundation (email/password login with JWT). Next up is signing in with GitHub and the overview page; see the open issues.
+> **Status:** early. Signing in with GitHub works; the overview page is next (see the open issues).
 
 ---
 
@@ -12,19 +12,20 @@ Built with **FastAPI**, **SQLite**, **Angular** and **JWT** sessions.
 
 This project consists of three main components:
 
-* **Backend**: FastAPI application handling authentication and database access
-* **Frontend**: Angular application providing login and profile UI
-* **Database**: SQLite file (`backend/hoot.db`) for persistent user storage, created automatically on first start
+* **Backend**: FastAPI application handling the GitHub sign-in, sessions and database access
+* **Frontend**: Angular application providing sign-in and profile UI
+* **Database**: SQLite file (`backend/hoot.db`) for users and their (encrypted) GitHub tokens, created automatically on first start
 
-Authentication is implemented using **JWT (JSON Web Tokens)**.
+Users sign in with their GitHub account via a **GitHub App** (OAuth). Hoot then keeps its own session as a **JWT** in an HttpOnly cookie.
 
 Flow:
 
-1. User registers or logs in via Angular frontend
-2. FastAPI validates credentials
-3. FastAPI sets the JWT as an HttpOnly session cookie (`hoot_session`)
-4. The browser sends the cookie with every request to the backend
-5. FastAPI validates the token and returns protected data
+1. User clicks "Sign in with GitHub" in the Angular frontend
+2. The backend sends the browser to GitHub, the user authorizes Hoot
+3. GitHub sends the browser back to the backend, which exchanges the code for the user's GitHub tokens and stores them encrypted
+4. FastAPI sets the JWT as an HttpOnly session cookie (`hoot_session`) and redirects to the frontend
+5. The browser sends the cookie with every request to the backend
+6. FastAPI validates the token and returns protected data
 
 ---
 
@@ -35,7 +36,10 @@ Hoot
 │
 ├── backend
 │   └── app
-│       ├── main.py
+│       ├── main.py        routes, sessions, GitHub sign-in flow
+│       ├── github.py      calls to GitHub (authorize URL, code exchange, user)
+│       ├── crypto.py      encryption of the stored GitHub tokens
+│       ├── config.py      settings from .env
 │       ├── models.py
 │       ├── schemas.py
 │       └── database.py
@@ -46,8 +50,11 @@ Hoot
 │       │   ├── login
 │       │   └── profile
 │       │
-│       └── services
-│           └── auth.ts
+│       ├── services
+│       │   ├── auth.ts
+│       │   └── session-interceptor.ts
+│       │
+│       └── api.ts         backend URL
 │
 ├── .env
 └── README.md
@@ -59,9 +66,9 @@ Hoot
 
 The backend handles:
 
-* authentication
-* password hashing
-* JWT token generation
+* the GitHub sign-in (OAuth with state and PKCE)
+* encrypted storage of the users' GitHub tokens
+* JWT session cookies
 * protected endpoints
 * database communication
 
@@ -70,8 +77,9 @@ Main technologies:
 * FastAPI
 * SQLAlchemy
 * SQLite
-* bcrypt (password hashing)
 * PyJWT (JWT)
+* httpx (calls to GitHub)
+* cryptography (Fernet encryption of GitHub tokens)
 * dotenv (environment variables)
 
 ---
@@ -100,12 +108,33 @@ pip install -r backend/requirements.txt
 
 ---
 
+# GitHub App
+
+Hoot signs users in through a GitHub App. For local development, register your own:
+
+1. GitHub → Settings → Developer settings → GitHub Apps → **New GitHub App**
+2. **GitHub App name:** must be unique on GitHub, e.g. `Hoot dev <your-username>`
+3. **Homepage URL:** `http://localhost:4200`
+4. **Callback URL:** `http://localhost:8000/auth/github/callback`
+5. Keep **Expire user authorization tokens** checked, and check **Request user authorization (OAuth) during installation**
+6. **Webhook:** uncheck *Active*
+7. **Repository permissions:** Issues → *Read-only*, Pull requests → *Read-only* (Metadata is set automatically)
+8. Create the app, then **Generate a new client secret**
+9. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+
+Hoot only sees repositories where the app is installed. Install it on your account (and any organization) from the app's page.
+
+---
+
 # Environment Variables (.env)
 
 Example `.env` file:
 
 ```
-SECRET_KEY=<output of the command below>
+SECRET_KEY=<output of the SECRET_KEY command below>
+TOKEN_ENCRYPTION_KEY=<output of the TOKEN_ENCRYPTION_KEY command below>
+GITHUB_CLIENT_ID=<Client ID of your GitHub App>
+GITHUB_CLIENT_SECRET=<client secret of your GitHub App>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
@@ -121,11 +150,29 @@ Used to sign JWT tokens. **Required** — the backend refuses to start without i
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
+TOKEN_ENCRYPTION_KEY
+Fernet key that encrypts the users' GitHub tokens in the database, so a copied `hoot.db` alone gives no access to GitHub accounts. **Required**, and deliberately separate from `SECRET_KEY`. Generate it in the venv:
+
+```
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Changing it makes the stored GitHub tokens unreadable; users then have to sign in again.
+
+GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET
+Credentials of the GitHub App (see *GitHub App*). **Required.**
+
+GITHUB_CALLBACK_URL
+Must match the callback URL of the GitHub App. Default: `http://localhost:8000/auth/github/callback`.
+
+FRONTEND_URL
+Where the browser lands after signing in. Default: `http://localhost:4200`.
+
 ALGORITHM
 JWT encryption algorithm. Default: `HS256`.
 
 ACCESS_TOKEN_EXPIRE_MINUTES
-Defines how long a login token remains valid. Default: `60`.
+Defines how long a Hoot session remains valid. Default: `60`.
 
 CORS_ORIGINS
 Comma-separated list of frontend origins allowed to call the API. Default: `http://localhost:4200,http://127.0.0.1:4200`.
@@ -165,7 +212,7 @@ Connection string: read from `DATABASE_URL` in `.env` (see *Environment Variable
 sqlite:///<repo>/backend/hoot.db
 ```
 
-The file and the `users` table are created automatically on first start. Delete the file to start with an empty database.
+The file and the `users` table are created automatically on first start. There are no migrations: after a model change, delete the file to start with an empty database. **A `hoot.db` from the email/password version must be deleted**, because the `users` table has different columns now.
 
 ---
 
@@ -173,26 +220,21 @@ The file and the `users` table are created automatically on first start. Delete 
 
 File: `models.py`
 
-Defines the user table.
-
-```
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True)
-    hashed_password = Column(String)
-```
+Defines the user table. A user is identified by the GitHub account's numeric id, because a GitHub login can be renamed and then taken by someone else.
 
 Table structure:
 
-| Column          | Description          |
-| --------------- | -------------------- |
-| id              | Primary key          |
-| email           | Unique user email    |
-| hashed_password | Secure password hash |
+| Column                          | Description                                    |
+| ------------------------------- | ---------------------------------------------- |
+| id                              | Primary key (the `sub` of Hoot's session JWT)  |
+| github_id                       | Unique numeric GitHub user id                  |
+| login                           | GitHub login, updated on every sign-in         |
+| github_access_token             | Encrypted GitHub user access token             |
+| github_access_token_expires_at  | Unix timestamp, or empty if it doesn't expire  |
+| github_refresh_token            | Encrypted refresh token, if GitHub issued one  |
+| github_refresh_token_expires_at | Unix timestamp                                 |
 
-Passwords are **never stored in plain text**.
+GitHub tokens are **never stored in plain text** and never leave the backend.
 
 ---
 
@@ -200,29 +242,14 @@ Passwords are **never stored in plain text**.
 
 File: `schemas.py`
 
-Schemas define how data is validated and returned.
-
-UserCreate
-
-Used during registration.
-
-```
-email
-password
-```
-
 UserResponse
 
 Returned to frontend.
 
 ```
 id
-email
+login
 ```
-
-UserLogin
-
-Defines login structure.
 
 ---
 
@@ -234,7 +261,7 @@ This file contains:
 
 * application initialization
 * middleware
-* authentication logic
+* session and GitHub sign-in logic
 * API routes
 
 ---
@@ -244,44 +271,32 @@ This file contains:
 ```
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:4200",
-        "http://127.0.0.1:4200",
-    ]
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
 )
 ```
 
 Purpose:
 
-Allows the Angular frontend to communicate with the FastAPI backend.
-
-Without this, browsers block requests.
+Allows the Angular frontend to call the FastAPI backend with the session cookie. Without this, browsers block requests.
 
 ---
 
-# Password Hashing
+# GitHub Sign-in
 
-Passwords are hashed using **bcrypt** (`hash_password` / `verify_password` in `main.py`).
+The OAuth flow follows the security requirements in issue #44:
 
-Hashing:
-
-```
-hashed_password = hash_password(user.password)
-```
-
-Verification:
-
-```
-verify_password(password, hashed_password)
-```
-
-bcrypt only accepts up to 72 bytes, so `/register` rejects longer passwords with `422`.
+* **State:** `/auth/github/login` creates a random `state` and a PKCE code verifier and stores both in the short-lived, signed, HttpOnly cookie `hoot_oauth` (10 minutes, only sent to `/auth/github`). The callback rejects a missing or mismatched state with `400`, and the cookie is dropped after use, so a state cannot be replayed.
+* **PKCE:** the authorize request carries an S256 `code_challenge`, the code exchange the matching `code_verifier`.
+* **No open redirect:** after the sign-in the browser always goes to `FRONTEND_URL` (or `FRONTEND_URL/login?error=github` if it failed or was cancelled). Redirect parameters are ignored.
+* **No token in a URL:** the Hoot session is handed over as an HttpOnly cookie, never as a query parameter.
+* **Encrypted tokens:** GitHub access and refresh tokens are stored encrypted with `TOKEN_ENCRYPTION_KEY` (`crypto.py`). Refreshing expired GitHub tokens comes with the first GitHub API calls (#25).
 
 ---
 
 # JWT Authentication
 
-JWT tokens are created after successful login.
+JWT tokens are created after a successful sign-in.
 
 Function:
 
@@ -339,62 +354,37 @@ Returns a simple status message.
 
 ---
 
-Register
+Start the GitHub sign-in
 
 ```
-POST /register
+GET /auth/github/login
 ```
 
-Creates a new user.
-
-Body:
-
-```
-{
-  "email": "user@example.com",
-  "password": "123456"
-}
-```
-
-Process:
-
-1. Hash password
-2. Save user
-3. Return created user
-
-If the email is already registered, it returns `409 Conflict` with `{"detail": "Email already registered"}`.
+Opened by the browser (a link, not an API call). Sets the `hoot_oauth` cookie and redirects (`302`) to GitHub's authorize page.
 
 ---
 
-Login
+GitHub callback
 
 ```
-POST /login
+GET /auth/github/callback?code=…&state=…
 ```
 
-Uses OAuth2 form data.
-
-Body:
-
-```
-username=email
-password=password
-```
+GitHub sends the browser here after the user authorized Hoot.
 
 Process:
 
-1. Verify email
-2. Verify password
-3. Generate JWT
-4. Set it as session cookie
-
-Response: `204 No Content` with
+1. Check `state` against the `hoot_oauth` cookie (`400` if missing, wrong or expired)
+2. Exchange the code for the user's tokens (with client secret and PKCE verifier)
+3. Load the GitHub user
+4. Create or update the user and store the tokens encrypted
+5. Set the session cookie and redirect to `FRONTEND_URL`
 
 ```
 Set-Cookie: hoot_session=<jwt>; HttpOnly; Max-Age=3600; Path=/; SameSite=lax; Secure
 ```
 
-The token is never in the response body, so JavaScript cannot read it.
+If the user cancelled on GitHub or GitHub rejected the code, it redirects to `FRONTEND_URL/login?error=github` without a session.
 
 ---
 
@@ -421,7 +411,7 @@ Returns:
 ```
 {
   "id": 1,
-  "email": "user@example.com"
+  "login": "octocat"
 }
 ```
 
@@ -431,7 +421,7 @@ Returns:
 
 The Angular frontend provides:
 
-* Login page
+* Sign-in page
 * Profile page
 * Auth service for API communication
 
@@ -447,14 +437,7 @@ Login Page
 /login
 ```
 
-User enters email and password.
-
-Angular sends login request to backend.
-
-On success:
-
-* the backend sets the session cookie
-* the frontend loads the user from `/profile` and redirects to `/`
+Shows a "Sign in with GitHub" button. It is a plain link to `/auth/github/login` on the backend, because the sign-in is a full page navigation to GitHub and back. With `?error=github` the page explains that the sign-in failed or was cancelled.
 
 ---
 
@@ -464,9 +447,7 @@ Profile Page
 /profile
 ```
 
-Angular sends request with JWT token.
-
-Backend validates token and returns user data.
+Shows the logged-in user's id and GitHub login.
 
 ---
 
@@ -480,22 +461,9 @@ frontend/src/app/services/auth.ts
 
 Responsibilities:
 
-* login requests
-* saving JWT tokens
-* sending authenticated requests
-
-Example login request:
-
-```
-POST /login
-```
-
-Body:
-
-```
-username=email
-password=password
-```
+* knowing who is logged in (`user`, `isLoggedIn` signals)
+* loading the session once from `GET /profile`
+* logout via `POST /logout`
 
 ---
 
@@ -534,7 +502,7 @@ Start backend (creates the SQLite database on first start):
 uvicorn backend.app.main:app --reload
 ```
 
-Run the backend tests from the repo root (they use a temporary SQLite database, not `backend/hoot.db`):
+Run the backend tests from the repo root (they use a temporary SQLite database, not `backend/hoot.db`, and a mocked GitHub):
 
 ```
 pytest
@@ -580,13 +548,13 @@ http://localhost:4200
 
 # Authentication Flow
 
-1. User opens Angular login page
-2. User submits credentials
-3. Angular sends request to `/login`
-4. FastAPI validates credentials
-5. FastAPI sets the HttpOnly session cookie
-6. Angular requests `/profile`; the browser sends the cookie
-7. Token is validated
+1. User opens the Angular login page and clicks "Sign in with GitHub"
+2. The browser opens `/auth/github/login`, which redirects to GitHub
+3. User authorizes Hoot on GitHub
+4. GitHub redirects to `/auth/github/callback`
+5. FastAPI checks the state, exchanges the code, stores the encrypted GitHub tokens
+6. FastAPI sets the HttpOnly session cookie and redirects to the frontend
+7. Angular requests `/profile`; the browser sends the cookie
 8. Backend returns user data
 9. Logout calls `POST /logout`, which deletes the cookie
 
@@ -594,7 +562,7 @@ http://localhost:4200
 
 # Security Notes
 
-Passwords are protected using bcrypt hashing.
+Hoot stores no passwords; signing in is delegated to GitHub.
 
 JWT tokens contain:
 
@@ -607,15 +575,15 @@ Tokens expire automatically.
 
 The cookie is `HttpOnly` (unreadable for JavaScript, so XSS cannot steal it), `SameSite=Lax` (other sites can't send it along with POST requests) and `Secure` by default.
 
+GitHub tokens are encrypted at rest, never returned by an API response and never logged. See *GitHub Sign-in* for state, PKCE and redirect handling.
+
 ---
 
 # Future Improvements
 
 Possible extensions:
 
-* refresh tokens
-* email verification
-* password reset
+* refreshing expired GitHub tokens (#25)
 * HTTPS support
 * deployment with Docker containers
 
@@ -628,6 +596,5 @@ This project demonstrates a complete authentication system using:
 * FastAPI backend
 * Angular frontend
 * SQLite database
-* JWT authentication
-
-It provides a simple but production-like example of how modern web authentication systems work.
+* Sign-in with GitHub (OAuth with state and PKCE)
+* JWT session cookies

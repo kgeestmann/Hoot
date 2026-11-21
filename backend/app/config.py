@@ -9,11 +9,17 @@ load_dotenv()
 MIN_SECRET_KEY_BYTES = 32
 
 
+def read_required(name: str) -> str:
+    """Return a required environment variable, or raise if it is missing or empty."""
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"{name} is not set. Add it to .env (see README).")
+    return value
+
+
 def read_secret_key() -> str:
     """Return SECRET_KEY from the environment, or raise if it is missing or too short."""
-    secret_key = os.getenv("SECRET_KEY")
-    if not secret_key:
-        raise RuntimeError("SECRET_KEY is not set. Add it to .env (see README).")
+    secret_key = read_required("SECRET_KEY")
     if len(secret_key.encode("utf-8")) < MIN_SECRET_KEY_BYTES:
         raise RuntimeError(
             f"SECRET_KEY must be at least {MIN_SECRET_KEY_BYTES} bytes. "
@@ -34,11 +40,22 @@ def read_bool(name: str, default: bool) -> bool:
         raise RuntimeError(f'{name} must be "true" or "false", got "{value}".')
     return value.lower() == "true"
 
+
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:4200,http://127.0.0.1:4200").split(",")
 # Chrome, Edge and Firefox accept Secure cookies on http://localhost, so this stays on in
 # development too. Safari doesn't; set COOKIE_SECURE=false there.
 COOKIE_SECURE = read_bool("COOKIE_SECURE", default=True)
+
+# GitHub App credentials and URLs for the OAuth sign-in.
+GITHUB_CLIENT_ID = read_required("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = read_required("GITHUB_CLIENT_SECRET")
+GITHUB_CALLBACK_URL = os.getenv("GITHUB_CALLBACK_URL", "http://localhost:8000/auth/github/callback")
+# Where the browser lands after the sign-in. Fixed, so the callback can't be used as an open redirect.
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:4200").rstrip("/")
+# Fernet key for the GitHub tokens in the database; deliberately separate from SECRET_KEY.
+TOKEN_ENCRYPTION_KEY = read_required("TOKEN_ENCRYPTION_KEY")
+
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parent.parent / "hoot.db"
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DATABASE_PATH.as_posix()}")

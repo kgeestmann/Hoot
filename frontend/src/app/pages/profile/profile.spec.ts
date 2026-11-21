@@ -9,7 +9,7 @@ describe('Profile', () => {
     await TestBed.configureTestingModule({
       imports: [Profile],
       providers: [
-        { provide: AuthService, useValue: { user: signal({ id: 1, email: 'test@example.com' }) } },
+        { provide: AuthService, useValue: { user: signal({ id: 1, login: 'octocat' }) } },
       ],
     }).compileComponents();
 
@@ -19,6 +19,6 @@ describe('Profile', () => {
     const values = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.value'),
     ).map((value) => value.textContent!.trim());
-    expect(values).toEqual(['1', 'test@example.com']);
+    expect(values).toEqual(['1', 'octocat']);
   });
 });

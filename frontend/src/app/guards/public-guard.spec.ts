@@ -30,7 +30,7 @@ describe('publicGuard', () => {
   });
 
   it('sends logged-in users to /profile', async () => {
-    const result = await runGuard({ id: 1, email: 'user@example.com' });
+    const result = await runGuard({ id: 1, login: 'octocat' });
 
     expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/profile');
   });
