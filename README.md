@@ -35,6 +35,7 @@ Flow:
 Hoot
 │
 ├── backend
+│   ├── setup_github_app.py  one-time local setup: creates the GitHub App, fills .env
 │   └── app
 │       ├── main.py        routes, sessions, GitHub sign-in flow
 │       ├── github.py      calls to GitHub (authorize URL, tokens, user, GraphQL)
@@ -114,7 +115,21 @@ pip install -r backend/requirements.txt
 
 # GitHub App
 
-Hoot signs users in through a GitHub App. For local development, register your own:
+Hoot signs users in through a GitHub App. Everyone who runs their own Hoot needs their own app (its client secret must stay private). Users of a running Hoot only sign in with their own GitHub account.
+
+## Quick setup (recommended)
+
+With the venv active and the backend stopped, run once:
+
+```
+python backend/setup_github_app.py
+```
+
+It opens `http://localhost:8000` in the browser and sends GitHub a description of the app ([manifest](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest)) with the settings below (*Expire user authorization tokens* can't be set in a manifest; it's on by default, and Hoot works either way). On GitHub, check the name and click **Create GitHub App**. GitHub sends you back, and the script writes `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` and `GITHUB_APP_SLUG` to `.env`, plus a generated `SECRET_KEY` and `TOKEN_ENCRYPTION_KEY` if they are missing. Existing settings are never overwritten. If `.env` already has a `GITHUB_CLIENT_ID`, the script only adds missing keys; remove the `GITHUB_*` lines to create a new app.
+
+Then start Hoot (see *Running the Project*), sign in, and install the app on your account from Hoot's home page.
+
+## Manual setup
 
 1. GitHub → Settings → Developer settings → GitHub Apps → **New GitHub App**
 2. **GitHub App name:** must be unique on GitHub, e.g. `Hoot dev <your-username>`
@@ -597,6 +612,8 @@ The UI uses an Angular Material 3 theme built from the brand orange `#fea034` an
 ---
 
 # Running the Project
+
+First time only: create the GitHub App and `.env` with `python backend/setup_github_app.py` (see *GitHub App*).
 
 Start backend (creates the SQLite database on first start, restarts when backend code changes):
 
