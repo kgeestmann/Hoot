@@ -51,6 +51,8 @@ COOKIE_SECURE = read_bool("COOKIE_SECURE", default=True)
 # GitHub App credentials and URLs for the OAuth sign-in.
 GITHUB_CLIENT_ID = read_required("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = read_required("GITHUB_CLIENT_SECRET")
+# The app's URL name (github.com/apps/<slug>), for links to its install page.
+GITHUB_APP_SLUG = read_required("GITHUB_APP_SLUG")
 GITHUB_CALLBACK_URL = os.getenv("GITHUB_CALLBACK_URL", "http://localhost:8000/auth/github/callback")
 # Where the browser lands after the sign-in. Fixed, so the callback can't be used as an open redirect.
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:4200").rstrip("/")

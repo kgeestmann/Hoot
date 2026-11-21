@@ -49,11 +49,13 @@ Hoot
 ├── frontend
 │   └── src/app
 │       ├── pages
+│       │   ├── home   (with the GitHub access card)
 │       │   ├── login
 │       │   └── profile
 │       │
 │       ├── services
 │       │   ├── auth.ts
+│       │   ├── github-access.ts
 │       │   └── session-interceptor.ts
 │       │
 │       └── api.ts         backend URL
@@ -123,13 +125,13 @@ Hoot signs users in through a GitHub App. For local development, register your o
    * **Expire user authorization tokens:** on
    * **Request user authorization (OAuth) during installation:** **off**. With it on, GitHub sends the browser to the callback right after installing, without Hoot's `state`, and the callback rejects that (`400`). Signing in always starts from Hoot's "Sign in with GitHub" button.
    * **Enable Device Flow:** off
-5. *Post installation*: leave **Setup URL** empty
+5. *Post installation*: **Setup URL** `http://localhost:4200/` and **Redirect on update** on, so GitHub sends the user back to Hoot after installing the app or changing its repositories
 6. **Webhook:** uncheck *Active*
 7. **Repository permissions:** Issues, Pull requests, Checks and Commit statuses → *Read-only* (Metadata is set automatically); everything else stays *No access*. Checks and Commit statuses are needed for the CI status of your pull requests on the overview. After adding permissions to an existing app, accept them on the installation (GitHub → Settings → Applications → Installed GitHub Apps)
 8. **Where can this GitHub App be installed?** *Only on this account* for development; *Any account* if it should also be installed on organizations
 9. Create the app, then **Generate a new client secret** (GitHub shows it only once)
-10. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
-11. In the app's settings, **Install App** on your account. Hoot only sees repositories where the app is installed.
+10. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, and the app's URL name as `GITHUB_APP_SLUG` (the last part of its public page `https://github.com/apps/<slug>`)
+11. Install the app on your account: after signing in, Hoot's home page links to GitHub's install page. Hoot only sees repositories in accounts where the app is installed. Members who aren't owners of an organization can request the app there, and GitHub asks the owners to approve it.
 
 ---
 
@@ -142,6 +144,7 @@ SECRET_KEY=<output of the SECRET_KEY command below>
 TOKEN_ENCRYPTION_KEY=<output of the TOKEN_ENCRYPTION_KEY command below>
 GITHUB_CLIENT_ID=<Client ID of your GitHub App>
 GITHUB_CLIENT_SECRET=<client secret of your GitHub App>
+GITHUB_APP_SLUG=<URL name of your GitHub App>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
@@ -168,6 +171,9 @@ Changing it makes the stored GitHub tokens unreadable; users then have to sign i
 
 GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET
 Credentials of the GitHub App (see *GitHub App*). **Required.**
+
+GITHUB_APP_SLUG
+URL name of the GitHub App, as in `https://github.com/apps/<slug>`. Hoot links to `https://github.com/apps/<slug>/installations/new` so users can install it. **Required.**
 
 GITHUB_CALLBACK_URL
 Must match the callback URL of the GitHub App. Default: `http://localhost:8000/auth/github/callback`.
@@ -271,7 +277,16 @@ url
 updated_at
 ```
 
-Items in `pull_requests` also carry `ci_status` (GitHub's `SUCCESS`, `FAILURE`, `PENDING`, `ERROR`, `EXPECTED`, or `null` without checks) and `review_decision` (`APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED`, or `null`).
+GitHubAccess
+
+Returned by `/github/installations`.
+
+```
+install_url      GitHub's page for installing the app on more accounts
+installations    list of { account, account_type ("User" or "Organization"), all_repositories, settings_url }
+```
+
+Items in `pull_requests` of the overview also carry `ci_status` (GitHub's `SUCCESS`, `FAILURE`, `PENDING`, `ERROR`, `EXPECTED`, or `null` without checks) and `review_decision` (`APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED`, or `null`).
 
 ---
 
@@ -467,11 +482,38 @@ Returns `401` (and clears the session cookie) when the GitHub tokens can't be re
 
 ---
 
+GitHub access (Protected Route)
+
+```
+GET /github/installations
+```
+
+Requires a valid session cookie. Lists the accounts where the GitHub App is installed and the user can use it (GitHub's `GET /user/installations`, first 100), plus the install URL:
+
+```
+{
+  "install_url": "https://github.com/apps/<slug>/installations/new",
+  "installations": [
+    {
+      "account": "octocat",
+      "account_type": "User",
+      "all_repositories": true,
+      "settings_url": "https://github.com/settings/installations/1"
+    }
+  ]
+}
+```
+
+Enterprise installations are left out. Errors as for `/overview`.
+
+---
+
 # Frontend (Angular)
 
 The Angular frontend provides:
 
 * Sign-in page
+* Home page that shows where Hoot can see your repositories
 * Profile page
 * Auth service for API communication
 
@@ -488,6 +530,16 @@ Login Page
 ```
 
 Shows a "Sign in with GitHub" button. It is a plain link to `/auth/github/login` on the backend, because the sign-in is a full page navigation to GitHub and back. With `?error=github` the page explains that the sign-in failed or was cancelled.
+
+---
+
+Home Page
+
+```
+/
+```
+
+For a logged-in user it shows the GitHub access card (`pages/home/github-access`), loaded from `GET /github/installations`. If the app is installed nowhere, it asks the user to install it and links to GitHub's install page. Otherwise it lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
 
 ---
 

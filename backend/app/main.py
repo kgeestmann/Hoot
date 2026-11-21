@@ -15,7 +15,7 @@ if not __package__:
 import httpx
 import jwt
 import uvicorn
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Response, status
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import APIKeyCookie
@@ -199,7 +199,8 @@ def redirect_after_sign_in(url: str) -> RedirectResponse:
     return response
 
 
-def github_sign_in_expired() -> JSONResponse:
+@app.exception_handler(github_tokens.SignInRequired)
+def github_sign_in_expired(request: Request, error: github_tokens.SignInRequired) -> JSONResponse:
     """Answer 401 and end the session, so the frontend sends the user back to the sign-in."""
     response = JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -207,6 +208,16 @@ def github_sign_in_expired() -> JSONResponse:
     )
     clear_session_cookie(response)
     return response
+
+
+@app.exception_handler(github.GitHubError)
+def github_failed(request: Request, error: github.GitHubError) -> JSONResponse:
+    """Answer 502 when GitHub can't be reached or answers with something unexpected."""
+    logger.warning("GitHub request for %s failed: %s", request.url.path, error)
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": "GitHub could not be reached. Please try again."},
+    )
 
 
 @app.get("/")
@@ -282,21 +293,28 @@ def get_overview(
     github_client: httpx.Client = Depends(get_github_client),
 ):
     """Return everything on GitHub that is waiting on the user."""
-    try:
-        return github_tokens.call_as_user(
-            db,
-            github_client,
-            current_user,
-            lambda access_token: overview.fetch_overview(github_client, access_token),
-        )
-    except github_tokens.SignInRequired:
-        return github_sign_in_expired()
-    except github.GitHubError as error:
-        logger.warning("Loading the overview failed: %s", error)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="GitHub could not be reached. Please try again.",
-        )
+    return github_tokens.call_as_user(
+        db,
+        github_client,
+        current_user,
+        lambda access_token: overview.fetch_overview(github_client, access_token),
+    )
+
+
+@app.get("/github/installations", response_model=schemas.GitHubAccess)
+def get_github_installations(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    github_client: httpx.Client = Depends(get_github_client),
+):
+    """List the accounts where Hoot can see the user's repositories, and where to add more."""
+    installations = github_tokens.call_as_user(
+        db,
+        github_client,
+        current_user,
+        lambda access_token: github.fetch_installations(github_client, access_token),
+    )
+    return {"install_url": github.INSTALL_URL, "installations": installations}
 
 
 def run_dev_server() -> None:

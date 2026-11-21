@@ -12,6 +12,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{Path(tempfile.mkdtemp(), 'test.db').as
 os.environ["COOKIE_SECURE"] = "false"
 os.environ["GITHUB_CLIENT_ID"] = "test-client-id"
 os.environ["GITHUB_CLIENT_SECRET"] = "test-client-secret"
+os.environ["GITHUB_APP_SLUG"] = "hoot-test"
 os.environ["GITHUB_CALLBACK_URL"] = "http://testserver/auth/github/callback"
 os.environ["FRONTEND_URL"] = "http://frontend.test"
 os.environ["TOKEN_ENCRYPTION_KEY"] = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
