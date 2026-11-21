@@ -1,6 +1,6 @@
 # Mini Auth Project
 
-A minimal full-stack authentication system built with **FastAPI**, **PostgreSQL**, **Angular**, **JWT authentication**, and **Docker**.
+A minimal full-stack authentication system built with **FastAPI**, **SQLite**, **Angular**, and **JWT authentication**.
 The project demonstrates a modern authentication flow including user registration, login, token generation, and protected routes.
 
 ---
@@ -11,7 +11,7 @@ This project consists of three main components:
 
 * **Backend**: FastAPI application handling authentication and database access
 * **Frontend**: Angular application providing login and profile UI
-* **Database**: PostgreSQL for persistent user storage
+* **Database**: SQLite file (`backend/mini_auth.db`) for persistent user storage, created automatically on first start
 
 Authentication is implemented using **JWT (JSON Web Tokens)**.
 
@@ -47,9 +47,6 @@ mini-auth-project
 │       └── services
 │           └── auth.ts
 │
-├── docker
-│   └── docker-compose.yml
-│
 ├── .env
 └── README.md
 ```
@@ -70,7 +67,7 @@ Main technologies:
 
 * FastAPI
 * SQLAlchemy
-* PostgreSQL
+* SQLite
 * Passlib (password hashing)
 * python-jose (JWT)
 * dotenv (environment variables)
@@ -110,7 +107,6 @@ SECRET_KEY=supersecretkey
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
-DATABASE_URL=postgresql://admin:admin@localhost:5432/mini_auth
 ```
 
 Explanation:
@@ -128,10 +124,7 @@ CORS_ORIGINS
 Comma-separated list of frontend origins allowed to call the API. Default: `http://localhost:4200,http://127.0.0.1:4200`.
 
 DATABASE_URL
-SQLAlchemy connection string. Default: `postgresql://admin:admin@localhost:5432/mini_auth` (the local Docker database).
-
-POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
-Credentials for the Docker database (see *Docker*). Defaults: `admin` / `admin` / `mini_auth`. If you change them, change `DATABASE_URL` to match.
+Optional SQLAlchemy connection string. Default: the SQLite file `backend/mini_auth.db`.
 
 ---
 
@@ -148,7 +141,7 @@ Responsible for:
 Key components:
 
 create_engine
-Creates connection to PostgreSQL.
+Creates the SQLite connection (`check_same_thread=False`, because FastAPI handles requests in a thread pool).
 
 SessionLocal
 Creates a database session for each request.
@@ -159,14 +152,10 @@ Base class for database models.
 Connection string: read from `DATABASE_URL` in `.env` (see *Environment Variables*). Default:
 
 ```
-postgresql://admin:admin@localhost:5432/mini_auth
+sqlite:///<repo>/backend/mini_auth.db
 ```
 
-Format:
-
-```
-postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-```
+The file and the `users` table are created automatically on first start. Delete the file to start with an empty database.
 
 ---
 
@@ -515,35 +504,9 @@ Used for authenticated requests.
 
 ---
 
-# Docker
-
-Docker allows running the database in a container.
-
-File:
-
-```
-docker/docker-compose.yml
-```
-
-The credentials come from `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` in `.env` and fall back to `admin` / `admin` / `mini_auth`.
-
-Start container (from the repo root):
-
-```
-docker compose --env-file .env -f docker/docker-compose.yml up -d
-```
-
----
-
 # Running the Project
 
-Start database:
-
-```
-docker compose --env-file .env -f docker/docker-compose.yml up -d
-```
-
-Start backend:
+Start backend (creates the SQLite database on first start):
 
 ```
 uvicorn backend.app.main:app --reload
@@ -628,8 +591,7 @@ This project demonstrates a complete authentication system using:
 
 * FastAPI backend
 * Angular frontend
-* PostgreSQL database
+* SQLite database
 * JWT authentication
-* Docker containerized database
 
 It provides a simple but production-like example of how modern web authentication systems work.
