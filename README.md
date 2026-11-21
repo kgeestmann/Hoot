@@ -509,6 +509,23 @@ Used for authenticated requests.
 
 ---
 
+# Styling
+
+The UI uses an Angular Material 3 theme built from the brand orange `#fea034` and its complementary blue `#3492fe`. The design rules are in issue #55.
+
+* `frontend/src/_theme-colors.scss`: generated tonal palettes. Don't edit by hand; regenerate with:
+
+  ```
+  cd frontend
+  npx ng generate @angular/material:theme-color --primary-color="#fea034" --tertiary-color="#3492fe" --directory=src/ --is-scss=true --include-high-contrast=false
+  ```
+
+* `frontend/src/material-theme.scss`: applies the palettes and emits the `--mat-sys-*` tokens (colours, type scale, corners, elevation).
+* `frontend/src/styles.css`: Hoot's own tokens: `--hoot-brand` / `--hoot-on-brand` (bright orange fill with dark text, because white text on it fails contrast), the `--hoot-space-*` spacing scale, the focus ring and transitions.
+* Roboto is self-hosted via `@fontsource/roboto`, so the app loads nothing from Google or other CDNs.
+
+---
+
 # Running the Project
 
 Start backend (creates the SQLite database on first start):

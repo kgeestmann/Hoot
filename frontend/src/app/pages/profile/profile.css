@@ -2,44 +2,35 @@
   max-width: 600px;
 }
 
-.profile-page h2 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0 0 1.5rem 0;
-  letter-spacing: -0.025em;
-}
-
 .profile-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: var(--hoot-space-2);
+  margin-top: var(--hoot-space-4);
 }
 
 .profile-field {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
-  border-radius: calc(var(--radius) - 2px);
-  background: hsl(var(--bg));
-  border: 1px solid hsl(var(--border));
-  transition: all var(--transition);
+  padding: var(--hoot-space-3) var(--hoot-space-4);
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  transition: all var(--hoot-transition);
 }
 
 .profile-field:hover {
-  background: hsl(var(--accent));
-  border-color: hsl(var(--primary) / 0.2);
+  background: var(--mat-sys-surface-container-high);
+  border-color: var(--mat-sys-outline);
 }
 
 .label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: hsl(var(--muted-foreground));
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .value {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: hsl(var(--foreground));
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
 }
