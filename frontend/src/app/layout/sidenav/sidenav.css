@@ -91,12 +91,6 @@
   font: var(--mat-sys-title-large);
 }
 
-.icon {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
 .content {
   padding: var(--hoot-space-10) var(--hoot-space-8);
 }

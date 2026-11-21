@@ -39,6 +39,10 @@
 
 /* Colour backs up the label, never replaces it (#55, rule 6). */
 .status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hoot-space-1);
+  --hoot-icon-size: 16px;
   padding: 0 var(--hoot-space-2);
   border: 1px solid currentColor;
   border-radius: var(--mat-sys-corner-small);

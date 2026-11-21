@@ -14,6 +14,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from '../../services/auth';
+import { Icon } from '../icon/icon';
 import { GitHubAccessService } from '../../services/github-access';
 
 const WIDE_SCREEN = '(min-width: 840px)';
@@ -21,7 +22,7 @@ const WIDE_SCREEN = '(min-width: 840px)';
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [MatButtonModule, MatSidenavModule, MatToolbarModule, RouterModule],
+  imports: [Icon, MatButtonModule, MatSidenavModule, MatToolbarModule, RouterModule],
   templateUrl: './sidenav.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./sidenav.css'],

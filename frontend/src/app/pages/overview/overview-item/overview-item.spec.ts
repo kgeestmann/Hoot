@@ -55,6 +55,9 @@ describe('OverviewItemComponent', () => {
       ['CI failing', 'status status-danger'],
       ['Approved', 'status status-success'],
     ]);
+    expect(chips.map((chip) => chip.querySelector('path')?.getAttribute('d')?.slice(0, 8))).toEqual(
+      ['m256-200', 'M382-240'],
+    );
   });
 
   it('shows no chips for an issue', async () => {
