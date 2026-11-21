@@ -8,6 +8,7 @@ Hoot shows everything that is waiting on the user on GitHub (assigned issues, op
 
 ```bash
 pip install -r backend/requirements.txt               # in venv/ in the repo root (gitignored)
+python backend/setup_github_app.py                    # once: creates the GitHub App from a manifest and fills .env
 python backend/app/main.py                            # → http://localhost:8000 with reload; same as uvicorn backend.app.main:app --reload
 pytest                                                # backend tests (backend/tests/, temp SQLite DB)
 pytest backend/tests/test_auth.py::test_profile_returns_the_logged_in_user   # single test
@@ -19,7 +20,7 @@ npm test                                              # ng test (Vitest + jsdom)
 npm run build
 ```
 
-The backend reads a `.env` in the repo root via `backend/app/config.py`. `SECRET_KEY` (at least 32 bytes), `TOKEN_ENCRYPTION_KEY` (a Fernet key), `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` and `GITHUB_APP_SLUG` are required, and the backend refuses to start without them. `GITHUB_CALLBACK_URL`, `FRONTEND_URL`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `CORS_ORIGINS` (comma-separated) and `COOKIE_SECURE` have defaults that are documented in the README. The tests set all of them in `backend/tests/conftest.py` and never call the real GitHub. Prettier is configured in `frontend/.prettierrc`; there is no linter. The `Tests` workflow (`.github/workflows/tests.yml`) runs `pytest` and the frontend tests on every PR and on pushes to `main`. Don't merge while it is red.
+The backend reads a `.env` in the repo root via `backend/app/config.py`. `SECRET_KEY` (at least 32 bytes), `TOKEN_ENCRYPTION_KEY` (a Fernet key), `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` and `GITHUB_APP_SLUG` are required, and the backend refuses to start without them. `GITHUB_CALLBACK_URL`, `FRONTEND_URL`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `CORS_ORIGINS` (comma-separated) and `COOKIE_SECURE` have defaults that are documented in the README. `backend/setup_github_app.py` is a standalone one-time script (not imported by the app) that registers the GitHub App via GitHub's manifest flow on `localhost:8000` and writes the credentials and generated keys to `.env`, never overwriting existing values. The tests set all of them in `backend/tests/conftest.py` and never call the real GitHub. Prettier is configured in `frontend/.prettierrc`; there is no linter. The `Tests` workflow (`.github/workflows/tests.yml`) runs `pytest` and the frontend tests on every PR and on pushes to `main`. Don't merge while it is red.
 
 ## Code comments
 

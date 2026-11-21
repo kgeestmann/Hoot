@@ -13,7 +13,10 @@ def read_required(name: str) -> str:
     """Return a required environment variable, or raise if it is missing or empty."""
     value = os.getenv(name)
     if not value:
-        raise RuntimeError(f"{name} is not set. Add it to .env (see README).")
+        raise RuntimeError(
+            f"{name} is not set. For a local setup run python backend/setup_github_app.py, "
+            "or add it to .env (see README)."
+        )
     return value
 
 
