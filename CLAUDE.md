@@ -20,6 +20,10 @@ npm run build
 
 The backend reads a `.env` in the repo root and needs `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` and `CORS_ORIGINS` (comma-separated). If any of them is missing, the import fails at startup. Prettier is configured in `frontend/.prettierrc`, and the backend has no tests or linter.
 
+## Code comments
+
+Don't add comments or docstrings to new or changed code. Explanations go into the PR description or the commit message. Never describe the old or broken behaviour in the code. Leave existing comments alone unless the code they describe changes.
+
 ## Architecture
 
 - **Backend (`backend/app/`)** is a single FastAPI module. `main.py` holds the config, CORS, bcrypt hashing (passlib), JWT creation and validation (python-jose) and all routes: `/register`, `/login` (OAuth2 *form* data, with `username` = email) and `/profile` (protected). Tables are created with `Base.metadata.create_all` on import. There are no migrations, so a model change needs a fresh DB or a manual `ALTER`.
