@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 import bcrypt
 from datetime import datetime, timedelta
-from jose import jwt, JWTError
+import jwt
 
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,22 +61,24 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
+    """Return the user the bearer token belongs to, or raise 401."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-
-        if user_id is None:
-            raise credentials_exception
-
-    except JWTError:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"require": ["exp", "sub"]},
+        )
+        user_id = int(payload["sub"])
+    except (jwt.PyJWTError, ValueError):
         raise credentials_exception
 
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    user = db.query(models.User).filter(models.User.id == user_id).first()
 
     if user is None:
         raise credentials_exception
