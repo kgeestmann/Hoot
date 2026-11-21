@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Mini Auth Project is a minimal full-stack JWT login demo: a FastAPI + SQLAlchemy backend on SQLite and an Angular 21 (Material) frontend. The default branch is `main`, and the main dev machine is Windows.
+Hoot shows everything that is waiting on the user on GitHub (assigned issues, open PRs, review requests, mentions) on one page. It is being built on top of a minimal full-stack JWT login: a FastAPI + SQLAlchemy backend on SQLite and an Angular 21 (Material) frontend. The open issues hold the roadmap. The default branch is `main`, and the main dev machine is Windows.
 
 ## Commands
 
