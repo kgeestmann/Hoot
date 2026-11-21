@@ -15,56 +15,9 @@ from backend.app.main import (
     OAUTH_COOKIE_NAME,
     SESSION_COOKIE_NAME,
     SIGN_IN_FAILED_URL,
-    app,
     create_access_token,
-    get_github_client,
 )
-
-ACCESS_TOKEN = "gho_access-token"
-REFRESH_TOKEN = "ghr_refresh-token"
-
-
-class FakeGitHub:
-    """Stands in for GitHub's token and user endpoints and records every request."""
-
-    def __init__(self):
-        self.requests: list[httpx.Request] = []
-        self.token_response = httpx.Response(
-            200,
-            json={
-                "access_token": ACCESS_TOKEN,
-                "expires_in": 28800,
-                "refresh_token": REFRESH_TOKEN,
-                "refresh_token_expires_in": 15811200,
-                "token_type": "bearer",
-                "scope": "",
-            },
-        )
-        self.user_response = httpx.Response(200, json={"id": 4242, "login": "octocat"})
-        self.unreachable = False
-
-    def handle(self, request: httpx.Request) -> httpx.Response:
-        self.requests.append(request)
-        if self.unreachable:
-            raise httpx.ConnectError("connection refused", request=request)
-        if str(request.url) == github.TOKEN_URL:
-            return self.token_response
-        if str(request.url) == github.USER_URL:
-            return self.user_response
-        return httpx.Response(404)
-
-
-@pytest.fixture
-def fake_github(client):
-    fake = FakeGitHub()
-
-    def mocked_client():
-        with httpx.Client(transport=httpx.MockTransport(fake.handle)) as mocked:
-            yield mocked
-
-    app.dependency_overrides[get_github_client] = mocked_client
-    yield fake
-    app.dependency_overrides.pop(get_github_client, None)
+from backend.tests.fake_github import ACCESS_TOKEN, REFRESH_TOKEN
 
 
 def start_sign_in(client):

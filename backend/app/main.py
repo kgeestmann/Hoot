@@ -1,7 +1,6 @@
 import logging
 import secrets
 import sys
-import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -18,11 +17,11 @@ import jwt
 import uvicorn
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import APIKeyCookie
 from sqlalchemy.orm import Session
 
-from . import github, models, schemas
+from . import github, github_tokens, models, overview, schemas
 from .config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
@@ -31,7 +30,6 @@ from .config import (
     FRONTEND_URL,
     SECRET_KEY,
 )
-from .crypto import encrypt_token
 from .database import engine, SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -171,11 +169,6 @@ def verified_code_verifier(oauth_cookie: str | None, state: str | None) -> str:
     return str(claims["verifier"])
 
 
-def expires_at(seconds_from_now: int | None) -> int | None:
-    """Turn GitHub's "expires in" seconds into a Unix timestamp."""
-    return None if seconds_from_now is None else int(time.time()) + seconds_from_now
-
-
 def save_github_user(
     db: Session, github_user: github.GitHubUser, tokens: github.GitHubTokens
 ) -> models.User:
@@ -186,12 +179,7 @@ def save_github_user(
         db.add(user)
 
     user.login = github_user.login
-    user.github_access_token = encrypt_token(tokens.access_token)
-    user.github_access_token_expires_at = expires_at(tokens.access_token_expires_in)
-    user.github_refresh_token = (
-        encrypt_token(tokens.refresh_token) if tokens.refresh_token else None
-    )
-    user.github_refresh_token_expires_at = expires_at(tokens.refresh_token_expires_in)
+    github_tokens.store_tokens(user, tokens)
 
     db.commit()
     db.refresh(user)
@@ -208,6 +196,16 @@ def redirect_after_sign_in(url: str) -> RedirectResponse:
         secure=COOKIE_SECURE,
         samesite="lax",
     )
+    return response
+
+
+def github_sign_in_expired() -> JSONResponse:
+    """Answer 401 and end the session, so the frontend sends the user back to the sign-in."""
+    response = JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": "The GitHub sign-in has expired. Please sign in again."},
+    )
+    clear_session_cookie(response)
     return response
 
 
@@ -275,6 +273,30 @@ def logout(response: Response):
 @app.get("/profile", response_model=schemas.UserResponse)
 def get_profile(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+@app.get("/overview", response_model=schemas.Overview)
+def get_overview(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    github_client: httpx.Client = Depends(get_github_client),
+):
+    """Return everything on GitHub that is waiting on the user."""
+    try:
+        return github_tokens.call_as_user(
+            db,
+            github_client,
+            current_user,
+            lambda access_token: overview.fetch_overview(github_client, access_token),
+        )
+    except github_tokens.SignInRequired:
+        return github_sign_in_expired()
+    except github.GitHubError as error:
+        logger.warning("Loading the overview failed: %s", error)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="GitHub could not be reached. Please try again.",
+        )
 
 
 def run_dev_server() -> None:

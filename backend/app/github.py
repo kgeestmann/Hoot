@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import logging
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
@@ -7,13 +8,21 @@ import httpx
 
 from .config import GITHUB_CALLBACK_URL, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
 
+logger = logging.getLogger(__name__)
+
 AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
 TOKEN_URL = "https://github.com/login/oauth/access_token"
 USER_URL = "https://api.github.com/user"
+GRAPHQL_URL = "https://api.github.com/graphql"
+API_HEADERS = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 
 class GitHubError(Exception):
     """GitHub rejected a request or answered with something unexpected."""
+
+
+class GitHubTokenRejected(GitHubError):
+    """GitHub rejected a token or code: expired, revoked or invalid."""
 
 
 @dataclass(frozen=True)
@@ -54,22 +63,35 @@ def authorize_url(state: str, verifier: str) -> str:
 
 def exchange_code(client: httpx.Client, code: str, verifier: str) -> GitHubTokens:
     """Trade the authorization code for the user's access and refresh tokens."""
-    body = _request_json(
+    return _request_tokens(
         client,
-        "POST",
-        TOKEN_URL,
-        headers={"Accept": "application/json"},
-        data={
-            "client_id": GITHUB_CLIENT_ID,
-            "client_secret": GITHUB_CLIENT_SECRET,
+        {
             "code": code,
             "redirect_uri": GITHUB_CALLBACK_URL,
             "code_verifier": verifier,
         },
     )
-    # GitHub reports an invalid or expired code as 200 with an "error" field.
+
+
+def refresh_tokens(client: httpx.Client, refresh_token: str) -> GitHubTokens:
+    """Trade a refresh token for a new pair of access and refresh tokens."""
+    return _request_tokens(
+        client, {"grant_type": "refresh_token", "refresh_token": refresh_token}
+    )
+
+
+def _request_tokens(client: httpx.Client, grant: dict) -> GitHubTokens:
+    """Ask GitHub's token endpoint for user tokens with the given grant."""
+    body = _request_json(
+        client,
+        "POST",
+        TOKEN_URL,
+        headers={"Accept": "application/json"},
+        data={"client_id": GITHUB_CLIENT_ID, "client_secret": GITHUB_CLIENT_SECRET, **grant},
+    )
+    # GitHub reports an invalid or expired code or refresh token as 200 with an "error" field.
     if not isinstance(body.get("access_token"), str):
-        raise GitHubError(f"Token exchange failed: {body.get('error', 'no access_token')}")
+        raise GitHubTokenRejected(f"Token request failed: {body.get('error', 'no access_token')}")
     return GitHubTokens(
         access_token=body["access_token"],
         access_token_expires_in=body.get("expires_in"),
@@ -84,15 +106,38 @@ def fetch_user(client: httpx.Client, access_token: str) -> GitHubUser:
         client,
         "GET",
         USER_URL,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {access_token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
+        headers={**API_HEADERS, "Authorization": f"Bearer {access_token}"},
     )
     if not isinstance(body.get("id"), int) or not isinstance(body.get("login"), str):
         raise GitHubError("GitHub user response is missing id or login")
     return GitHubUser(id=body["id"], login=body["login"])
+
+
+def graphql(client: httpx.Client, access_token: str, query: str, variables: dict) -> dict:
+    """Run a GraphQL query as the user and return its data.
+
+    Partial errors (e.g. one repository the token may not read) are logged, and the
+    data GitHub could load is returned.
+    """
+    body = _request_json(
+        client,
+        "POST",
+        GRAPHQL_URL,
+        headers={**API_HEADERS, "Authorization": f"Bearer {access_token}"},
+        json={"query": query, "variables": variables},
+    )
+    errors = body.get("errors") or []
+    if not isinstance(body.get("data"), dict):
+        raise GitHubError(f"GraphQL query failed: {_error_messages(errors)}")
+    if errors:
+        logger.warning("GraphQL query returned partial errors: %s", _error_messages(errors))
+    return body["data"]
+
+
+def _error_messages(errors: list) -> str:
+    """Join the messages of GraphQL errors for a log line."""
+    messages = [str(error.get("message")) for error in errors if isinstance(error, dict)]
+    return "; ".join(messages) or "no data"
 
 
 def _request_json(client: httpx.Client, method: str, url: str, **kwargs) -> dict:
@@ -101,6 +146,8 @@ def _request_json(client: httpx.Client, method: str, url: str, **kwargs) -> dict
         response = client.request(method, url, **kwargs)
     except httpx.HTTPError as error:
         raise GitHubError(f"Request to {url} failed: {type(error).__name__}") from error
+    if response.status_code == 401:
+        raise GitHubTokenRejected(f"{url} answered 401")
     if response.status_code != 200:
         raise GitHubError(f"{url} answered {response.status_code}")
     try:
