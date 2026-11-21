@@ -96,7 +96,7 @@ venv\Scripts\activate
 Install dependencies:
 
 ```
-pip install fastapi uvicorn sqlalchemy psycopg2-binary passlib[bcrypt] python-jose python-dotenv
+pip install -r backend/requirements.txt
 ```
 
 ---
