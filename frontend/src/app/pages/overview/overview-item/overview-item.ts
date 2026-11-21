@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+import { TeamItem } from '../../../services/organizations';
 import { OverviewItem, PullRequestItem } from '../../../services/overview';
 import { relativeTime } from './relative-time';
 import { statusChips } from './status-chips';
@@ -12,9 +13,22 @@ import { statusChips } from './status-chips';
   styleUrl: './overview-item.css',
 })
 export class OverviewItemComponent {
-  readonly item = input.required<OverviewItem | PullRequestItem>();
+  readonly item = input.required<OverviewItem | PullRequestItem | TeamItem>();
 
   readonly kindLabel = computed(() => (this.item().kind === 'issue' ? 'Issue' : 'Pull request'));
   readonly updatedAgo = computed(() => relativeTime(new Date(this.item().updated_at)));
   readonly statuses = computed(() => statusChips(this.item()));
+  /** Who opened it and who is on it; only team items carry people. */
+  readonly team = computed(() => {
+    const item = this.item();
+    if (!('created_at' in item)) {
+      return undefined;
+    }
+    return {
+      openedAgo: relativeTime(new Date(item.created_at)),
+      createdAt: item.created_at,
+      author: item.author ?? 'a deleted account',
+      assignees: item.assignees.length > 0 ? item.assignees.join(', ') : 'nobody',
+    };
+  });
 }

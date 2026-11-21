@@ -15,6 +15,16 @@
         Overview
       </a>
 
+      @for (organization of organizations(); track organization) {
+        <a
+          class="nav-btn nav-organization"
+          [routerLink]="['/orgs', organization]"
+          routerLinkActive="active-link"
+        >
+          {{ organization }}
+        </a>
+      }
+
       <a
         class="nav-btn"
         routerLink="/profile"

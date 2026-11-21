@@ -15,13 +15,13 @@ if not __package__:
 import httpx
 import jwt
 import uvicorn
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Path as PathParam, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import APIKeyCookie
 from sqlalchemy.orm import Session
 
-from . import github, github_tokens, models, overview, overview_filters, schemas
+from . import github, github_tokens, models, org_overview, overview, overview_filters, schemas
 from .config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
@@ -319,6 +319,30 @@ def put_overview_filters(
     """Replace the user's overview filters and return them as stored."""
     overview_filters.replace_hidden_scopes(db, current_user, filters.hidden)
     return {"hidden": overview_filters.hidden_scopes(db, current_user)}
+
+
+@app.get("/orgs/{organization}/overview", response_model=schemas.OrgOverview)
+def get_org_overview(
+    organization: str = PathParam(max_length=39, pattern=r"^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$"),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    github_client: httpx.Client = Depends(get_github_client),
+):
+    """Return the team view of an organization where Hoot is installed for the user."""
+    try:
+        return github_tokens.call_as_user(
+            db,
+            github_client,
+            current_user,
+            lambda access_token: org_overview.fetch_org_overview(
+                github_client, access_token, organization
+            ),
+        )
+    except org_overview.OrganizationNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hoot isn't installed on this organization, or you can't see it.",
+        )
 
 
 @app.get("/github/installations", response_model=schemas.GitHubAccess)

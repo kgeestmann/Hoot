@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,6 +9,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, concatMap, forkJoin, map, of, Subject } from 'rxjs';
 
+import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
+import { SectionsSkeleton } from '../../layout/sections-skeleton/sections-skeleton';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { Overview, OverviewService } from '../../services/overview';
 import { OverviewFiltersService } from '../../services/overview-filters';
@@ -21,7 +22,7 @@ import { OverviewSection } from './overview-section/overview-section';
 /** The start page: everything on GitHub that is waiting on the user. */
 @Component({
   selector: 'app-overview-page',
-  imports: [GitHubAccessCard, OverviewFilters, OverviewSection],
+  imports: [GitHubAccessCard, LoadError, OverviewFilters, OverviewSection, SectionsSkeleton],
   templateUrl: './overview.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview.css',
@@ -109,12 +110,4 @@ export class OverviewPage implements OnInit {
     this.hidden.set(hidden);
     this.filterSaves.next(hidden);
   }
-}
-
-/** Say whose fault a failed load is, so the user knows whether retrying can help. */
-function loadErrorMessage(error: unknown): string {
-  if (error instanceof HttpErrorResponse && error.status === 0) {
-    return "Can't reach Hoot's server. Check your connection and try again.";
-  }
-  return "GitHub didn't answer. Try again in a moment.";
 }

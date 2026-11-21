@@ -3,9 +3,17 @@
   <p class="meta">
     <span>{{ kindLabel() }}</span>
     <span class="reference">{{ item().repository }}#{{ item().number }}</span>
+    @if (team(); as team) {
+      <time class="opened" [attr.datetime]="team.createdAt" [title]="team.createdAt">
+        opened {{ team.openedAgo }} by {{ team.author }}
+      </time>
+    }
     <time [attr.datetime]="item().updated_at" [title]="item().updated_at">
       updated {{ updatedAgo() }}
     </time>
+    @if (team(); as team) {
+      <span class="assignees">assigned to {{ team.assignees }}</span>
+    }
   </p>
   @if (statuses().length > 0) {
     <ul class="statuses">

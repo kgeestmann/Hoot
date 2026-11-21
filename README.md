@@ -4,7 +4,7 @@ One page for everything that is waiting on you on GitHub: assigned issues, your 
 
 Built with **FastAPI**, **SQLite**, **Angular** and **JWT** sessions.
 
-> **Status:** early. Signing in with GitHub, the overview page and its filters work; an organization view is next (see the open issues).
+> **Status:** early. Signing in with GitHub, the overview page with filters and a team view per organization work (see the open issues for what's next).
 
 ---
 
@@ -42,6 +42,7 @@ Hoot
 │       ├── github_tokens.py  storing and refreshing the users' GitHub tokens
 │       ├── overview.py    GraphQL searches behind GET /overview
 │       ├── overview_filters.py  the owners/repositories a user hid from the overview
+│       ├── org_overview.py  GraphQL searches behind GET /orgs/{organization}/overview
 │       ├── crypto.py      encryption of the stored GitHub tokens
 │       ├── config.py      settings from .env
 │       ├── models.py
@@ -52,6 +53,7 @@ Hoot
 │   └── src/app
 │       ├── pages
 │       │   ├── overview   start page: the four lists and the GitHub access card
+│       │   ├── organization   team view of one organization (/orgs/:organization)
 │       │   ├── login
 │       │   └── profile
 │       │
@@ -60,6 +62,7 @@ Hoot
 │       │   ├── github-access.ts
 │       │   ├── overview.ts
 │       │   ├── overview-filters.ts
+│       │   ├── organizations.ts
 │       │   └── session-interceptor.ts
 │       │
 │       └── api.ts         backend URL
@@ -520,6 +523,34 @@ Returns `401` (and clears the session cookie) when the GitHub tokens can't be re
 
 ---
 
+Organization team view (Protected Route)
+
+```
+GET /orgs/{organization}/overview
+```
+
+Requires a valid session cookie. The organization must be one where the GitHub App is installed for the user (otherwise `404`; an invalid name gets `422`). Runs four searches in the organization with the user's token, each `is:open archived:false`, with GitHub's total, up to 20 items and a link to the full search on github.com:
+
+| List                 | Search                                   | Order                       |
+| -------------------- | ---------------------------------------- | --------------------------- |
+| `waiting_for_review` | `is:pr review:required -is:draft`        | oldest first                |
+| `failing_ci`         | `is:pr status:failure`                   | recently updated first      |
+| `unassigned_issues`  | `is:issue no:assignee`                   | oldest first                |
+| `stale`              | `updated:<today-60 days` (issues and PRs) | least recently updated first |
+
+```
+{
+  "organization": "Octo-Org",
+  "stale_after_days": 60,
+  "waiting_for_review": { "total": 3, "items": [ ... ], "search_url": "https://github.com/search?q=..." },
+  "failing_ci": { ... }, "unassigned_issues": { ... }, "stale": { ... }
+}
+```
+
+Items are like the overview's, plus `created_at`, `author` (`null` for deleted accounts), `assignees`, and `ci_status` / `review_decision` for pull requests. **Deliberately no statistics per person** (no counts, rankings or response times per person): in Germany such tools usually need works-council approval (§ 87 Abs. 1 Nr. 6 BetrVG) and fall under GDPR, see #28.
+
+---
+
 Overview filters (Protected Route)
 
 ```
@@ -600,6 +631,16 @@ The start page after signing in (logged-out visitors go to `/login`, and `/login
 * **Filter:** a collapsible panel lists every owner and repository in the overview (and hidden ones without items) as checkboxes. Unchecking hides it; new owners and repositories show up automatically. The section counts follow the filter, and the panel says how many items are hidden. Changes are saved per user with `PUT /overview/filters`, one after the other; if saving fails, the filter still applies until the page is reloaded.
 * **States:** a skeleton while loading, an empty message per section, "Nothing waiting on you 🎉" when all four are empty, and an error with **Try again** that says whether Hoot's server or GitHub failed.
 * **GitHub access card** (`pages/overview/github-access`): if the app is installed nowhere, it replaces the sections and asks the user to install it, since every list would otherwise be empty. Otherwise it sits below the sections and lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
+
+---
+
+Organization Page
+
+```
+/orgs/:organization
+```
+
+The team view of one organization from `GET /orgs/{organization}/overview`: waiting for review, failing CI, unassigned issues and items without an update for 60 days. Each list shows GitHub's total and links to the full search on GitHub when there are more than the 20 loaded items. Items say when and by whom they were opened and who is assigned. The sidenav lists every organization where Hoot is installed under *Overview*. Loading, error (with "Hoot isn't installed on …" for a 404) and empty states work like on the overview, through the shared `layout/sections-skeleton` and `layout/load-error`.
 
 ---
 

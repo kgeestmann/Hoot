@@ -1,0 +1,22 @@
+.skeleton {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: var(--hoot-space-8) var(--hoot-space-6);
+}
+
+.skeleton-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hoot-space-3);
+}
+
+.skeleton-line {
+  height: var(--hoot-space-10);
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-high);
+}
+
+.skeleton-heading {
+  width: 40%;
+  height: var(--hoot-space-6);
+}

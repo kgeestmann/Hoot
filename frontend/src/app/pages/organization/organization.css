@@ -1,0 +1,29 @@
+.organization-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hoot-space-8);
+  max-width: 1200px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hoot-space-2);
+}
+
+.page-title {
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+}
+
+.subtitle {
+  margin: 0;
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: var(--hoot-space-8) var(--hoot-space-6);
+}

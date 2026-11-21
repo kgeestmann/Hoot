@@ -81,3 +81,34 @@ class OverviewFilters(BaseModel):
     def sorted_without_duplicates(cls, hidden: list[str]) -> list[str]:
         """Store each scope once, in a stable order."""
         return sorted(set(hidden))
+
+
+class TeamItem(OverviewItem):
+    """An issue or pull request in an organization's team view."""
+
+    created_at: datetime
+    # None for deleted accounts.
+    author: str | None
+    assignees: list[str]
+    # Only for pull requests; same values as in PullRequestItem.
+    ci_status: str | None
+    review_decision: str | None
+
+
+class TeamList(BaseModel):
+    """One list of the team view: GitHub's total, up to 20 items and the full search on GitHub."""
+
+    total: int
+    items: list[TeamItem]
+    search_url: str
+
+
+class OrgOverview(BaseModel):
+    """What needs the team's attention in an organization. Deliberately no statistics per person."""
+
+    organization: str
+    stale_after_days: int
+    waiting_for_review: TeamList
+    failing_ci: TeamList
+    unassigned_issues: TeamList
+    stale: TeamList

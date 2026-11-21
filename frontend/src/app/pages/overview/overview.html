@@ -39,20 +39,9 @@
         </div>
       }
     } @else if (loadError(); as message) {
-      <div class="load-error" role="alert">
-        <p>{{ message }}</p>
-        <button type="button" class="retry" (click)="load()">Try again</button>
-      </div>
+      <app-load-error [message]="message" (retry)="load()" />
     } @else {
-      <div class="sections" aria-busy="true" aria-label="Loading your overview">
-        @for (placeholder of [1, 2, 3, 4]; track placeholder) {
-          <div class="skeleton-section">
-            <div class="skeleton-line skeleton-heading"></div>
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line"></div>
-          </div>
-        }
-      </div>
+      <app-sections-skeleton label="Loading your overview" />
     }
 
     @if (gitHubAccess) {
