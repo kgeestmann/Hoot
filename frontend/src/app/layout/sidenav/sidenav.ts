@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, effect, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { GitHubAccessService } from '../../services/github-access';
@@ -7,7 +6,7 @@ import { GitHubAccessService } from '../../services/github-access';
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './sidenav.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./sidenav.css'],

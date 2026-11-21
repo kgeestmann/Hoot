@@ -1,11 +1,14 @@
-<div
-  class="ui-card"
-  [class]="'elevation-' + elevation + ' variant-' + variant"
->
-  <div class="card-header" *ngIf="title || description">
-    <h3 *ngIf="title">{{ title }}</h3>
-    <p *ngIf="description">{{ description }}</p>
-  </div>
+<div class="ui-card" [class]="'elevation-' + elevation + ' variant-' + variant">
+  @if (title || description) {
+    <div class="card-header">
+      @if (title) {
+        <h3>{{ title }}</h3>
+      }
+      @if (description) {
+        <p>{{ description }}</p>
+      }
+    </div>
+  }
   <div class="card-content">
     <ng-content></ng-content>
   </div>
