@@ -1,11 +1,17 @@
-import { signal } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { Component, signal } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { MatSidenav } from '@angular/material/sidenav';
+import { By } from '@angular/platform-browser';
+import { provideRouter, Router } from '@angular/router';
 
 import { AuthService } from '../../services/auth';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { Sidenav } from './sidenav';
+
+@Component({ template: '' })
+class EmptyPage {}
 
 describe('Sidenav', () => {
   let component: Sidenav;
@@ -14,11 +20,19 @@ describe('Sidenav', () => {
   async function render(
     loggedIn: boolean,
     access: Observable<GitHubAccess> = of({ install_url: '', installations: [] }),
+    wide = true,
   ) {
     await TestBed.configureTestingModule({
       imports: [Sidenav],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'profile', component: EmptyPage }]),
+        {
+          provide: BreakpointObserver,
+          useValue: {
+            observe: () => of({ matches: wide, breakpoints: {} }),
+            isMatched: () => wide,
+          },
+        },
         { provide: AuthService, useValue: { isLoggedIn: signal(loggedIn), logout: vi.fn() } },
         { provide: GitHubAccessService, useValue: { load: () => access } },
       ],
@@ -79,5 +93,44 @@ describe('Sidenav', () => {
     );
 
     expect(navLabels(element)).toEqual(['Overview', 'Profile', 'Logout']);
+  });
+
+  describe('layout', () => {
+    function drawer(): MatSidenav {
+      return fixture.debugElement.query(By.directive(MatSidenav)).componentInstance;
+    }
+
+    it('keeps the navigation open beside the content on wide screens', async () => {
+      const element = await render(true, undefined, true);
+
+      expect(drawer().mode).toBe('side');
+      expect(drawer().opened).toBe(true);
+      expect(element.querySelector('.top-bar')).toBeNull();
+    });
+
+    it('hides the navigation in a drawer behind a menu button on small screens', async () => {
+      const element = await render(true, undefined, false);
+
+      expect(drawer().mode).toBe('over');
+      expect(drawer().opened).toBe(false);
+      const menu = element.querySelector<HTMLButtonElement>('.top-bar button');
+      expect(menu?.getAttribute('aria-label')).toBe('Open navigation');
+
+      menu!.click();
+      await fixture.whenStable();
+
+      expect(drawer().opened).toBe(true);
+    });
+
+    it('closes the drawer once a page is chosen on small screens', async () => {
+      const element = await render(true, undefined, false);
+      element.querySelector<HTMLButtonElement>('.top-bar button')!.click();
+      await fixture.whenStable();
+
+      await TestBed.inject(Router).navigateByUrl('/profile');
+      await fixture.whenStable();
+
+      expect(drawer().opened).toBe(false);
+    });
   });
 });

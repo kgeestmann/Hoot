@@ -1,19 +1,19 @@
 .layout {
-  display: flex;
   height: 100vh;
+  background: var(--mat-sys-surface);
 }
 
 .sidebar {
   width: 280px;
-  background-color: var(--mat-sys-surface-container-lowest);
   border-right: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0;
+  background-color: var(--mat-sys-surface-container-lowest);
+}
+
+.sidebar-inner {
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  box-shadow: var(--mat-sys-level1);
+  min-height: 100%;
 }
 
 .sidebar-header {
@@ -78,9 +78,31 @@
   border-top: 1px solid var(--mat-sys-outline-variant);
 }
 
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  gap: var(--hoot-space-2);
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+}
+
+.top-bar-title {
+  font: var(--mat-sys-title-large);
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
 .content {
-  flex: 1;
   padding: var(--hoot-space-10) var(--hoot-space-8);
-  overflow: auto;
-  background: var(--mat-sys-surface);
+}
+
+@media (max-width: 839.98px) {
+  .content {
+    padding: var(--hoot-space-6) var(--hoot-space-4);
+  }
 }

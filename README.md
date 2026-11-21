@@ -607,6 +607,8 @@ The Angular frontend provides:
 
 Framework: Angular (standalone components)
 
+Layout (`layout/sidenav`): from 840 px wide (Material 3's "expanded" size) the navigation stays open beside the content. Below that it is a drawer behind a top bar with a menu button, and it closes once a page is chosen.
+
 ---
 
 # Angular Pages
