@@ -369,6 +369,8 @@ Process:
 2. Save user
 3. Return created user
 
+If the email is already registered, it returns `409 Conflict` with `{"detail": "Email already registered"}`.
+
 ---
 
 Login

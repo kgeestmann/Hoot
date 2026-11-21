@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
@@ -86,7 +87,14 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     )
 
     db.add(new_user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered"
+        )
     db.refresh(new_user)
 
     return new_user
