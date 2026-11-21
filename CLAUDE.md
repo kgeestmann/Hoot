@@ -7,7 +7,7 @@ Mini Auth Project is a minimal full-stack JWT login demo: a FastAPI + SQLAlchemy
 ## Commands
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d     # PostgreSQL 15 on localhost:5432
+docker compose --env-file .env -f docker/docker-compose.yml up -d     # PostgreSQL 15 on localhost:5432
 pip install -r backend/requirements.txt               # in a venv (backend/venv/ is gitignored)
 uvicorn backend.app.main:app --reload                 # from the repo root → http://localhost:8000
 
