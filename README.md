@@ -696,7 +696,8 @@ The UI uses an Angular Material 3 theme built from the brand orange `#fea034` an
   ```
 
 * `frontend/src/material-theme.scss`: applies the palettes and emits the `--mat-sys-*` tokens (colours, type scale, corners, elevation).
-* `frontend/src/styles.css`: Hoot's own tokens: `--hoot-brand` / `--hoot-on-brand` (bright orange fill with dark text, because white text on it fails contrast), the `--hoot-space-*` spacing scale, the focus ring and transitions.
+* `frontend/src/styles.css`: Hoot's own tokens: `--hoot-brand` / `--hoot-on-brand` (bright orange fill with dark text, because white text on it fails contrast), the `--hoot-status-*` colours for GitHub states, the `--hoot-space-*` spacing scale, the focus ring and transitions.
+* **Dark mode** follows the system setting (`color-scheme: light dark`). Every `--mat-sys-*` colour has a light and a dark value (`light-dark()`), and so do Hoot's own colours where they differ, e.g. `--hoot-status-success: light-dark(#1a7f37, #3fb950)`. The brand orange with its dark text works in both modes.
 * Roboto is self-hosted via `@fontsource/roboto`, so the app loads nothing from Google or other CDNs.
 
 ---

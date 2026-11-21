@@ -12,9 +12,10 @@
 
   /*
    * Status colours keep GitHub's meanings (#55). Pending uses the neutral grey: GitHub's amber is
-   * too close to the brand orange. #1a7f37 is GitHub's green, 5:1 on white.
+   * too close to the brand orange. The green is GitHub's for light and for dark backgrounds:
+   * 4.8:1 on the light surface, 7.3:1 on the dark one.
    */
-  --hoot-status-success: #1a7f37;
+  --hoot-status-success: light-dark(#1a7f37, #3fb950);
   --hoot-status-danger: var(--mat-sys-error);
   --hoot-status-neutral: var(--mat-sys-on-surface-variant);
 
