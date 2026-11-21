@@ -501,11 +501,13 @@ The UI uses an Angular Material 3 theme built from the brand orange `#fea034` an
 
 # Running the Project
 
-Start backend (creates the SQLite database on first start):
+Start backend (creates the SQLite database on first start, restarts when backend code changes):
 
 ```
-uvicorn backend.app.main:app --reload
+python backend/app/main.py
 ```
+
+This works from any working directory, and so does the IDE's Run button on `main.py`. `python -m backend.app.main` and `uvicorn backend.app.main:app --reload` (both from the repo root) start the same server.
 
 Run the backend tests from the repo root (they use a temporary SQLite database, not `backend/hoot.db`, and a mocked GitHub):
 
