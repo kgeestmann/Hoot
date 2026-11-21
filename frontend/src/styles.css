@@ -10,6 +10,14 @@
   /* The bright complementary blue is below 3:1 on the surface, so rings use the darker tone. */
   --hoot-focus-ring: var(--mat-sys-tertiary);
 
+  /*
+   * Status colours keep GitHub's meanings (#55). Pending uses the neutral grey: GitHub's amber is
+   * too close to the brand orange. #1a7f37 is GitHub's green, 5:1 on white.
+   */
+  --hoot-status-success: #1a7f37;
+  --hoot-status-danger: var(--mat-sys-error);
+  --hoot-status-neutral: var(--mat-sys-on-surface-variant);
+
   /* Spacing scale: --hoot-space-N is N × 4px. */
   --hoot-space-1: 4px;
   --hoot-space-2: 8px;

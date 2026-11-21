@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 
 import { Login } from './pages/login/login';
 import { Profile } from './pages/profile/profile';
-import { Home } from './pages/home/home';
+import { OverviewPage } from './pages/overview/overview';
 
 import { authGuard } from './guards/auth-guard';
 import { publicGuard } from './guards/public-guard';
@@ -11,7 +11,8 @@ export const routes: Routes = [
 
   {
     path: '',
-    component: Home
+    component: OverviewPage,
+    canActivate: [authGuard]
   },
 
   {

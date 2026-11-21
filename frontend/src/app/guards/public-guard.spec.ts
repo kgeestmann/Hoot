@@ -29,9 +29,9 @@ describe('publicGuard', () => {
     expect(await runGuard(null)).toBe(true);
   });
 
-  it('sends logged-in users to /profile', async () => {
+  it('sends logged-in users to the overview', async () => {
     const result = await runGuard({ id: 1, login: 'octocat' });
 
-    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/profile');
+    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/');
   });
 });

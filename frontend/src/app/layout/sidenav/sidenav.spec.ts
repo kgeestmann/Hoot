@@ -35,11 +35,11 @@ describe('Sidenav', () => {
 
   it('shows Login when logged out', async () => {
     const element = await render(false);
-    expect(navLabels(element)).toEqual(['Home', 'Login']);
+    expect(navLabels(element)).toEqual(['Login']);
   });
 
-  it('shows Profile and Logout when logged in', async () => {
+  it('shows Overview, Profile and Logout when logged in', async () => {
     const element = await render(true);
-    expect(navLabels(element)).toEqual(['Home', 'Profile', 'Logout']);
+    expect(navLabels(element)).toEqual(['Overview', 'Profile', 'Logout']);
   });
 });

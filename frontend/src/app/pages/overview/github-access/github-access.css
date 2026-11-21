@@ -79,12 +79,3 @@
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
 }
-
-.load-error {
-  padding: var(--hoot-space-3) var(--hoot-space-4);
-  background: var(--mat-sys-error-container);
-  border: 1px solid var(--mat-sys-error);
-  border-radius: var(--mat-sys-corner-small);
-  color: var(--mat-sys-on-error-container);
-  font: var(--mat-sys-body-medium);
-}

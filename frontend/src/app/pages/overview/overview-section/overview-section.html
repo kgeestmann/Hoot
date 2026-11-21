@@ -1,0 +1,15 @@
+<section class="section">
+  <h2 class="heading">
+    {{ heading() }}
+    <span class="count">{{ items().length }}</span>
+  </h2>
+  @if (items().length > 0) {
+    <ul class="items">
+      @for (item of items(); track item.url) {
+        <li><app-overview-item [item]="item" /></li>
+      }
+    </ul>
+  } @else {
+    <p class="empty">{{ emptyText() }}</p>
+  }
+</section>
