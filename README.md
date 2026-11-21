@@ -72,7 +72,7 @@ Main technologies:
 * SQLAlchemy
 * SQLite
 * bcrypt (password hashing)
-* python-jose (JWT)
+* PyJWT (JWT)
 * dotenv (environment variables)
 
 ---
