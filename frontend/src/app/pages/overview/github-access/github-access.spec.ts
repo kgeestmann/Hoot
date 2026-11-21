@@ -23,7 +23,7 @@ describe('GitHubAccessCard', () => {
 
     const link = element.querySelector<HTMLAnchorElement>('.install-link');
     expect(link?.href).toBe(INSTALL_URL);
-    expect(text(element.querySelector('h3'))).toBe('Install Hoot on GitHub');
+    expect(text(element.querySelector('h2'))).toBe('Install Hoot on GitHub');
     expect(element.querySelector('.installations')).toBeNull();
   });
 

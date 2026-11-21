@@ -10,7 +10,7 @@
       }
     </ul>
     @if (hasMore()) {
-      <a class="more-link" [href]="moreUrl()">Show all {{ count() }} on GitHub</a>
+      <a mat-button class="more-link" [href]="moreUrl()">Show all {{ count() }} on GitHub</a>
     }
   } @else {
     <p class="empty">{{ emptyText() }}</p>

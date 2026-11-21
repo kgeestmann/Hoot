@@ -1,25 +1,27 @@
 @let gitHubAccess = access();
 @if (gitHubAccess.installations.length === 0) {
-  <ui-card
-    title="Install Hoot on GitHub"
-    description="Hoot can't see any of your repositories yet."
-    elevation="medium"
-  >
-    <div class="github-access">
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <h2 mat-card-title>Install Hoot on GitHub</h2>
+      <p mat-card-subtitle>Hoot can't see any of your repositories yet.</p>
+    </mat-card-header>
+    <mat-card-content class="github-access">
       <p class="explanation">
         Install Hoot on your GitHub account and on the organizations you work in. Hoot only gets
         read access to issues, pull requests and their checks.
       </p>
-      <a class="install-link" [href]="gitHubAccess.install_url">Install Hoot on GitHub</a>
-    </div>
-  </ui-card>
+      <a mat-flat-button class="install-link" [href]="gitHubAccess.install_url">
+        Install Hoot on GitHub
+      </a>
+    </mat-card-content>
+  </mat-card>
 } @else {
-  <ui-card
-    title="GitHub access"
-    description="Hoot only sees repositories in these accounts."
-    elevation="low"
-  >
-    <div class="github-access">
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <h2 mat-card-title>GitHub access</h2>
+      <p mat-card-subtitle>Hoot only sees repositories in these accounts.</p>
+    </mat-card-header>
+    <mat-card-content class="github-access">
       <ul class="installations">
         @for (installation of gitHubAccess.installations; track installation.account) {
           <li class="installation">
@@ -27,14 +29,16 @@
             <span class="scope">
               {{ installation.all_repositories ? 'All repositories' : 'Selected repositories' }}
             </span>
-            <a class="manage-link" [href]="installation.settings_url">Manage</a>
+            <a mat-button class="manage-link" [href]="installation.settings_url">Manage</a>
           </li>
         }
       </ul>
-      <a class="add-link" [href]="gitHubAccess.install_url">Add an account or organization</a>
+      <a mat-stroked-button class="add-link" [href]="gitHubAccess.install_url">
+        Add an account or organization
+      </a>
       <p class="hint">
         Not an owner of the organization? GitHub then asks its owners to approve Hoot.
       </p>
-    </div>
-  </ui-card>
+    </mat-card-content>
+  </mat-card>
 }
