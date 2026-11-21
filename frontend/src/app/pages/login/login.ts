@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { ActivatedRoute } from '@angular/router';
 import { API_URL } from '../../api';
-import { UiCardComponent } from '../../layout/ui-card/ui-card';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [UiCardComponent],
+  imports: [MatButtonModule, MatCardModule],
   templateUrl: './login.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./login.css'],

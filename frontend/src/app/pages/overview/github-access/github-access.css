@@ -1,4 +1,5 @@
 .github-access {
+  padding-top: var(--hoot-space-4);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -39,39 +40,6 @@
   flex: 1;
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
-}
-
-.manage-link {
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-primary);
-}
-
-.install-link,
-.add-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 48px;
-  padding: 0 var(--hoot-space-6);
-  border-radius: var(--mat-sys-corner-small);
-  font: var(--mat-sys-label-large);
-  text-decoration: none;
-  transition: box-shadow var(--hoot-transition);
-}
-
-/* The one primary action when Hoot can't see anything yet: brand fill with dark text. */
-.install-link {
-  background: var(--hoot-brand);
-  color: var(--hoot-on-brand);
-}
-
-.add-link {
-  border: 1px solid var(--mat-sys-outline);
-  color: var(--mat-sys-primary);
-}
-
-.install-link:hover,
-.add-link:hover {
-  box-shadow: var(--mat-sys-level1);
 }
 
 .hint {

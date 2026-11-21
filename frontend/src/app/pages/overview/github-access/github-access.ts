@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { UiCardComponent } from '../../../layout/ui-card/ui-card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+
 import { GitHubAccess } from '../../../services/github-access';
 
 /** Shows where Hoot can see the user's repositories and links to GitHub to add more. */
 @Component({
   selector: 'app-github-access',
   standalone: true,
-  imports: [UiCardComponent],
+  imports: [MatButtonModule, MatCardModule],
   templateUrl: './github-access.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./github-access.css'],

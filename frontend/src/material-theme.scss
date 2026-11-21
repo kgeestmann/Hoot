@@ -18,6 +18,20 @@ html {
       density: 0,
     )
   );
+
+  // Buttons follow #55: one radius for controls, and the filled button is the single primary
+  // action per view in the bright brand orange with dark text (white text fails contrast).
+  @include mat.button-overrides(
+    (
+      filled-container-color: var(--hoot-brand),
+      filled-label-text-color: var(--hoot-on-brand),
+      filled-state-layer-color: var(--hoot-on-brand),
+      filled-ripple-color: color-mix(in srgb, var(--hoot-on-brand) 12%, transparent),
+      filled-container-shape: var(--mat-sys-corner-small),
+      outlined-container-shape: var(--mat-sys-corner-small),
+      text-container-shape: var(--mat-sys-corner-small),
+    )
+  );
 }
 
 body {

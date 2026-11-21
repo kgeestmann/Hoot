@@ -8,6 +8,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--hoot-space-6);
+  padding-top: var(--hoot-space-4);
 }
 
 .form-error {
@@ -17,22 +18,4 @@
   border-radius: var(--mat-sys-corner-small);
   color: var(--mat-sys-on-error-container);
   font: var(--mat-sys-body-medium);
-}
-
-/* The one primary action on this page: brand fill with dark text. */
-.github-button {
-  display: inline-flex;
-  align-items: center;
-  min-height: 48px;
-  padding: 0 var(--hoot-space-6);
-  border-radius: var(--mat-sys-corner-small);
-  background: var(--hoot-brand);
-  color: var(--hoot-on-brand);
-  font: var(--mat-sys-label-large);
-  text-decoration: none;
-  transition: box-shadow var(--hoot-transition);
-}
-
-.github-button:hover {
-  box-shadow: var(--mat-sys-level1);
 }

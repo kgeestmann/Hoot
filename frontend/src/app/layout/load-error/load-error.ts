@@ -1,9 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 
 /** An error box that says what went wrong, with a button to try again (#55, rule 7). */
 @Component({
   selector: 'app-load-error',
+  imports: [MatButtonModule],
   templateUrl: './load-error.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './load-error.css',

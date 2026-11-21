@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+import { MatButtonModule } from '@angular/material/button';
+
 import { OverviewItem } from '../../../services/overview';
 import { OverviewItemComponent } from '../overview-item/overview-item';
 
 /** One list (e.g. review requests) with its items or an empty message. */
 @Component({
   selector: 'app-overview-section',
-  imports: [OverviewItemComponent],
+  imports: [MatButtonModule, OverviewItemComponent],
   templateUrl: './overview-section.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview-section.css',

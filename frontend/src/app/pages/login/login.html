@@ -1,16 +1,16 @@
 <div class="login-page">
-  <ui-card
-    title="Sign in"
-    description="Hoot shows everything that is waiting on you on GitHub."
-    elevation="medium"
-  >
-    <div class="login-content">
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <h1 mat-card-title>Sign in</h1>
+      <p mat-card-subtitle>Hoot shows everything that is waiting on you on GitHub.</p>
+    </mat-card-header>
+    <mat-card-content class="login-content">
       @if (signInFailed) {
         <div class="form-error" role="alert">
           Signing in with GitHub didn't work or was cancelled. Please try again.
         </div>
       }
-      <a class="github-button" [href]="signInUrl">Sign in with GitHub</a>
-    </div>
-  </ui-card>
+      <a mat-flat-button class="github-button" [href]="signInUrl">Sign in with GitHub</a>
+    </mat-card-content>
+  </mat-card>
 </div>
