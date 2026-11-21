@@ -1,40 +1,56 @@
+/*
+ * Hoot design tokens on top of the Material 3 system variables (--mat-sys-*).
+ * Colour rules and proportions: see issue #55.
+ */
 :root {
+  /* Bright brand orange for filled surfaces only. White text on it fails contrast (2.0:1). */
+  --hoot-brand: #fea034;
+  --hoot-on-brand: #2d1600;
 
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
+  /* The bright complementary blue is below 3:1 on the surface, so rings use the darker tone. */
+  --hoot-focus-ring: var(--mat-sys-tertiary);
 
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
+  /* Spacing scale: --hoot-space-N is N × 4px. */
+  --hoot-space-1: 4px;
+  --hoot-space-2: 8px;
+  --hoot-space-3: 12px;
+  --hoot-space-4: 16px;
+  --hoot-space-6: 24px;
+  --hoot-space-8: 32px;
+  --hoot-space-10: 40px;
 
-  --foreground: 240 5.9% 10%;
-  --muted-foreground: 240 3.8% 46%;
+  --hoot-transition: 150ms ease-out;
+}
 
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --hoot-transition: 0s;
+  }
 }
 
 h1 {
-  font-size: 2.25rem;
-  font-weight: 700;
-  line-height: 1.2;
+  font: var(--mat-sys-headline-large);
 }
 
 h2 {
-  font-size: 1.875rem;
-  font-weight: 600;
+  font: var(--mat-sys-headline-medium);
 }
 
 h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font: var(--mat-sys-headline-small);
 }
 
 p {
-  font-size: 1rem;
-  line-height: 1.7;
+  font: var(--mat-sys-body-large);
 }
 
-.small-text {
-  font-size: 0.875rem;
+:focus-visible {
+  outline: 2px solid var(--hoot-focus-ring);
+  outline-offset: 2px;
 }

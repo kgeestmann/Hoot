@@ -5,77 +5,77 @@
 
 .sidebar {
   width: 280px;
-  background-color: hsl(var(--bg-light));
-  border-right: 1px solid hsl(var(--border));
+  background-color: var(--mat-sys-surface-container-lowest);
+  border-right: 1px solid var(--mat-sys-outline-variant);
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-raised-m);
+  box-shadow: var(--mat-sys-level1);
 }
 
 .sidebar-header {
-  padding: 2rem 1.5rem 1.5rem;
-  border-bottom: 1px solid hsl(var(--border));
+  padding: var(--hoot-space-8) var(--hoot-space-6) var(--hoot-space-6);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
 .sidebar-header h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: hsl(var(--foreground));
-  margin: 0 0 0.25rem 0;
-  letter-spacing: -0.025em;
+  font: var(--mat-sys-title-large);
+  color: var(--mat-sys-on-surface);
+  margin: 0;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: 1rem 0.75rem;
+  padding: var(--hoot-space-4) var(--hoot-space-3);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--hoot-space-1);
 }
 
 .nav-btn {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--hoot-space-3);
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius);
+  min-height: 48px;
+  padding: 0 var(--hoot-space-4);
+  border-radius: var(--mat-sys-corner-small);
   border: none;
   background: transparent;
-  color: hsl(var(--muted-foreground));
-  font-size: 0.9375rem;
-  font-weight: 500;
-  font-family: inherit;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
   text-align: left;
   cursor: pointer;
   text-decoration: none;
-  transition: all var(--transition);
+  transition: all var(--hoot-transition);
 }
 
 .nav-btn:hover {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--foreground));
+  background-color: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
 }
 
 .nav-btn.active-link {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  font-weight: 600;
+  background-color: var(--hoot-brand);
+  color: var(--hoot-on-brand);
+}
+
+.nav-btn.danger {
+  color: var(--mat-sys-error);
 }
 
 .logout {
   margin-top: auto;
-  padding: 1rem 0.75rem;
-  border-top: 1px solid hsl(var(--border));
+  padding: var(--hoot-space-4) var(--hoot-space-3);
+  border-top: 1px solid var(--mat-sys-outline-variant);
 }
 
 .content {
   flex: 1;
-  padding: 2.5rem 2rem;
+  padding: var(--hoot-space-10) var(--hoot-space-8);
   overflow: auto;
-  background: hsl(var(--bg));
+  background: var(--mat-sys-surface);
 }

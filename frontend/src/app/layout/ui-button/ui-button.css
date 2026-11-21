@@ -4,7 +4,7 @@
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  border-radius: var(--radius);
+  border-radius: var(--mat-sys-corner-small);
   font-size: 0.875rem;
   font-weight: 500;
   font-family: inherit;
@@ -12,12 +12,12 @@
   cursor: pointer;
   position: relative;
   user-select: none;
-  transition: all var(--transition);
+  transition: all var(--hoot-transition);
   border: 1px solid transparent;
 }
 
 .ui-button:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--hoot-focus-ring);
   outline-offset: 2px;
 }
 
@@ -31,8 +31,8 @@
 .ui-button-default {
   height: 2.5rem;
   padding: 0.5rem 1rem;
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background: var(--hoot-brand);
+  color: var(--hoot-on-brand);
   box-shadow:
     inset 0 1px 0 0 rgba(255,255,255,0.1),
     0 2px 4px rgba(0,0,0,0.1),
@@ -56,9 +56,9 @@
 .ui-button-outline {
   height: 2.5rem;
   padding: 0.5rem 1rem;
-  background: hsl(var(--bg-light));
-  color: hsl(var(--foreground));
-  border-color: hsl(var(--border));
+  background: var(--mat-sys-surface-container-lowest);
+  color: var(--mat-sys-on-surface);
+  border-color: var(--mat-sys-outline);
   box-shadow:
     inset 0 1px 0 0 rgba(255,255,255,0.5),
     0 2px 4px rgba(0,0,0,0.06),
@@ -82,8 +82,8 @@
 .ui-button-secondary {
   height: 2.5rem;
   padding: 0.5rem 1rem;
-  background: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
   box-shadow:
     inset 0 1px 0 0 rgba(255,255,255,0.4),
     0 2px 4px rgba(0,0,0,0.05),
@@ -108,11 +108,11 @@
   height: 2.5rem;
   padding: 0.5rem 1rem;
   background: transparent;
-  color: hsl(var(--foreground));
+  color: var(--mat-sys-on-surface);
 }
 
 .ui-button-ghost:hover:not(:disabled) {
-  background: hsl(var(--accent));
+  background: var(--mat-sys-surface-container-high);
   box-shadow: 0 2px 4px rgba(0,0,0,0.06);
   transform: translateY(-1px);
 }
@@ -126,7 +126,7 @@
   height: 2.5rem;
   padding: 0.5rem 1rem;
   background: transparent;
-  color: hsl(var(--primary));
+  color: var(--mat-sys-tertiary);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -139,8 +139,8 @@
 .ui-button-destructive {
   height: 2.5rem;
   padding: 0.5rem 1rem;
-  background: hsl(var(--destructive));
-  color: hsl(var(--destructive-foreground));
+  background: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
   box-shadow:
     inset 0 1px 0 0 rgba(255,255,255,0.15),
     0 2px 4px rgba(0,0,0,0.1),
@@ -167,11 +167,11 @@
   overflow: hidden;
   background: linear-gradient(
     135deg,
-    hsl(var(--primary)) 0%,
-    hsl(var(--primary) / 0.85) 50%,
-    hsl(var(--primary)) 100%
+    var(--hoot-brand) 0%,
+    color-mix(in srgb, var(--hoot-brand) 85%, transparent) 50%,
+    var(--hoot-brand) 100%
   );
-  color: hsl(var(--primary-foreground));
+  color: var(--hoot-on-brand);
   font-weight: 600;
   box-shadow:
     inset 0 1px 0 0 rgba(255,255,255,0.15),
@@ -202,7 +202,7 @@
   height: 2rem;
   padding: 0.25rem 0.75rem;
   font-size: 0.8125rem;
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: var(--mat-sys-corner-extra-small);
 }
 
 .ui-button-lg {
