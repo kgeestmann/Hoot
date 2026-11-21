@@ -11,7 +11,7 @@ pip install -r backend/requirements.txt               # in a venv (backend/venv/
 uvicorn backend.app.main:app --reload                 # from the repo root → http://localhost:8000
 
 cd frontend
-npm install
+npm install                                           # needs Node 24 LTS; Node >= 25 breaks localStorage in the jsdom tests
 npm start                                             # ng serve → http://localhost:4200
 npm test                                              # ng test (Vitest + jsdom)
 npm run build
@@ -29,7 +29,7 @@ The backend reads a `.env` in the repo root via `backend/app/config.py`. Only `S
 
 - **Backend (`backend/app/`)** is a small FastAPI app. `config.py` loads `.env` and holds all settings. `main.py` holds CORS, bcrypt hashing (`hash_password` / `verify_password`), JWT creation and validation (python-jose) and all routes: `/register`, `/login` (OAuth2 *form* data, with `username` = email) and `/profile` (protected). Tables are created with `Base.metadata.create_all` on import. There are no migrations, so a model change needs a fresh DB or a manual `ALTER`.
 - **Auth flow:** `/login` returns `{access_token, token_type}` with `sub` = the user id as a string. `get_current_user` decodes the token and loads the user, and protected routes depend on it.
-- **Frontend (`frontend/src/app/`)** uses standalone components. `services/auth.ts` keeps the JWT in `localStorage` (`token`) and calls the backend at the hard-coded `http://localhost:8000`. `guards/auth-guard.ts` protects `/profile`, and `guards/public-guard.ts` keeps logged-in users away from `/login` (routes are in `app.routes.ts`). Shared UI lives in `layout/` (sidenav, ui-button, ui-card).
+- **Frontend (`frontend/src/app/`)** uses standalone components and is **zoneless** (no zone.js): the view only re-renders on signal updates, template events or `markForCheck`. Keep state that templates read in signals; a plain field set inside `subscribe` won't show up (see #35). `services/auth.ts` keeps the JWT in `localStorage` (`token`) and calls the backend at the hard-coded `http://localhost:8000`. `guards/auth-guard.ts` protects `/profile`, and `guards/public-guard.ts` keeps logged-in users away from `/login` (routes are in `app.routes.ts`). Shared UI lives in `layout/` (sidenav, ui-button, ui-card).
 - **Contract between the two halves:** the login request is `application/x-www-form-urlencoded` (because of `OAuth2PasswordRequestForm`), not JSON. If you change the backend auth or the CORS origins, check `auth.ts` and `CORS_ORIGINS` as well.
 
 ## Keeping docs in sync

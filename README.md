@@ -535,6 +535,12 @@ npm install
 ng serve
 ```
 
+Requires **Node.js 24 LTS** (Angular 21 supports 20.19+, but Node 25+ breaks `localStorage` in the unit tests). Run the tests with:
+
+```
+npm test
+```
+
 Frontend URL:
 
 ```
