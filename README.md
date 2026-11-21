@@ -111,11 +111,13 @@ Windows
 venv\Scripts\activate
 ```
 
-Install dependencies:
+Install dependencies (the runtime dependencies plus pytest):
 
 ```
-pip install -r backend/requirements.txt
+pip install -r backend/requirements-dev.txt
 ```
+
+`backend/requirements.txt` holds only what the backend needs at runtime, e.g. for a production install.
 
 ---
 
