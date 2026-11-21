@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth';
 import { UiCardComponent } from '../../layout/ui-card/ui-card';
@@ -8,10 +8,10 @@ import { UiCardComponent } from '../../layout/ui-card/ui-card';
   standalone: true,
   imports: [CommonModule, UiCardComponent],
   templateUrl: './profile.html',
-  styleUrls: ['./profile.css']
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrls: ['./profile.css'],
 })
 export class Profile implements OnInit {
-
   user: any;
 
   constructor(public auth: AuthService) {}
@@ -21,7 +21,7 @@ export class Profile implements OnInit {
   }
 
   loadProfile() {
-    this.auth.getProfile().subscribe(res => {
+    this.auth.getProfile().subscribe((res) => {
       this.user = res;
     });
   }

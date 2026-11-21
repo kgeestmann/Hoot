@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -11,10 +11,10 @@ import { UiCardComponent } from '../../layout/ui-card/ui-card';
   standalone: true,
   imports: [FormsModule, CommonModule, UiButtonComponent, UiCardComponent],
   templateUrl: './login.html',
-  styleUrls: ['./login.css']
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrls: ['./login.css'],
 })
 export class Login {
-
   email = '';
   password = '';
   error = '';
@@ -22,7 +22,7 @@ export class Login {
   constructor(
     private auth: AuthService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   onLogin() {
@@ -34,8 +34,7 @@ export class Login {
       error: () => {
         this.error = 'Login fehlgeschlagen';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
-
 }

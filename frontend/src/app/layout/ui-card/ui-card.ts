@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,7 +6,8 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './ui-card.html',
-  styleUrls: ['./ui-card.css']
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrls: ['./ui-card.css'],
 })
 export class UiCardComponent {
   @Input() title?: string;
