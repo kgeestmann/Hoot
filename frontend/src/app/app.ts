@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Sidenav } from './layout/sidenav/sidenav';
 
@@ -6,6 +6,7 @@ import { Sidenav } from './layout/sidenav/sidenav';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, Sidenav],
-  templateUrl: './app.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './app.html',
 })
 export class App {}

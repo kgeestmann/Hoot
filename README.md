@@ -543,7 +543,7 @@ npm install
 ng serve
 ```
 
-Requires **Node.js 24 LTS** (Angular 21 supports 20.19+, but Node 25+ breaks `localStorage` in the unit tests). Run the tests with:
+Requires **Node.js 24 LTS**, at least 24.15 (Angular 22 supports `^22.22.3 || ^24.15.0 || >=26`, but Node 25+ breaks `localStorage` in the unit tests). Run the tests with:
 
 ```
 npm test
