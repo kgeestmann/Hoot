@@ -1,15 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 import bcrypt
 from datetime import datetime, timedelta, timezone
 import jwt
 
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import APIKeyCookie
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 
-from .config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, CORS_ORIGINS, SECRET_KEY
+from .config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, COOKIE_SECURE, CORS_ORIGINS, SECRET_KEY
 from .database import engine, SessionLocal
 from . import models, schemas
 from .schemas import MAX_PASSWORD_BYTES
@@ -39,7 +39,34 @@ def verify_password(password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+SESSION_COOKIE_NAME = "hoot_session"
+
+# auto_error=False so that a missing cookie gets the same 401 as an invalid one.
+session_cookie = APIKeyCookie(name=SESSION_COOKIE_NAME, auto_error=False)
+
+
+def set_session_cookie(response: Response, token: str) -> None:
+    """Store the session JWT in a cookie that JavaScript cannot read."""
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+    )
+
+
+def clear_session_cookie(response: Response) -> None:
+    """Tell the browser to delete the session cookie."""
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+    )
 
 
 def get_db():
@@ -59,14 +86,17 @@ def create_access_token(data: dict):
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: str | None = Depends(session_cookie),
     db: Session = Depends(get_db)
 ):
-    """Return the user the bearer token belongs to, or raise 401."""
+    """Return the user the session cookie belongs to, or raise 401."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
     )
+
+    if token is None:
+        raise credentials_exception
 
     try:
         payload = jwt.decode(
@@ -115,11 +145,13 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
-@app.post("/login")
+@app.post("/login", status_code=status.HTTP_204_NO_CONTENT)
 def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    """Check email and password and start a session via the session cookie."""
     db_user = db.query(models.User).filter(
         models.User.email == form_data.username
     ).first()
@@ -139,11 +171,13 @@ def login(
     access_token = create_access_token(
         data={"sub": str(db_user.id)}
     )
+    set_session_cookie(response, access_token)
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+
+@app.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(response: Response):
+    """End the session by deleting the session cookie."""
+    clear_session_cookie(response)
 
 
 @app.get("/profile", response_model=schemas.UserResponse)

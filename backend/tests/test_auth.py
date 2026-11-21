@@ -5,7 +5,9 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
+from backend.app import main
 from backend.app.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
+from backend.app.main import SESSION_COOKIE_NAME
 
 
 def login(client, email, password):
@@ -32,8 +34,16 @@ def in_minutes(minutes):
 
 
 def get_profile(client, token):
-    """Request /profile with the given bearer token and return the response."""
-    return client.get("/profile", headers={"Authorization": f"Bearer {token}"})
+    """Request /profile with the given token as session cookie and return the response."""
+    client.cookies.set(SESSION_COOKIE_NAME, token)
+    return client.get("/profile")
+
+
+def session_cookie_header(response):
+    """Return the Set-Cookie header for the session cookie."""
+    headers = [h for h in response.headers.get_list("set-cookie") if h.startswith(f"{SESSION_COOKIE_NAME}=")]
+    assert len(headers) == 1
+    return headers[0]
 
 
 def test_register_returns_the_new_user(client):
@@ -69,17 +79,43 @@ def test_login_with_unknown_email_is_unauthorized(client):
 
 
 def test_login_token_expires_after_the_configured_minutes_in_utc(client, registered_user):
-    token = login(client, registered_user["email"], registered_user["password"]).json()["access_token"]
+    token = login(client, registered_user["email"], registered_user["password"]).cookies[SESSION_COOKIE_NAME]
 
     expires_at = datetime.fromtimestamp(jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])["exp"], timezone.utc)
 
     assert abs(expires_at - in_minutes(ACCESS_TOKEN_EXPIRE_MINUTES)) < timedelta(seconds=10)
 
 
-def test_profile_returns_the_logged_in_user(client, registered_user):
-    token = login(client, registered_user["email"], registered_user["password"]).json()["access_token"]
+def test_login_sets_an_httponly_session_cookie_and_returns_no_token(client, registered_user):
+    response = login(client, registered_user["email"], registered_user["password"])
 
-    response = client.get("/profile", headers={"Authorization": f"Bearer {token}"})
+    cookie = session_cookie_header(response).lower()
+    assert response.status_code == 204
+    assert response.content == b""
+    assert "httponly" in cookie
+    assert "samesite=lax" in cookie
+    assert "path=/" in cookie
+    assert f"max-age={ACCESS_TOKEN_EXPIRE_MINUTES * 60}" in cookie
+
+
+def test_session_cookie_is_secure_when_configured(client, registered_user, monkeypatch):
+    monkeypatch.setattr(main, "COOKIE_SECURE", True)
+
+    response = login(client, registered_user["email"], registered_user["password"])
+
+    assert "secure" in session_cookie_header(response).lower()
+
+
+def test_failed_login_sets_no_session_cookie(client, registered_user):
+    response = login(client, registered_user["email"], "falsch")
+
+    assert SESSION_COOKIE_NAME not in response.cookies
+
+
+def test_profile_returns_the_logged_in_user(client, registered_user):
+    login(client, registered_user["email"], registered_user["password"])
+
+    response = client.get("/profile")
 
     assert response.status_code == 200
     assert response.json()["email"] == registered_user["email"]
@@ -90,9 +126,30 @@ def test_profile_without_token_is_unauthorized(client):
 
 
 def test_profile_with_invalid_token_is_unauthorized(client):
-    response = client.get("/profile", headers={"Authorization": "Bearer not-a-jwt"})
+    assert get_profile(client, "not-a-jwt").status_code == 401
+
+
+def test_profile_ignores_a_bearer_header(client, registered_user):
+    token = login(client, registered_user["email"], registered_user["password"]).cookies[SESSION_COOKIE_NAME]
+    client.cookies.clear()
+
+    response = client.get("/profile", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 401
+
+
+def test_logout_deletes_the_session_cookie(client, registered_user):
+    login(client, registered_user["email"], registered_user["password"])
+
+    response = client.post("/logout")
+
+    assert response.status_code == 204
+    assert "max-age=0" in session_cookie_header(response).lower()
+    assert client.get("/profile").status_code == 401
+
+
+def test_logout_without_session_succeeds(client):
+    assert client.post("/logout").status_code == 204
 
 
 @pytest.mark.usefixtures("registered_user")

@@ -27,10 +27,7 @@ export class Login {
 
   onLogin() {
     this.auth.login(this.email, this.password).subscribe({
-      next: (res: any) => {
-        this.auth.saveToken(res.access_token);
-        this.router.navigate(['/']);
-      },
+      next: () => this.router.navigate(['/']),
       error: () => {
         this.error = 'Login fehlgeschlagen';
         this.cdr.detectChanges();

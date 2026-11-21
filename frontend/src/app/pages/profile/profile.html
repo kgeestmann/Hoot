@@ -1,14 +1,16 @@
-<div class="profile-page" *ngIf="user">
-  <ui-card title="Profile" description="Deine Kontodaten im Überblick." elevation="medium">
-    <div class="profile-grid">
-      <div class="profile-field">
-        <span class="label">ID</span>
-        <span class="value">{{ user.id }}</span>
+@if (user(); as user) {
+  <div class="profile-page">
+    <ui-card title="Profile" description="Deine Kontodaten im Überblick." elevation="medium">
+      <div class="profile-grid">
+        <div class="profile-field">
+          <span class="label">ID</span>
+          <span class="value">{{ user.id }}</span>
+        </div>
+        <div class="profile-field">
+          <span class="label">E-Mail</span>
+          <span class="value">{{ user.email }}</span>
+        </div>
       </div>
-      <div class="profile-field">
-        <span class="label">E-Mail</span>
-        <span class="value">{{ user.email }}</span>
-      </div>
-    </div>
-  </ui-card>
-</div>
+    </ui-card>
+  </div>
+}

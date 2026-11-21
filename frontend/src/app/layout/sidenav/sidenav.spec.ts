@@ -1,21 +1,21 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
+import { AuthService } from '../../services/auth';
 import { Sidenav } from './sidenav';
 
 describe('Sidenav', () => {
   let component: Sidenav;
   let fixture: ComponentFixture<Sidenav>;
 
-  async function render(token: string | null) {
-    localStorage.clear();
-    if (token) {
-      localStorage.setItem('token', token);
-    }
+  async function render(loggedIn: boolean) {
     await TestBed.configureTestingModule({
       imports: [Sidenav],
-      providers: [provideHttpClient(), provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isLoggedIn: signal(loggedIn), logout: vi.fn() } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Sidenav);
@@ -29,17 +29,17 @@ describe('Sidenav', () => {
   }
 
   it('should create', async () => {
-    await render(null);
+    await render(false);
     expect(component).toBeTruthy();
   });
 
   it('shows Login when logged out', async () => {
-    const element = await render(null);
+    const element = await render(false);
     expect(navLabels(element)).toEqual(['Home', 'Login']);
   });
 
   it('shows Profile and Logout when logged in', async () => {
-    const element = await render('abc');
+    const element = await render(true);
     expect(navLabels(element)).toEqual(['Home', 'Profile', 'Logout']);
   });
 });

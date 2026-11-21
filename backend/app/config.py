@@ -24,8 +24,21 @@ def read_secret_key() -> str:
 
 SECRET_KEY = read_secret_key()
 
+
+def read_bool(name: str, default: bool) -> bool:
+    """Return the environment variable as a bool; only "true" and "false" are accepted."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    if value.lower() not in ("true", "false"):
+        raise RuntimeError(f'{name} must be "true" or "false", got "{value}".')
+    return value.lower() == "true"
+
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:4200,http://127.0.0.1:4200").split(",")
+# Chrome, Edge and Firefox accept Secure cookies on http://localhost, so this stays on in
+# development too. Safari doesn't; set COOKIE_SECURE=false there.
+COOKIE_SECURE = read_bool("COOKIE_SECURE", default=True)
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parent.parent / "hoot.db"
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DATABASE_PATH.as_posix()}")
