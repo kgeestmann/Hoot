@@ -16,12 +16,14 @@ os.environ["GITHUB_CALLBACK_URL"] = "http://testserver/auth/github/callback"
 os.environ["FRONTEND_URL"] = "http://frontend.test"
 os.environ["TOKEN_ENCRYPTION_KEY"] = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
 
+import httpx
 from fastapi.testclient import TestClient
 
 from backend.app import models
 from backend.app.crypto import encrypt_token
 from backend.app.database import SessionLocal, engine
-from backend.app.main import app
+from backend.app.main import app, get_github_client
+from backend.tests.fake_github import FakeGitHub
 
 
 @pytest.fixture
@@ -44,3 +46,17 @@ def user(client):
         db.add(stored)
         db.commit()
         return {"id": stored.id, "login": stored.login}
+
+
+@pytest.fixture
+def fake_github(client):
+    """Route the backend's GitHub calls to a FakeGitHub and return it."""
+    fake = FakeGitHub()
+
+    def mocked_client():
+        with httpx.Client(transport=httpx.MockTransport(fake.handle)) as mocked:
+            yield mocked
+
+    app.dependency_overrides[get_github_client] = mocked_client
+    yield fake
+    app.dependency_overrides.pop(get_github_client, None)

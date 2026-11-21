@@ -9,7 +9,8 @@ class User(Base):
     github_id = Column(Integer, unique=True, index=True, nullable=False)
     login = Column(String, nullable=False)
     # Tokens are encrypted with crypto.encrypt_token; expiry times are Unix timestamps.
-    github_access_token = Column(String, nullable=False)
+    # Empty when GitHub rejected them and the user has to sign in again.
+    github_access_token = Column(String)
     github_access_token_expires_at = Column(Integer)
     github_refresh_token = Column(String)
     github_refresh_token_expires_at = Column(Integer)

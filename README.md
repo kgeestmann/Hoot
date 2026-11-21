@@ -4,7 +4,7 @@ One page for everything that is waiting on you on GitHub: assigned issues, your 
 
 Built with **FastAPI**, **SQLite**, **Angular** and **JWT** sessions.
 
-> **Status:** early. Signing in with GitHub works; the overview page is next (see the open issues).
+> **Status:** early. Signing in with GitHub and the overview API (`GET /overview`) work; the overview page is next (see the open issues).
 
 ---
 
@@ -37,7 +37,9 @@ Hoot
 ├── backend
 │   └── app
 │       ├── main.py        routes, sessions, GitHub sign-in flow
-│       ├── github.py      calls to GitHub (authorize URL, code exchange, user)
+│       ├── github.py      calls to GitHub (authorize URL, tokens, user, GraphQL)
+│       ├── github_tokens.py  storing and refreshing the users' GitHub tokens
+│       ├── overview.py    GraphQL searches behind GET /overview
 │       ├── crypto.py      encryption of the stored GitHub tokens
 │       ├── config.py      settings from .env
 │       ├── models.py
@@ -123,7 +125,7 @@ Hoot signs users in through a GitHub App. For local development, register your o
    * **Enable Device Flow:** off
 5. *Post installation*: leave **Setup URL** empty
 6. **Webhook:** uncheck *Active*
-7. **Repository permissions:** Issues → *Read-only*, Pull requests → *Read-only* (Metadata is set automatically); everything else stays *No access*
+7. **Repository permissions:** Issues, Pull requests, Checks and Commit statuses → *Read-only* (Metadata is set automatically); everything else stays *No access*. Checks and Commit statuses are needed for the CI status of your pull requests on the overview. After adding permissions to an existing app, accept them on the installation (GitHub → Settings → Applications → Installed GitHub Apps)
 8. **Where can this GitHub App be installed?** *Only on this account* for development; *Any account* if it should also be installed on organizations
 9. Create the app, then **Generate a new client secret** (GitHub shows it only once)
 10. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
@@ -217,7 +219,7 @@ Connection string: read from `DATABASE_URL` in `.env` (see *Environment Variable
 sqlite:///<repo>/backend/hoot.db
 ```
 
-The file and the `users` table are created automatically on first start. There are no migrations: after a model change, delete the file to start with an empty database. **A `hoot.db` from the email/password version must be deleted**, because the `users` table has different columns now.
+The file and the `users` table are created automatically on first start. There are no migrations: after a model change, delete the file to start with an empty database. **A `hoot.db` from before the overview API (#25) must be deleted**, because `github_access_token` may be empty now; signing in again creates the user anew.
 
 ---
 
@@ -234,7 +236,7 @@ Table structure:
 | id                              | Primary key (the `sub` of Hoot's session JWT)  |
 | github_id                       | Unique numeric GitHub user id                  |
 | login                           | GitHub login, updated on every sign-in         |
-| github_access_token             | Encrypted GitHub user access token             |
+| github_access_token             | Encrypted GitHub user access token; empty after GitHub rejected it |
 | github_access_token_expires_at  | Unix timestamp, or empty if it doesn't expire  |
 | github_refresh_token            | Encrypted refresh token, if GitHub issued one  |
 | github_refresh_token_expires_at | Unix timestamp                                 |
@@ -249,12 +251,27 @@ File: `schemas.py`
 
 UserResponse
 
-Returned to frontend.
+Returned by `/profile`.
 
 ```
 id
 login
 ```
+
+Overview
+
+Returned by `/overview`: four lists (`assigned_issues`, `pull_requests`, `review_requests`, `mentions`) of items with
+
+```
+kind          "issue" or "pull_request"
+title
+repository    owner/name
+number
+url
+updated_at
+```
+
+Items in `pull_requests` also carry `ci_status` (GitHub's `SUCCESS`, `FAILURE`, `PENDING`, `ERROR`, `EXPECTED`, or `null` without checks) and `review_decision` (`APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED`, or `null`).
 
 ---
 
@@ -295,7 +312,14 @@ The OAuth flow follows the security requirements in issue #44:
 * **PKCE:** the authorize request carries an S256 `code_challenge`, the code exchange the matching `code_verifier`.
 * **No open redirect:** after the sign-in the browser always goes to `FRONTEND_URL` (or `FRONTEND_URL/login?error=github` if it failed or was cancelled). Redirect parameters are ignored.
 * **No token in a URL:** the Hoot session is handed over as an HttpOnly cookie, never as a query parameter.
-* **Encrypted tokens:** GitHub access and refresh tokens are stored encrypted with `TOKEN_ENCRYPTION_KEY` (`crypto.py`). Refreshing expired GitHub tokens comes with the first GitHub API calls (#25).
+* **Encrypted tokens:** GitHub access and refresh tokens are stored encrypted with `TOKEN_ENCRYPTION_KEY` (`crypto.py`).
+
+GitHub user tokens expire after 8 hours; the refresh token lasts 6 months. Every call to GitHub on the user's behalf goes through `github_tokens.call_as_user`:
+
+* If the access token has expired (or expires within a minute), it is refreshed first, and the new pair is stored encrypted.
+* If GitHub still answers `401`, the token is refreshed once more and the call retried.
+* If there is no refresh token, it has expired, GitHub rejects it, or the retried call gets `401` again (e.g. the user revoked Hoot on GitHub), the stored tokens are deleted, the session cookie is cleared and the route answers `401`. The frontend then sends the user to the sign-in.
+* If GitHub can't be reached or answers with an error, the route answers `502` and the tokens stay.
 
 ---
 
@@ -419,6 +443,27 @@ Returns:
   "login": "octocat"
 }
 ```
+
+---
+
+Overview (Protected Route)
+
+```
+GET /overview
+```
+
+Requires a valid session cookie. Runs four GitHub searches as the user in one GraphQL query, each limited to the 50 most recently updated results, and only covering repositories where the GitHub App is installed:
+
+| List              | GitHub search                                     |
+| ----------------- | ------------------------------------------------- |
+| `assigned_issues` | `is:open is:issue assignee:@me archived:false`    |
+| `pull_requests`   | `is:open is:pr author:@me archived:false`         |
+| `review_requests` | `is:open is:pr review-requested:@me archived:false` |
+| `mentions`        | `is:open mentions:@me archived:false`             |
+
+Mentions whose latest comment comes from a bot (or, without comments, that a bot opened) are left out. The response shape is described under *Pydantic Schemas*.
+
+Returns `401` (and clears the session cookie) when the GitHub tokens can't be renewed, and `502` when GitHub fails; see *GitHub Sign-in*.
 
 ---
 
@@ -590,7 +635,6 @@ GitHub tokens are encrypted at rest, never returned by an API response and never
 
 Possible extensions:
 
-* refreshing expired GitHub tokens (#25)
 * HTTPS support
 * deployment with Docker containers
 
