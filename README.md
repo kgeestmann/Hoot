@@ -22,10 +22,9 @@ Flow:
 
 1. User registers or logs in via Angular frontend
 2. FastAPI validates credentials
-3. FastAPI returns a JWT access token
-4. Angular stores the token
-5. Angular sends the token with requests to protected endpoints
-6. FastAPI validates the token and returns protected data
+3. FastAPI sets the JWT as an HttpOnly session cookie (`hoot_session`)
+4. The browser sends the cookie with every request to the backend
+5. FastAPI validates the token and returns protected data
 
 ---
 
@@ -110,6 +109,7 @@ SECRET_KEY=<output of the command below>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
+COOKIE_SECURE=true
 ```
 
 Explanation:
@@ -129,6 +129,9 @@ Defines how long a login token remains valid. Default: `60`.
 
 CORS_ORIGINS
 Comma-separated list of frontend origins allowed to call the API. Default: `http://localhost:4200,http://127.0.0.1:4200`.
+
+COOKIE_SECURE
+`true` or `false`: whether the session cookie gets the `Secure` flag (HTTPS only). Default: `true`. Chrome, Edge and Firefox accept Secure cookies on `http://localhost`, so local development works with the default. Safari doesn't; set `false` there.
 
 DATABASE_URL
 Optional SQLAlchemy connection string. Default: the SQLite file `backend/hoot.db`.
@@ -314,17 +317,13 @@ get_current_user()
 
 Steps:
 
-1. Extract token from Authorization header
-2. Decode JWT
+1. Read the token from the `hoot_session` cookie
+2. Decode JWT (requires `exp` and `sub`)
 3. Extract user id
 4. Query database
 5. Return authenticated user
 
-Header format:
-
-```
-Authorization: Bearer <token>
-```
+A missing, invalid or expired cookie returns `401`. An `Authorization` header is not accepted.
 
 ---
 
@@ -387,16 +386,25 @@ Process:
 1. Verify email
 2. Verify password
 3. Generate JWT
-4. Return access token
+4. Set it as session cookie
 
-Response:
+Response: `204 No Content` with
 
 ```
-{
-  "access_token": "TOKEN",
-  "token_type": "bearer"
-}
+Set-Cookie: hoot_session=<jwt>; HttpOnly; Max-Age=3600; Path=/; SameSite=lax; Secure
 ```
+
+The token is never in the response body, so JavaScript cannot read it.
+
+---
+
+Logout
+
+```
+POST /logout
+```
+
+Deletes the session cookie. Returns `204 No Content`, also when nobody was logged in.
 
 ---
 
@@ -406,7 +414,7 @@ Profile (Protected Route)
 GET /profile
 ```
 
-Requires a valid JWT.
+Requires a valid session cookie.
 
 Returns:
 
@@ -445,8 +453,8 @@ Angular sends login request to backend.
 
 On success:
 
-* JWT token saved in localStorage
-* User redirected to `/profile`
+* the backend sets the session cookie
+* the frontend loads the user from `/profile` and redirects to `/`
 
 ---
 
@@ -491,21 +499,13 @@ password=password
 
 ---
 
-# Token Storage
+# Session Handling
 
-Token is stored in:
+The session token lives only in the HttpOnly cookie `hoot_session`. The frontend never sees it.
 
-```
-localStorage
-```
-
-Example:
-
-```
-localStorage.setItem("token", token)
-```
-
-Used for authenticated requests.
+* `services/session-interceptor.ts` sends every request to the backend with `withCredentials: true`, so the browser includes the cookie. A `401` during an active session (expired token) clears the session and opens `/login`.
+* `services/auth.ts` keeps the logged-in user in a signal. At startup the app asks `GET /profile` once, and the guards reuse that answer.
+* Open the frontend as `http://localhost:4200`, not `127.0.0.1`. The cookie belongs to `localhost`, and only the same site gets it.
 
 ---
 
@@ -584,11 +584,11 @@ http://localhost:4200
 2. User submits credentials
 3. Angular sends request to `/login`
 4. FastAPI validates credentials
-5. FastAPI returns JWT token
-6. Angular stores token
-7. Angular requests `/profile`
-8. Token is validated
-9. Backend returns user data
+5. FastAPI sets the HttpOnly session cookie
+6. Angular requests `/profile`; the browser sends the cookie
+7. Token is validated
+8. Backend returns user data
+9. Logout calls `POST /logout`, which deletes the cookie
 
 ---
 
@@ -601,9 +601,11 @@ JWT tokens contain:
 * user id
 * expiration timestamp
 
-Protected routes require valid tokens.
+Protected routes require a valid session cookie.
 
 Tokens expire automatically.
+
+The cookie is `HttpOnly` (unreadable for JavaScript, so XSS cannot steal it), `SameSite=Lax` (other sites can't send it along with POST requests) and `Secure` by default.
 
 ---
 
@@ -612,10 +614,8 @@ Tokens expire automatically.
 Possible extensions:
 
 * refresh tokens
-* logout system
 * email verification
 * password reset
-* Angular route guards
 * HTTPS support
 * deployment with Docker containers
 

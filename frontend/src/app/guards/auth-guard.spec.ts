@@ -1,17 +1,37 @@
 import { TestBed } from '@angular/core/testing';
-import { CanActivateFn } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  provideRouter,
+  Router,
+  RouterStateSnapshot,
+  UrlTree,
+} from '@angular/router';
+import { firstValueFrom, Observable, of } from 'rxjs';
 
+import { AuthService, User } from '../services/auth';
 import { authGuard } from './auth-guard';
 
 describe('authGuard', () => {
-  const executeGuard: CanActivateFn = (...guardParameters) =>
-    TestBed.runInInjectionContext(() => authGuard(...guardParameters));
+  function runGuard(user: User | null) {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { loadSession: () => of(user) } },
+      ],
+    });
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+    );
+    return firstValueFrom(result as Observable<boolean | UrlTree>);
+  }
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
+  it('lets logged-in users through', async () => {
+    expect(await runGuard({ id: 1, email: 'user@example.com' })).toBe(true);
   });
 
-  it('should be created', () => {
-    expect(executeGuard).toBeTruthy();
+  it('sends everyone else to /login', async () => {
+    const result = await runGuard(null);
+
+    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/login');
   });
 });

@@ -8,6 +8,8 @@ import pytest
 # so the test environment has to be in place before it is imported.
 os.environ["SECRET_KEY"] = "test-secret-key-for-the-backend-tests"
 os.environ["DATABASE_URL"] = f"sqlite:///{Path(tempfile.mkdtemp(), 'test.db').as_posix()}"
+# The test client talks plain http://testserver and would not send a Secure cookie back.
+os.environ["COOKIE_SECURE"] = "false"
 
 from fastapi.testclient import TestClient
 

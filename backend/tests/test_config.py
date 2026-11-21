@@ -1,6 +1,6 @@
 import pytest
 
-from backend.app.config import MIN_SECRET_KEY_BYTES, read_secret_key
+from backend.app.config import MIN_SECRET_KEY_BYTES, read_bool, read_secret_key
 
 
 def test_missing_secret_key_is_rejected(monkeypatch):
@@ -28,3 +28,23 @@ def test_secret_key_length_is_measured_in_bytes(monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "ä" * 16)
 
     assert read_secret_key() == "ä" * 16
+
+
+def test_bool_setting_falls_back_to_the_default(monkeypatch):
+    monkeypatch.delenv("COOKIE_SECURE", raising=False)
+
+    assert read_bool("COOKIE_SECURE", default=True) is True
+
+
+@pytest.mark.parametrize(("value", "expected"), [("true", True), ("FALSE", False)])
+def test_bool_setting_accepts_true_and_false(monkeypatch, value, expected):
+    monkeypatch.setenv("COOKIE_SECURE", value)
+
+    assert read_bool("COOKIE_SECURE", default=True) is expected
+
+
+def test_bool_setting_rejects_other_values(monkeypatch):
+    monkeypatch.setenv("COOKIE_SECURE", "yes")
+
+    with pytest.raises(RuntimeError, match="COOKIE_SECURE"):
+        read_bool("COOKIE_SECURE", default=True)

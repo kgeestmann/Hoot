@@ -1,28 +1,15 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { AuthService } from '../../services/auth';
 import { UiCardComponent } from '../../layout/ui-card/ui-card';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, UiCardComponent],
+  imports: [UiCardComponent],
   templateUrl: './profile.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./profile.css'],
 })
-export class Profile implements OnInit {
-  user: any;
-
-  constructor(public auth: AuthService) {}
-
-  ngOnInit() {
-    this.loadProfile();
-  }
-
-  loadProfile() {
-    this.auth.getProfile().subscribe((res) => {
-      this.user = res;
-    });
-  }
+export class Profile {
+  readonly user = inject(AuthService).user;
 }
