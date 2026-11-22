@@ -276,15 +276,14 @@ Table structure:
 
 GitHub tokens are **never stored in plain text** and never leave the backend.
 
-Table `hidden_scopes` holds the overview filters, one row per hidden owner or repository:
+Two tables hold the overview filters, one row per entry:
 
-| Column  | Description                                                   |
-| ------- | ------------------------------------------------------------- |
-| id      | Primary key                                                   |
-| user_id | The user (`users.id`)                                         |
-| scope   | Lowercase owner (`octo-org`) or repository (`octo-org/hoot`)  |
+| Table           | Columns                   | Holds                                                         |
+| --------------- | ------------------------- | ------------------------------------------------------------- |
+| `hidden_scopes` | `id`, `user_id`, `scope`  | Hidden owners (`octo-org`) and repositories (`octo-org/hoot`), lowercase |
+| `shown_labels`  | `id`, `user_id`, `label`  | Labels picked in the label filter, lowercase                  |
 
-A new table is created on the next start, so this needs no fresh database.
+New tables are created on the next start, so they need no fresh database.
 
 ---
 
@@ -320,10 +319,11 @@ OverviewFilters
 Returned and accepted by `/overview/filters`.
 
 ```
-hidden    list of owners ("octo-org") or repositories ("octo-org/hoot"), at most 500
+hidden    list of owners ("octo-org") or repositories ("octo-org/hoot") to hide, at most 500
+labels    list of label names to show only (empty: every label), at most 100, each at most 50 characters
 ```
 
-Entries are trimmed, lowercased (GitHub names are case-insensitive), de-duplicated and sorted. Anything else answers `422`.
+Entries are trimmed, lowercased (GitHub names are case-insensitive), de-duplicated and sorted. Anything else answers `422`. A request without `labels` shows every label.
 
 GitHubAccess
 
@@ -570,10 +570,10 @@ GET /overview/filters
 PUT /overview/filters
 ```
 
-Requires a valid session cookie. `GET` returns what the user hid from the overview, `PUT` replaces it and returns it as stored:
+Requires a valid session cookie. `GET` returns the user's filters, `PUT` replaces them and returns them as stored:
 
 ```
-{ "hidden": ["dipt-pa1469-ht26", "kgeestmann/old-repo"] }
+{ "hidden": ["dipt-pa1469-ht26", "kgeestmann/old-repo"], "labels": ["bug"] }
 ```
 
 The frontend applies the filters to the loaded overview; `/overview` itself always returns everything.
@@ -647,12 +647,15 @@ Overview Page
 
 The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` and `GET /github/installations` side by side:
 
-* **Four sections:** your pull requests, review requests, assigned issues and mentions, each with the number of items. Each list is a Material nav list (`overview-section`), and every item is one clickable row to GitHub: the title, a line with kind, `owner/repo#number` and how long ago it was updated ("3 hours ago", `item/item-meta`), and a line of chips (`item/item-chips`):
+* **Four tabs** (`mat-tab-group`): *My pull requests*, *Review requests*, *Assigned* and *Mentions*, each with its number of items. The page opens on the first tab with items. Each list is a Material nav list (`overview-section`), and every item is one clickable row to GitHub: the title, a line with kind, `owner/repo#number` and how long ago it was updated ("3 hours ago", `item/item-meta`), and a line of chips (`item/item-chips`):
   * **Status** of your pull requests: CI (`CI passing`, `CI failing`, `CI running`) and review (`Approved`, `Changes requested`, `Review required`), always as text with an icon (✓ check, ✕ close, 🕒 schedule) and a colour, never colour alone.
   * **Labels** in GitHub's colours. The text is dark or white, whichever has more contrast on the label colour (`item/label-colors.ts`), as on GitHub.
-* **Filter:** a collapsible panel lists every owner and repository in the overview (and hidden ones without items) as checkboxes. Unchecking hides it; new owners and repositories show up automatically. The section counts follow the filter, and the panel says how many items are hidden. Changes are saved per user with `PUT /overview/filters`, one after the other; if saving fails, the filter still applies until the page is reloaded.
-* **States:** a skeleton while loading, an empty message per section, "Nothing waiting on you 🎉" when all four are empty, and an error with **Try again** that says whether Hoot's server or GitHub failed.
-* **GitHub access card** (`pages/overview/github-access`): if the app is installed nowhere, it replaces the sections and asks the user to install it, since every list would otherwise be empty. Otherwise it sits below the sections and lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
+* **Filter bar** above the tabs (`filters/filter-bar`): *Owner*, *Repository* and *Label* buttons open Material menus whose options are `menuitemcheckbox`es with a `mat-pseudo-checkbox`, so they work with the keyboard. A button names its state ("Owner: 2 of 3", "Label: bug"), and the bar ends with "Showing 12 of 15 · 3 hidden" and *Clear filters*.
+  * **Owner and repository:** unchecking hides them. New owners and repositories show up automatically, and a hidden owner's repositories are disabled.
+  * **Label:** picking labels shows only items carrying at least one of them. With none picked, every item shows.
+  * The tab counts follow the filters, and a tab whose items are all filtered out says so. Changes are saved per user with `PUT /overview/filters`, one after the other. If saving fails, the filters still apply until the page is reloaded.
+* **States:** a skeleton while loading, an empty message per tab, "Nothing waiting on you 🎉" when all four are empty, and an error with **Try again** that says whether Hoot's server or GitHub failed.
+* **GitHub access card** (`pages/overview/github-access`): if the app is installed nowhere, it replaces the tabs and asks the user to install it, since every list would otherwise be empty. Otherwise it sits below the tabs and lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
 
 ---
 

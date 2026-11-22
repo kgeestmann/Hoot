@@ -1,0 +1,32 @@
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hoot-space-2);
+}
+
+.filter-button.active {
+  border-color: var(--mat-sys-primary);
+  background: color-mix(in srgb, var(--hoot-brand) 18%, transparent);
+}
+
+.summary {
+  margin-left: var(--hoot-space-2);
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.save-error {
+  margin: var(--hoot-space-2) 0 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-error);
+}
+
+.label-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: var(--hoot-space-2);
+  border-radius: var(--mat-sys-corner-full);
+  outline: 1px solid var(--mat-sys-outline-variant);
+}

@@ -1,15 +1,20 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { API_URL } from '../api';
 
-interface OverviewFilters {
-  /** Lowercase owners ("octo-org") and repositories ("octo-org/hoot") hidden from the overview. */
+/** The overview's filters as stored per user on the backend; all entries lowercase. */
+export interface OverviewFilters {
+  /** Owners ("octo-org") and repositories ("octo-org/hoot") hidden from the overview. */
   hidden: string[];
+  /** Labels to show only; empty means every label shows. */
+  labels: string[];
 }
 
-/** Loads and saves what the user hid from the overview; stored per user on the backend. */
+export const NO_FILTERS: OverviewFilters = { hidden: [], labels: [] };
+
+/** Loads and saves the overview's filters. */
 @Injectable({
   providedIn: 'root',
 })
@@ -17,13 +22,11 @@ export class OverviewFiltersService {
   private readonly http = inject(HttpClient);
   private readonly url = `${API_URL}/overview/filters`;
 
-  load(): Observable<string[]> {
-    return this.http.get<OverviewFilters>(this.url).pipe(map((filters) => filters.hidden));
+  load(): Observable<OverviewFilters> {
+    return this.http.get<OverviewFilters>(this.url);
   }
 
-  save(hidden: string[]): Observable<string[]> {
-    return this.http
-      .put<OverviewFilters>(this.url, { hidden })
-      .pipe(map((filters) => filters.hidden));
+  save(filters: OverviewFilters): Observable<OverviewFilters> {
+    return this.http.put<OverviewFilters>(this.url, filters);
   }
 }

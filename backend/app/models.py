@@ -26,3 +26,15 @@ class HiddenScope(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     # Lowercase, because GitHub owner and repository names are case-insensitive.
     scope = Column(String, nullable=False)
+
+
+class ShownLabel(Base):
+    """A label the user picked in the overview's label filter: only items with a picked label show."""
+
+    __tablename__ = "shown_labels"
+    __table_args__ = (UniqueConstraint("user_id", "label"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    # Lowercase, because GitHub label names are case-insensitive.
+    label = Column(String, nullable=False)
