@@ -10,3 +10,17 @@
   font: var(--mat-sys-body-large);
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* Filters (or the subtitle) and the refresh status share one row; it's positioned so the
+   refresh progress bar can lie just under it. */
+.toolbar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hoot-space-2) var(--hoot-space-4);
+}
+
+.refresh {
+  margin-left: auto;
+}

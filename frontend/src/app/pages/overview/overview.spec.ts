@@ -294,6 +294,14 @@ describe('OverviewPage', () => {
       expect(rows(element)).toEqual(['Issue 6', 'Issue 7']);
     });
 
+    it('shows the refresh status in the filter row', async () => {
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      const toolbar = element.querySelector('.toolbar')!;
+      expect(toolbar.querySelector('app-filter-bar')).not.toBeNull();
+      expect(toolbar.querySelector('app-refresh-status')).not.toBeNull();
+    });
+
     it('keeps the overview and says so when a refresh fails', async () => {
       const answers: Observable<Overview>[] = [
         of(OVERVIEW),
