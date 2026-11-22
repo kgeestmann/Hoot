@@ -6,6 +6,9 @@
 }
 
 .all-clear {
+  display: flex;
+  align-items: center;
+  gap: var(--hoot-space-2);
   margin: 0;
   font: var(--mat-sys-title-large);
   color: var(--mat-sys-on-surface-variant);

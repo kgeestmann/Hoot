@@ -27,7 +27,10 @@
         />
       </div>
       @if (nothingWaiting()) {
-        <p class="all-clear">Nothing waiting on you 🎉</p>
+        <p class="all-clear">
+          <mat-icon svgIcon="task_alt" />
+          Nothing waiting on you.
+        </p>
       } @else {
         <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
       }

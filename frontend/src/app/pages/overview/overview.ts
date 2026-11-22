@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatIconModule } from '@angular/material/icon';
 import { catchError, concatMap, finalize, forkJoin, map, of, Subject } from 'rxjs';
 
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
@@ -51,7 +52,15 @@ const TABS = [
 /** The start page: everything on GitHub that is waiting on the user, one tab per list. */
 @Component({
   selector: 'app-overview-page',
-  imports: [FilterBar, GitHubAccessCard, LoadError, ListSkeleton, ListTabs, RefreshStatus],
+  imports: [
+    FilterBar,
+    GitHubAccessCard,
+    ListSkeleton,
+    ListTabs,
+    LoadError,
+    MatIconModule,
+    RefreshStatus,
+  ],
   templateUrl: './overview.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview.css',
