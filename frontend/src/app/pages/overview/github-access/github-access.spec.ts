@@ -57,5 +57,6 @@ describe('GitHubAccessCard', () => {
     );
     expect(element.querySelector<HTMLAnchorElement>('.add-link')?.href).toBe(INSTALL_URL);
     expect(element.querySelector('.install-link')).toBeNull();
+    expect(text(element.querySelector('.hint'))).toContain('Ask an owner of the organization');
   });
 });
