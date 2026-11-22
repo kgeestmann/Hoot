@@ -19,6 +19,10 @@
   --hoot-status-danger: var(--mat-sys-error);
   --hoot-status-neutral: var(--mat-sys-on-surface-variant);
 
+  /* Text on GitHub label colours, which are the same in light and dark mode (GitHub's own pair). */
+  --hoot-on-label-dark: #1f2328;
+  --hoot-on-label-light: #ffffff;
+
   /* Spacing scale: --hoot-space-N is N × 4px. */
   --hoot-space-1: 4px;
   --hoot-space-2: 8px;

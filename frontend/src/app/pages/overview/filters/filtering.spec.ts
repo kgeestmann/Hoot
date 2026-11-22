@@ -9,6 +9,7 @@ function item(repository: string, number = 1): OverviewItem {
     number,
     url: `https://github.com/${repository}/issues/${number}`,
     updated_at: '2026-11-21T10:00:00Z',
+    labels: [],
   };
 }
 

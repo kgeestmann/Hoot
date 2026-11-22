@@ -34,6 +34,7 @@ def team_node(number=1, kind="Issue", author="alice", assignees=(), **fields):
         "repository": {"nameWithOwner": "Octo-Org/hoot"},
         "author": {"login": author} if author else None,
         "assignees": {"nodes": [{"login": login} for login in assignees]},
+        "labels": {"nodes": [{"name": "bug", "color": "d73a4a"}]},
     }
     if kind == "PullRequest":
         node["reviewDecision"] = "REVIEW_REQUIRED"
@@ -108,6 +109,7 @@ def test_items_show_author_assignees_and_age(client, signed_in):
         "number": 3,
         "url": "https://github.com/Octo-Org/hoot/issues/3",
         "updated_at": "2026-11-20T10:00:00Z",
+        "labels": [{"name": "bug", "color": "d73a4a"}],
         "created_at": "2026-11-01T10:00:00Z",
         "author": "alice",
         "assignees": ["bob", "carol"],
@@ -191,3 +193,7 @@ def test_unexpected_answer_from_github_answers_502(client, signed_in):
     ]
 
     assert get_org(client).status_code == 502
+
+
+def test_the_team_query_asks_for_labels():
+    assert "labels(first: 10) { nodes { name color } }" in org_overview.ORG_OVERVIEW_QUERY

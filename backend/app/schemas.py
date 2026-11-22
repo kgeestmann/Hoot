@@ -10,6 +10,13 @@ class UserResponse(BaseModel):
     login: str
 
 
+class Label(BaseModel):
+    """A GitHub label with its colour as six hex digits without "#", e.g. "d73a4a"."""
+
+    name: str
+    color: str = Field(pattern=r"^[0-9a-fA-F]{6}$")
+
+
 class OverviewItem(BaseModel):
     """An issue or pull request on the overview."""
 
@@ -19,6 +26,7 @@ class OverviewItem(BaseModel):
     number: int
     url: str
     updated_at: datetime
+    labels: list[Label]
 
 
 class PullRequestItem(OverviewItem):

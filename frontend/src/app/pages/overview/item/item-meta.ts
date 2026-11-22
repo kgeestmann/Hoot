@@ -1,27 +1,32 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { MatIconModule } from '@angular/material/icon';
-
 import { TeamItem } from '../../../services/organizations';
-import { OverviewItem, PullRequestItem } from '../../../services/overview';
+import { OverviewItem } from '../../../services/overview';
 import { relativeTime } from './relative-time';
-import { statusChips, TONE_ICONS } from './status-chips';
 
-/** One issue or pull request: title linking to GitHub, where it lives, when it changed. */
+/** The line under an item's title: kind, repo#number, age, and for team items the people. */
 @Component({
-  selector: 'app-overview-item',
-  imports: [MatIconModule],
-  templateUrl: './overview-item.html',
+  selector: 'app-item-meta',
+  template: `
+    {{ kindLabel() }} · {{ item().repository }}#{{ item().number }}
+    @if (team(); as team) {
+      · opened
+      <time [attr.datetime]="team.createdAt" [title]="team.createdAt">{{ team.openedAgo }}</time>
+      by {{ team.author }}
+    }
+    · updated
+    <time [attr.datetime]="item().updated_at" [title]="item().updated_at">{{ updatedAgo() }}</time>
+    @if (team(); as team) {
+      · assigned to {{ team.assignees }}
+    }
+  `,
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './overview-item.css',
 })
-export class OverviewItemComponent {
-  readonly item = input.required<OverviewItem | PullRequestItem | TeamItem>();
-  readonly toneIcons = TONE_ICONS;
+export class ItemMeta {
+  readonly item = input.required<OverviewItem | TeamItem>();
 
   readonly kindLabel = computed(() => (this.item().kind === 'issue' ? 'Issue' : 'Pull request'));
   readonly updatedAgo = computed(() => relativeTime(new Date(this.item().updated_at)));
-  readonly statuses = computed(() => statusChips(this.item()));
   /** Who opened it and who is on it; only team items carry people. */
   readonly team = computed(() => {
     const item = this.item();

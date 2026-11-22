@@ -1,14 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
 
 import { OverviewItem } from '../../../services/overview';
-import { OverviewItemComponent } from '../overview-item/overview-item';
+import { hasChips, ItemChips } from '../item/item-chips';
+import { ItemMeta } from '../item/item-meta';
 
 /** One list (e.g. review requests) with its items or an empty message. */
 @Component({
   selector: 'app-overview-section',
-  imports: [MatButtonModule, OverviewItemComponent],
+  imports: [ItemChips, ItemMeta, MatButtonModule, MatDividerModule, MatIconModule, MatListModule],
   templateUrl: './overview-section.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview-section.css',
@@ -23,5 +27,7 @@ export class OverviewSection {
   readonly moreUrl = input<string>();
 
   readonly count = computed(() => this.total() ?? this.items().length);
+  /** The items with what their list row needs: a third line only when there are chips. */
+  readonly rows = computed(() => this.items().map((item) => ({ item, hasChips: hasChips(item) })));
   readonly hasMore = computed(() => !!this.moreUrl() && this.count() > this.items().length);
 }

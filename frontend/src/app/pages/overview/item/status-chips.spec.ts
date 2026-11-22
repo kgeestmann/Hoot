@@ -8,6 +8,7 @@ const ISSUE: OverviewItem = {
   number: 1,
   url: 'https://github.com/octo/hoot/issues/1',
   updated_at: '2026-11-21T10:00:00Z',
+  labels: [],
 };
 
 function pullRequest(ci_status: string | null, review_decision: string | null): PullRequestItem {

@@ -12,6 +12,7 @@ describe('OverviewSection', () => {
       number,
       url: `https://github.com/octo/hoot/issues/${number}`,
       updated_at: '2026-11-21T10:00:00Z',
+      labels: [],
     };
   }
 
@@ -37,7 +38,12 @@ describe('OverviewSection', () => {
     expect(element.querySelector('h2')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Assigned issues 2',
     );
-    expect(element.querySelectorAll('app-overview-item').length).toBe(2);
+    const rows = Array.from(element.querySelectorAll<HTMLAnchorElement>('a.item'));
+    expect(rows.map((row) => row.getAttribute('href'))).toEqual([
+      'https://github.com/octo/hoot/issues/1',
+      'https://github.com/octo/hoot/issues/2',
+    ]);
+    expect(rows[0].querySelector('.title')?.textContent?.trim()).toBe('Issue 1');
     expect(element.querySelector('.empty')).toBeNull();
   });
 
@@ -63,5 +69,15 @@ describe('OverviewSection', () => {
     const element = await render([item(1)], 1, 'https://github.com/search?q=x');
 
     expect(element.querySelector('.more-link')).toBeNull();
+  });
+
+  it('adds a line of chips only to items that have labels or a status', async () => {
+    const element = await render([
+      item(1),
+      { ...item(2), labels: [{ name: 'bug', color: 'd73a4a' }] },
+    ]);
+
+    const rows = Array.from(element.querySelectorAll('a.item'));
+    expect(rows.map((row) => row.querySelector('app-item-chips') !== null)).toEqual([false, true]);
   });
 });

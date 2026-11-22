@@ -24,12 +24,19 @@
 }
 
 .items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--hoot-space-2);
-  margin: 0;
   padding: 0;
-  list-style: none;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-lowest);
+  overflow: hidden;
+}
+
+.items mat-divider:last-child {
+  display: none;
+}
+
+.title {
+  font: var(--mat-sys-title-medium);
 }
 
 .empty {
