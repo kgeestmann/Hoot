@@ -10,19 +10,3 @@
   font: var(--mat-sys-title-large);
   color: var(--mat-sys-on-surface-variant);
 }
-
-.tab-count {
-  min-width: var(--hoot-space-6);
-  margin-left: var(--hoot-space-2);
-  padding: 0 var(--hoot-space-2);
-  border-radius: var(--mat-sys-corner-full);
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-label-medium);
-  text-align: center;
-}
-
-.tab-content {
-  display: block;
-  padding-top: var(--hoot-space-4);
-}

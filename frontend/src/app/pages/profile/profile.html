@@ -6,16 +6,17 @@
         <p mat-card-subtitle>Your account details.</p>
       </mat-card-header>
       <mat-card-content>
-        <div class="profile-grid">
-          <div class="profile-field">
-            <span class="label">ID</span>
-            <span class="value">{{ user.id }}</span>
-          </div>
-          <div class="profile-field">
-            <span class="label">GitHub account</span>
-            <span class="value">{{ user.login }}</span>
-          </div>
-        </div>
+        <mat-list class="profile-fields">
+          <mat-list-item>
+            <span matListItemLine class="label">ID</span>
+            <span matListItemTitle class="value">{{ user.id }}</span>
+          </mat-list-item>
+          <mat-divider />
+          <mat-list-item>
+            <span matListItemLine class="label">GitHub account</span>
+            <span matListItemTitle class="value">{{ user.login }}</span>
+          </mat-list-item>
+        </mat-list>
       </mat-card-content>
     </mat-card>
   </div>

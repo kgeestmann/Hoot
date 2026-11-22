@@ -1,0 +1,15 @@
+<div class="skeleton" aria-busy="true" [attr.aria-label]="label()">
+  <div class="skeleton-tabs">
+    @for (tab of [1, 2, 3, 4]; track tab) {
+      <div class="skeleton-block skeleton-tab"></div>
+    }
+  </div>
+  <div class="skeleton-rows">
+    @for (row of [1, 2, 3, 4, 5]; track row) {
+      <div class="skeleton-row">
+        <div class="skeleton-block skeleton-title"></div>
+        <div class="skeleton-block skeleton-meta"></div>
+      </div>
+    }
+  </div>
+</div>

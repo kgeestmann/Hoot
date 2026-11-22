@@ -2,17 +2,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--hoot-space-8);
-  max-width: 1200px;
+  max-width: 960px;
 }
 
 .subtitle {
   margin: 0;
   font: var(--mat-sys-body-large);
   color: var(--mat-sys-on-surface-variant);
-}
-
-.sections {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-  gap: var(--hoot-space-8) var(--hoot-space-6);
 }

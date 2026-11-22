@@ -654,7 +654,7 @@ The start page after signing in (logged-out visitors go to `/login`, and `/login
   * **Owner and repository:** unchecking hides them. New owners and repositories show up automatically, and a hidden owner's repositories are disabled.
   * **Label:** picking labels shows only items carrying at least one of them. With none picked, every item shows.
   * The tab counts follow the filters, and a tab whose items are all filtered out says so. Changes are saved per user with `PUT /overview/filters`, one after the other. If saving fails, the filters still apply until the page is reloaded.
-* **States:** a skeleton while loading, an empty message per tab, "Nothing waiting on you 🎉" when all four are empty, and an error with **Try again** that says whether Hoot's server or GitHub failed.
+* **States:** a skeleton in the shape of tabs and rows while loading (`layout/list-skeleton`), an empty message per tab, "Nothing waiting on you 🎉" when all four are empty, and an error with **Try again** that says whether Hoot's server or GitHub failed.
 * **GitHub access card** (`pages/overview/github-access`): if the app is installed nowhere, it replaces the tabs and asks the user to install it, since every list would otherwise be empty. Otherwise it sits below the tabs and lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
 
 ---
@@ -665,7 +665,7 @@ Organization Page
 /orgs/:organization
 ```
 
-The team view of one organization from `GET /orgs/{organization}/overview`: waiting for review, failing CI, unassigned issues and items without an update for 60 days. Each list shows GitHub's total and links to the full search on GitHub when there are more than the 20 loaded items. Items say when and by whom they were opened and who is assigned. The sidenav lists every organization where Hoot is installed under *Overview*. Loading, error (with "Hoot isn't installed on …" for a 404) and empty states work like on the overview, through the shared `layout/sections-skeleton` and `layout/load-error`.
+The team view of one organization from `GET /orgs/{organization}/overview`, with the same tabs and rows as the overview (the shared `pages/overview/list-tabs`): *Waiting for review*, *Failing CI*, *Unassigned* and *No update for 60 days*. Each tab shows GitHub's total and links to the full search on GitHub when there are more than the 20 loaded items, and the page opens on the first tab with items. Items say when and by whom they were opened and who is assigned. The sidenav lists every organization where Hoot is installed under *Teams*. Loading, error (with "Hoot isn't installed on …" for a 404) and empty states work like on the overview, through the shared `layout/list-skeleton` and `layout/load-error`.
 
 ---
 
@@ -675,7 +675,7 @@ Profile Page
 /profile
 ```
 
-Shows the logged-in user's id and GitHub login.
+Shows the logged-in user's id and GitHub login as a Material list in a card.
 
 ---
 

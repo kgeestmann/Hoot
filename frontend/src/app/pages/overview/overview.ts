@@ -7,13 +7,12 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatTabsModule } from '@angular/material/tabs';
 import { catchError, concatMap, forkJoin, map, of, Subject } from 'rxjs';
 
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
-import { SectionsSkeleton } from '../../layout/sections-skeleton/sections-skeleton';
+import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
-import { Overview, OverviewItem, OverviewService } from '../../services/overview';
+import { Overview, OverviewService } from '../../services/overview';
 import {
   NO_FILTERS,
   OverviewFilters,
@@ -22,7 +21,7 @@ import {
 import { FilterBar } from './filters/filter-bar';
 import { applyFilters, countItems, filterOptions, toggleEntry } from './filters/filtering';
 import { GitHubAccessCard } from './github-access/github-access';
-import { OverviewSection } from './overview-section/overview-section';
+import { firstTabWithItems, ListTab, ListTabs } from './list-tabs/list-tabs';
 
 /** The four tabs, in order: which list each shows and what it says when the list is empty. */
 const TABS = [
@@ -48,23 +47,10 @@ const TABS = [
   },
 ] as const;
 
-export interface OverviewTab {
-  label: string;
-  items: OverviewItem[];
-  emptyText: string;
-}
-
 /** The start page: everything on GitHub that is waiting on the user, one tab per list. */
 @Component({
   selector: 'app-overview-page',
-  imports: [
-    FilterBar,
-    GitHubAccessCard,
-    LoadError,
-    MatTabsModule,
-    OverviewSection,
-    SectionsSkeleton,
-  ],
+  imports: [FilterBar, GitHubAccessCard, LoadError, ListSkeleton, ListTabs],
   templateUrl: './overview.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview.css',
@@ -101,7 +87,7 @@ export class OverviewPage implements OnInit {
     const overview = this.overview();
     return overview ? filterOptions(overview, this.filters()) : { owners: [], labels: [] };
   });
-  readonly tabs = computed<OverviewTab[]>(() => {
+  readonly tabs = computed<ListTab[]>(() => {
     const overview = this.overview();
     const visible = this.visible();
     if (!overview || !visible) {
@@ -111,6 +97,7 @@ export class OverviewPage implements OnInit {
       const hiddenHere = overview[tab.section].length - visible[tab.section].length;
       return {
         label: tab.label,
+        count: visible[tab.section].length,
         items: visible[tab.section],
         emptyText: hiddenHere > 0 ? `All ${hiddenHere} hidden by your filters.` : tab.emptyText,
       };
@@ -179,11 +166,4 @@ export class OverviewPage implements OnInit {
     this.filters.set(filters);
     this.filterSaves.next(filters);
   }
-}
-
-function firstTabWithItems(tabs: OverviewTab[]): number {
-  return Math.max(
-    tabs.findIndex((tab) => tab.items.length > 0),
-    0,
-  );
 }
