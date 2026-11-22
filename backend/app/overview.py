@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urlencode
 
 import httpx
 from pydantic import ValidationError
@@ -20,10 +21,22 @@ query Overview(
   $review_requests: String!
   $mentions: String!
 ) {
-  assigned_issues: search(type: ISSUE, query: $assigned_issues, first: 50) { nodes { ...Item } }
-  pull_requests: search(type: ISSUE, query: $pull_requests, first: 50) { nodes { ...Item } }
-  review_requests: search(type: ISSUE, query: $review_requests, first: 50) { nodes { ...Item } }
-  mentions: search(type: ISSUE, query: $mentions, first: 50) { nodes { ...Item } }
+  assigned_issues: search(type: ISSUE, query: $assigned_issues, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
+  pull_requests: search(type: ISSUE, query: $pull_requests, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
+  review_requests: search(type: ISSUE, query: $review_requests, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
+  mentions: search(type: ISSUE, query: $mentions, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
 }
 
 fragment Item on SearchResultItem {
@@ -77,7 +90,20 @@ def build_overview(data: dict) -> schemas.Overview:
         pull_requests=[_pull_request_item(node) for node in search_nodes(data["pull_requests"])],
         review_requests=[_item(node) for node in search_nodes(data["review_requests"])],
         mentions=[_item(node) for node in mentions],
+        totals={section: _list_total(data[section], query) for section, query in SEARCHES.items()},
     )
+
+
+def github_search_url(query: str) -> str:
+    """The same search on github.com, where every match is listed."""
+    return f"https://github.com/search?{urlencode({'q': query, 'type': 'issues'})}"
+
+
+def _list_total(search: dict | None, query: str) -> dict:
+    """How many items GitHub found for a list, and whether some weren't loaded."""
+    total = search["issueCount"] if search else 0
+    loaded = len(search["nodes"]) if search else 0
+    return {"total": total, "has_more": total > loaded, "search_url": github_search_url(query)}
 
 
 def search_nodes(search: dict | None) -> list[dict]:

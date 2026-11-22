@@ -21,11 +21,20 @@ function item(repository: string, number = 1, labels: string[] = []): OverviewIt
   };
 }
 
+const ALL_LOADED = { total: 0, has_more: false, search_url: '' };
+const NO_MORE: Overview['totals'] = {
+  assigned_issues: ALL_LOADED,
+  pull_requests: ALL_LOADED,
+  review_requests: ALL_LOADED,
+  mentions: ALL_LOADED,
+};
+
 const OVERVIEW: Overview = {
   pull_requests: [],
   review_requests: [item('Octo-Org/hoot', 2, ['Bug'])],
   assigned_issues: [item('dipt-pa1469-ht26/team-14', 3), item('kgeestmann/hoot', 4, ['frontend'])],
   mentions: [item('kgeestmann/old-repo', 5, ['bug'])],
+  totals: NO_MORE,
 };
 
 describe('isHidden', () => {

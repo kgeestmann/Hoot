@@ -95,11 +95,14 @@ export class OverviewPage implements OnInit {
     }
     return TABS.map((tab) => {
       const hiddenHere = overview[tab.section].length - visible[tab.section].length;
+      const onGitHub = overview.totals[tab.section];
       return {
         label: tab.label,
+        // What the tab shows, so the count always matches the list.
         count: visible[tab.section].length,
         items: visible[tab.section],
         emptyText: hiddenHere > 0 ? `All ${hiddenHere} hidden by your filters.` : tab.emptyText,
+        ...(onGitHub.has_more && { total: onGitHub.total, moreUrl: onGitHub.search_url }),
       };
     });
   });

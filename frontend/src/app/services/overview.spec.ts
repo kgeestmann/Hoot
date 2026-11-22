@@ -27,6 +27,12 @@ describe('OverviewService', () => {
       pull_requests: [],
       review_requests: [],
       mentions: [],
+      totals: {
+        assigned_issues: { total: 0, has_more: false, search_url: '' },
+        pull_requests: { total: 0, has_more: false, search_url: '' },
+        review_requests: { total: 0, has_more: false, search_url: '' },
+        mentions: { total: 0, has_more: false, search_url: '' },
+      },
     };
     let loaded: Overview | undefined;
 

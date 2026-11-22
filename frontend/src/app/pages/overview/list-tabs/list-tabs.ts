@@ -11,7 +11,9 @@ export interface ListTab {
   count: number;
   items: readonly OverviewItem[];
   emptyText: string;
-  /** The full list on GitHub, linked when `count` is more than `items`. */
+  /** How many there are on GitHub, if that differs from `count`. */
+  total?: number;
+  /** The full list on GitHub, linked when there are more than `items`. */
   moreUrl?: string;
 }
 
