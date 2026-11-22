@@ -32,6 +32,15 @@ html {
       text-container-shape: var(--mat-sys-corner-small),
     )
   );
+
+  // The active nav item carries the brand as a tint, so its label keeps the normal text colour,
+  // which stays readable in light and dark mode.
+  @include mat.list-overrides(
+    (
+      active-indicator-color: color-mix(in srgb, var(--hoot-brand) 30%, transparent),
+      active-indicator-shape: var(--mat-sys-corner-small),
+    )
+  );
 }
 
 body {

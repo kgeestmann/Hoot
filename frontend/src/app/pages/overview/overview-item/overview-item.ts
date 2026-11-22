@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { Icon } from '../../../layout/icon/icon';
+import { MatIconModule } from '@angular/material/icon';
+
 import { TeamItem } from '../../../services/organizations';
 import { OverviewItem, PullRequestItem } from '../../../services/overview';
 import { relativeTime } from './relative-time';
@@ -9,7 +10,7 @@ import { statusChips, TONE_ICONS } from './status-chips';
 /** One issue or pull request: title linking to GitHub, where it lives, when it changed. */
 @Component({
   selector: 'app-overview-item',
-  imports: [Icon],
+  imports: [MatIconModule],
   templateUrl: './overview-item.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview-item.css',

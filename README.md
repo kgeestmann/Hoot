@@ -616,7 +616,13 @@ The Angular frontend provides:
 
 Framework: Angular (standalone components)
 
-Layout (`layout/sidenav`): from 840 px wide (Material 3's "expanded" size) the navigation stays open beside the content. Below that it is a drawer behind a top bar with a menu button, and it closes once a page is chosen.
+Layout (`layout/sidenav`):
+
+* **Navigation:** a Material nav list with icons: *Overview*, and under *Teams* every organization where Hoot is installed. The active page is tinted in the brand orange. At the bottom, an account button (the login's initial and the GitHub login) opens a menu with *Profile* and *Sign out*. The initial replaces the GitHub avatar, which would load from GitHub's servers and send every visitor's IP address there.
+* **Top bar:** shows the current page's title (from the route's `title`, also used for the browser tab: "Overview · Hoot").
+* **Responsive:** from 840 px wide (Material 3's "expanded" size) the navigation stays open beside the content. Below that it is a drawer behind a menu button in the top bar, and it closes once a page is chosen.
+* **Icons:** Material Symbols Outlined as SVG, registered once in `icons.ts` and used as `<mat-icon svgIcon="…">`.
+* Pages are lazy-loaded, so the first download only holds the app shell.
 
 ---
 

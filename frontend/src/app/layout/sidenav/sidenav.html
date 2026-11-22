@@ -10,55 +10,86 @@
         <h3>Hoot</h3>
       </div>
 
-      <nav class="sidebar-nav">
+      <mat-nav-list class="nav">
         @if (auth.isLoggedIn()) {
           <a
-            class="nav-btn"
+            mat-list-item
             routerLink="/"
-            routerLinkActive="active-link"
+            routerLinkActive
+            #overviewLink="routerLinkActive"
             [routerLinkActiveOptions]="{ exact: true }"
+            [activated]="overviewLink.isActive"
           >
-            Overview
+            <mat-icon matListItemIcon svgIcon="inbox" />
+            <span matListItemTitle>Overview</span>
           </a>
 
-          @for (organization of organizations(); track organization) {
-            <a
-              class="nav-btn nav-organization"
-              [routerLink]="['/orgs', organization]"
-              routerLinkActive="active-link"
-            >
-              {{ organization }}
-            </a>
+          @if (organizations().length > 0) {
+            <div mat-subheader>Teams</div>
+            @for (organization of organizations(); track organization) {
+              <a
+                mat-list-item
+                class="nav-organization"
+                [routerLink]="['/orgs', organization]"
+                routerLinkActive
+                #organizationLink="routerLinkActive"
+                [activated]="organizationLink.isActive"
+              >
+                <mat-icon matListItemIcon svgIcon="groups" />
+                <span matListItemTitle>{{ organization }}</span>
+              </a>
+            }
           }
-
-          <a class="nav-btn" routerLink="/profile" routerLinkActive="active-link">Profile</a>
         } @else {
-          <a class="nav-btn" routerLink="/login" routerLinkActive="active-link">Login</a>
+          <a
+            mat-list-item
+            routerLink="/login"
+            routerLinkActive
+            #loginLink="routerLinkActive"
+            [activated]="loginLink.isActive"
+          >
+            <mat-icon matListItemIcon svgIcon="person" />
+            <span matListItemTitle>Sign in</span>
+          </a>
         }
-      </nav>
+      </mat-nav-list>
 
-      @if (auth.isLoggedIn()) {
-        <div class="logout">
-          <button class="nav-btn danger" (click)="logout()">Logout</button>
+      @if (auth.user(); as user) {
+        <div class="account">
+          <button mat-button class="account-button" type="button" [matMenuTriggerFor]="accountMenu">
+            <span class="avatar" aria-hidden="true">{{ initial() }}</span>
+            <span class="login">{{ user.login }}</span>
+            <mat-icon svgIcon="arrow_drop_down" />
+          </button>
+          <mat-menu #accountMenu="matMenu" yPosition="above">
+            <a mat-menu-item routerLink="/profile">
+              <mat-icon svgIcon="person" />
+              <span>Profile</span>
+            </a>
+            <button mat-menu-item type="button" (click)="logout()">
+              <mat-icon svgIcon="logout" />
+              <span>Sign out</span>
+            </button>
+          </mat-menu>
         </div>
       }
     </div>
   </mat-sidenav>
 
   <mat-sidenav-content class="content-area">
-    @if (!isWide()) {
-      <mat-toolbar class="top-bar">
+    <mat-toolbar class="top-bar">
+      @if (!isWide()) {
         <button
           mat-icon-button
           type="button"
           aria-label="Open navigation"
           (click)="openNavigation()"
         >
-          <app-icon name="menu" />
+          <mat-icon svgIcon="menu" />
         </button>
-        <span class="top-bar-title">Hoot</span>
-      </mat-toolbar>
-    }
+      }
+      <h1 class="page-title">{{ pageTitle() }}</h1>
+    </mat-toolbar>
     <main class="content">
       <ng-content></ng-content>
     </main>

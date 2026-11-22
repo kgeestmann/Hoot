@@ -1,31 +1,42 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, signal } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
+import { Observable, of, throwError } from 'rxjs';
 
-import { AuthService } from '../../services/auth';
+import { AuthService, User } from '../../services/auth';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
+import { PageTitle } from '../../services/page-title';
 import { Sidenav } from './sidenav';
 
 @Component({ template: '' })
 class EmptyPage {}
 
+const NO_INSTALLATIONS: GitHubAccess = { install_url: '', installations: [] };
+
 describe('Sidenav', () => {
-  let component: Sidenav;
   let fixture: ComponentFixture<Sidenav>;
+  let logout: ReturnType<typeof vi.fn>;
 
   async function render(
-    loggedIn: boolean,
-    access: Observable<GitHubAccess> = of({ install_url: '', installations: [] }),
-    wide = true,
+    user: User | null,
+    {
+      access = of(NO_INSTALLATIONS),
+      wide = true,
+    }: { access?: Observable<GitHubAccess>; wide?: boolean } = {},
   ) {
+    logout = vi.fn();
     await TestBed.configureTestingModule({
       imports: [Sidenav],
       providers: [
         provideRouter([{ path: 'profile', component: EmptyPage }]),
+        {
+          provide: AuthService,
+          useValue: { user: signal(user), isLoggedIn: signal(!!user), logout },
+        },
+        { provide: GitHubAccessService, useValue: { load: () => access } },
         {
           provide: BreakpointObserver,
           useValue: {
@@ -33,43 +44,59 @@ describe('Sidenav', () => {
             isMatched: () => wide,
           },
         },
-        { provide: AuthService, useValue: { isLoggedIn: signal(loggedIn), logout: vi.fn() } },
-        { provide: GitHubAccessService, useValue: { load: () => access } },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Sidenav);
-    component = fixture.componentInstance;
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
   }
 
-  function navLabels(element: HTMLElement): string[] {
-    return Array.from(element.querySelectorAll('.nav-btn')).map((link) => link.textContent!.trim());
+  function navTitles(element: HTMLElement): string[] {
+    return Array.from(element.querySelectorAll('.nav [matListItemTitle]')).map((title) =>
+      title.textContent!.trim(),
+    );
   }
 
-  it('should create', async () => {
-    await render(false);
-    expect(component).toBeTruthy();
+  function menuItems(): HTMLElement[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('[mat-menu-item]'));
+  }
+
+  const OCTOCAT: User = { id: 1, login: 'octocat' };
+
+  it('offers only the sign-in when logged out', async () => {
+    const element = await render(null);
+
+    expect(navTitles(element)).toEqual(['Sign in']);
+    expect(element.querySelector('.account-button')).toBeNull();
   });
 
-  it('shows Login when logged out', async () => {
-    const element = await render(false);
-    expect(navLabels(element)).toEqual(['Login']);
+  it('shows the overview and an account button with the initial and login', async () => {
+    const element = await render(OCTOCAT);
+
+    expect(navTitles(element)).toEqual(['Overview']);
+    const account = element.querySelector('.account-button')!;
+    expect(account.querySelector('.avatar')!.textContent!.trim()).toBe('O');
+    expect(account.querySelector('.login')!.textContent!.trim()).toBe('octocat');
   });
 
-  it('shows Overview, Profile and Logout when logged in', async () => {
-    const element = await render(true);
-    expect(navLabels(element)).toEqual(['Overview', 'Profile', 'Logout']);
+  it('opens a menu with Profile and Sign out from the account button', async () => {
+    const element = await render(OCTOCAT);
+
+    element.querySelector<HTMLButtonElement>('.account-button')!.click();
+    await fixture.whenStable();
+
+    expect(menuItems().map((item) => item.textContent!.trim())).toEqual(['Profile', 'Sign out']);
+    menuItems()[1].click();
+    expect(logout).toHaveBeenCalled();
   });
 
-  it('lists the organizations where Hoot is installed under Overview', async () => {
-    const element = await render(
-      true,
-      of({
+  it('lists the organizations where Hoot is installed under Teams', async () => {
+    const element = await render(OCTOCAT, {
+      access: of({
         install_url: '',
         installations: [
-          { account: 'kgeestmann', account_type: 'User', all_repositories: true, settings_url: '' },
+          { account: 'octocat', account_type: 'User', all_repositories: true, settings_url: '' },
           {
             account: 'Octo-Org',
             account_type: 'Organization',
@@ -78,21 +105,27 @@ describe('Sidenav', () => {
           },
         ],
       }),
-    );
+    });
 
-    expect(navLabels(element)).toEqual(['Overview', 'Octo-Org', 'Profile', 'Logout']);
-    expect(
-      element.querySelector<HTMLAnchorElement>('.nav-organization')!.getAttribute('href'),
-    ).toBe('/orgs/Octo-Org');
+    expect(navTitles(element)).toEqual(['Overview', 'Octo-Org']);
+    expect(element.querySelector('[mat-subheader]')!.textContent!.trim()).toBe('Teams');
+    expect(element.querySelector('.nav-organization')!.getAttribute('href')).toBe('/orgs/Octo-Org');
   });
 
-  it('shows no organizations when they cannot be loaded', async () => {
-    const element = await render(
-      true,
-      throwError(() => new Error('502')),
-    );
+  it('shows no Teams section when the organizations cannot be loaded', async () => {
+    const element = await render(OCTOCAT, { access: throwError(() => new Error('502')) });
 
-    expect(navLabels(element)).toEqual(['Overview', 'Profile', 'Logout']);
+    expect(navTitles(element)).toEqual(['Overview']);
+    expect(element.querySelector('[mat-subheader]')).toBeNull();
+  });
+
+  it("shows the current page's title in the top bar", async () => {
+    const element = await render(OCTOCAT);
+
+    TestBed.inject(PageTitle).current.set('Overview');
+    await fixture.whenStable();
+
+    expect(element.querySelector('.top-bar h1')!.textContent!.trim()).toBe('Overview');
   });
 
   describe('layout', () => {
@@ -100,31 +133,33 @@ describe('Sidenav', () => {
       return fixture.debugElement.query(By.directive(MatSidenav)).componentInstance;
     }
 
+    function menuButton(element: HTMLElement): HTMLButtonElement | null {
+      return element.querySelector('[aria-label="Open navigation"]');
+    }
+
     it('keeps the navigation open beside the content on wide screens', async () => {
-      const element = await render(true, undefined, true);
+      const element = await render(OCTOCAT, { wide: true });
 
       expect(drawer().mode).toBe('side');
       expect(drawer().opened).toBe(true);
-      expect(element.querySelector('.top-bar')).toBeNull();
+      expect(menuButton(element)).toBeNull();
     });
 
     it('hides the navigation in a drawer behind a menu button on small screens', async () => {
-      const element = await render(true, undefined, false);
+      const element = await render(OCTOCAT, { wide: false });
 
       expect(drawer().mode).toBe('over');
       expect(drawer().opened).toBe(false);
-      const menu = element.querySelector<HTMLButtonElement>('.top-bar button');
-      expect(menu?.getAttribute('aria-label')).toBe('Open navigation');
 
-      menu!.click();
+      menuButton(element)!.click();
       await fixture.whenStable();
 
       expect(drawer().opened).toBe(true);
     });
 
     it('closes the drawer once a page is chosen on small screens', async () => {
-      const element = await render(true, undefined, false);
-      element.querySelector<HTMLButtonElement>('.top-bar button')!.click();
+      const element = await render(OCTOCAT, { wide: false });
+      menuButton(element)!.click();
       await fixture.whenStable();
 
       await TestBed.inject(Router).navigateByUrl('/profile');

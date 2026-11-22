@@ -2,6 +2,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import {
   Component,
   ChangeDetectionStrategy,
+  computed,
   effect,
   inject,
   signal,
@@ -9,20 +10,31 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from '../../services/auth';
-import { Icon } from '../icon/icon';
 import { GitHubAccessService } from '../../services/github-access';
+import { PageTitle } from '../../services/page-title';
 
 const WIDE_SCREEN = '(min-width: 840px)';
 
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [Icon, MatButtonModule, MatSidenavModule, MatToolbarModule, RouterModule],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatListModule,
+    MatMenuModule,
+    MatSidenavModule,
+    MatToolbarModule,
+    RouterModule,
+  ],
   templateUrl: './sidenav.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./sidenav.css'],
@@ -41,6 +53,9 @@ export class Sidenav {
 
   /** Organizations where Hoot is installed for the user, each with a team view. */
   readonly organizations = signal<string[]>([]);
+  readonly pageTitle = inject(PageTitle).current;
+  /** First letter of the GitHub login, shown instead of loading the avatar from GitHub. */
+  readonly initial = computed(() => this.auth.user()?.login.charAt(0).toUpperCase() ?? '');
 
   constructor(public auth: AuthService) {
     effect(() => {

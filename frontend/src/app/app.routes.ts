@@ -1,36 +1,37 @@
 import { Routes } from '@angular/router';
 
-import { Login } from './pages/login/login';
-import { Profile } from './pages/profile/profile';
-import { OverviewPage } from './pages/overview/overview';
-import { OrganizationPage } from './pages/organization/organization';
-
 import { authGuard } from './guards/auth-guard';
 import { publicGuard } from './guards/public-guard';
 
+// Pages load on demand, so the first download only holds the app shell.
 export const routes: Routes = [
 
   {
     path: '',
-    component: OverviewPage,
+    title: 'Overview',
+    loadComponent: () => import('./pages/overview/overview').then((page) => page.OverviewPage),
     canActivate: [authGuard]
   },
 
   {
     path: 'orgs/:organization',
-    component: OrganizationPage,
+    title: (route) => route.paramMap.get('organization') ?? 'Team view',
+    loadComponent: () =>
+      import('./pages/organization/organization').then((page) => page.OrganizationPage),
     canActivate: [authGuard]
   },
 
   {
     path: 'login',
-    component: Login,
+    title: 'Sign in',
+    loadComponent: () => import('./pages/login/login').then((page) => page.Login),
     canActivate: [publicGuard]
   },
 
   {
     path: 'profile',
-    component: Profile,
+    title: 'Profile',
+    loadComponent: () => import('./pages/profile/profile').then((page) => page.Profile),
     canActivate: [authGuard]
   }
 

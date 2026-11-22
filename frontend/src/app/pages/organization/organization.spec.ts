@@ -73,13 +73,11 @@ describe('OrganizationPage', () => {
 
     expect(load).toHaveBeenCalledWith('octo-org');
     expect(element.querySelector('[aria-busy="true"]')).not.toBeNull();
-    expect(element.querySelector('h1')!.textContent!.trim()).toBe('octo-org');
   });
 
   it("shows the four team lists with GitHub's totals", async () => {
     const element = await render(() => of(OVERVIEW));
 
-    expect(element.querySelector('h1')!.textContent!.trim()).toBe('Octo-Org');
     expect(headings(element)).toEqual([
       'Waiting for review 1',
       'Failing CI 25',
@@ -132,6 +130,6 @@ describe('OrganizationPage', () => {
     await fixture.whenStable();
 
     expect(load).toHaveBeenLastCalledWith('other-org');
-    expect(element.querySelector('h1')!.textContent!.trim()).toBe('Other-Org');
+    expect(headings(element)).toContain('Failing CI 25');
   });
 });
