@@ -209,6 +209,9 @@ describe('OverviewPage', () => {
     const element = await render(() => of(EMPTY), of(INSTALLED));
 
     expect(element.querySelector('.all-clear')?.textContent).toContain('Nothing waiting on you');
+    expect(element.querySelector('.all-clear mat-icon')?.getAttribute('data-mat-icon-name')).toBe(
+      'task_alt',
+    );
     expect(element.querySelector('mat-tab-group')).toBeNull();
   });
 
