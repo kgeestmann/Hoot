@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, Observable, shareReplay, throwError } from 'rxjs';
 
 import { API_URL } from '../api';
 
@@ -20,15 +20,28 @@ export interface GitHubAccess {
   installations: Installation[];
 }
 
-/** Asks the backend where Hoot can see the user's repositories on GitHub. */
+/**
+ * Asks the backend where Hoot can see the user's repositories on GitHub, once per app start:
+ * the sidenav and the overview share the answer. Signing in, signing out and installing the
+ * app on GitHub all reload the app, so the answer can't go stale in between.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class GitHubAccessService {
   private readonly http = inject(HttpClient);
+  private access?: Observable<GitHubAccess>;
 
-  /** Load the accounts where Hoot is installed and the URL of GitHub's install page. */
+  /** The accounts where Hoot is installed and the URL of GitHub's install page. */
   load(): Observable<GitHubAccess> {
-    return this.http.get<GitHubAccess>(`${API_URL}/github/installations`);
+    this.access ??= this.http.get<GitHubAccess>(`${API_URL}/github/installations`).pipe(
+      // A failed request isn't kept, so retrying asks the backend again.
+      catchError((error: unknown) => {
+        this.access = undefined;
+        return throwError(() => error);
+      }),
+      shareReplay(1),
+    );
+    return this.access;
   }
 }

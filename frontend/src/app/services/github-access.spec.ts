@@ -5,6 +5,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { API_URL } from '../api';
 import { GitHubAccess, GitHubAccessService } from './github-access';
 
+const ACCESS: GitHubAccess = {
+  install_url: 'https://github.com/apps/hoot/installations/new',
+  installations: [],
+};
+
 describe('GitHubAccessService', () => {
   let service: GitHubAccessService;
   let http: HttpTestingController;
@@ -32,5 +37,31 @@ describe('GitHubAccessService', () => {
     http.expectOne(`${API_URL}/github/installations`).flush(access);
 
     expect(loaded).toEqual(access);
+  });
+
+  it('asks the backend only once, however often it is loaded', () => {
+    const answers: GitHubAccess[] = [];
+
+    service.load().subscribe((access) => answers.push(access));
+    service.load().subscribe((access) => answers.push(access));
+    http.expectOne(`${API_URL}/github/installations`).flush(ACCESS);
+    service.load().subscribe((access) => answers.push(access));
+
+    expect(answers).toEqual([ACCESS, ACCESS, ACCESS]);
+  });
+
+  it('asks again after a failed request', () => {
+    let failed = false;
+    let loaded: GitHubAccess | undefined;
+
+    service.load().subscribe({ error: () => (failed = true) });
+    http
+      .expectOne(`${API_URL}/github/installations`)
+      .flush(null, { status: 502, statusText: 'Bad Gateway' });
+    service.load().subscribe((access) => (loaded = access));
+    http.expectOne(`${API_URL}/github/installations`).flush(ACCESS);
+
+    expect(failed).toBe(true);
+    expect(loaded).toEqual(ACCESS);
   });
 });
