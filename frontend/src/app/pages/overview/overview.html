@@ -1,6 +1,4 @@
 <div class="overview-page">
-  <h1 class="page-title">Overview</h1>
-
   @let gitHubAccess = access();
   @if (installedNowhere() && gitHubAccess) {
     <app-github-access [access]="gitHubAccess" />

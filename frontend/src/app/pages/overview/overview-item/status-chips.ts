@@ -1,4 +1,4 @@
-import { IconName } from '../../../layout/icon/icon';
+import { IconName } from '../../../icons';
 import { OverviewItem, PullRequestItem } from '../../../services/overview';
 
 /** Colour role of a status chip; the label always says the same in words. */
