@@ -5,7 +5,7 @@
   } @else {
     @if (overview()) {
       <div class="toolbar">
-        @if (!nothingWaiting()) {
+        @if (showFilters()) {
           <app-filter-bar
             class="filters"
             [owners]="filterOptions().owners"
@@ -31,9 +31,8 @@
           <mat-icon svgIcon="task_alt" />
           Nothing waiting on you.
         </p>
-      } @else {
-        <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
       }
+      <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
     } @else if (loadError(); as message) {
       <app-load-error [message]="message" (retry)="load()" />
     } @else {
