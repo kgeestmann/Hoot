@@ -1,46 +1,37 @@
 <div class="overview-page">
-  @let gitHubAccess = access();
-  @if (installedNowhere() && gitHubAccess) {
-    <app-github-access [access]="gitHubAccess" />
-  } @else {
-    @if (overview()) {
-      <div class="toolbar">
-        @if (showFilters()) {
-          <app-filter-bar
-            class="filters"
-            [owners]="filterOptions().owners"
-            [labels]="filterOptions().labels"
-            [shownCount]="shownCount()"
-            [totalCount]="totalCount()"
-            [saveFailed]="filterSaveFailed()"
-            (toggleScope)="toggleScope($event)"
-            (toggleLabel)="toggleLabel($event)"
-            (clear)="clearFilters()"
-          />
-        }
-        <app-refresh-status
-          class="refresh"
-          [loadedAt]="loadedAt()"
-          [refreshing]="refreshing()"
-          [failed]="refreshFailed()"
-          (refresh)="refresh()"
+  @if (overview()) {
+    <div class="toolbar">
+      @if (showFilters()) {
+        <app-filter-bar
+          class="filters"
+          [owners]="filterOptions().owners"
+          [labels]="filterOptions().labels"
+          [shownCount]="shownCount()"
+          [totalCount]="totalCount()"
+          [saveFailed]="filterSaveFailed()"
+          (toggleScope)="toggleScope($event)"
+          (toggleLabel)="toggleLabel($event)"
+          (clear)="clearFilters()"
         />
-      </div>
-      @if (nothingWaiting()) {
-        <p class="all-clear">
-          <mat-icon svgIcon="task_alt" />
-          Nothing waiting on you.
-        </p>
       }
-      <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
-    } @else if (loadError(); as message) {
-      <app-load-error [message]="message" (retry)="load()" />
-    } @else {
-      <app-list-skeleton label="Loading your overview" />
+      <app-refresh-status
+        class="refresh"
+        [loadedAt]="loadedAt()"
+        [refreshing]="refreshing()"
+        [failed]="refreshFailed()"
+        (refresh)="refresh()"
+      />
+    </div>
+    @if (nothingWaiting() && !installedNowhere()) {
+      <p class="all-clear">
+        <mat-icon svgIcon="task_alt" />
+        Nothing waiting on you.
+      </p>
     }
-
-    @if (gitHubAccess) {
-      <app-github-access [access]="gitHubAccess" />
-    }
+    <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
+  } @else if (loadError(); as message) {
+    <app-load-error [message]="message" (retry)="load()" />
+  } @else {
+    <app-list-skeleton label="Loading your overview" />
   }
 </div>

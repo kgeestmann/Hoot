@@ -1,0 +1,23 @@
+/* Information, so it uses the tertiary (blue) role from #55, not the brand orange. */
+.install-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hoot-space-2) var(--hoot-space-4);
+  padding: var(--hoot-space-3) var(--hoot-space-4);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.text {
+  flex: 1 1 240px;
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hoot-space-2);
+}

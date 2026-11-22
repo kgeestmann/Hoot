@@ -31,7 +31,10 @@ describe('Sidenav', () => {
     await TestBed.configureTestingModule({
       imports: [Sidenav],
       providers: [
-        provideRouter([{ path: 'profile', component: EmptyPage }]),
+        provideRouter([
+          { path: 'profile', component: EmptyPage },
+          { path: 'github-access', component: EmptyPage },
+        ]),
         {
           provide: AuthService,
           useValue: { user: signal(user), isLoggedIn: signal(!!user), logout },
@@ -126,6 +129,52 @@ describe('Sidenav', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('.top-bar h1')!.textContent!.trim()).toBe('Overview');
+  });
+
+  it('links to GitHub access at the bottom of the navigation', async () => {
+    const element = await render(OCTOCAT);
+
+    const link = element.querySelector('.secondary-nav a');
+    expect(link?.textContent?.trim()).toBe('GitHub access');
+    expect(link?.getAttribute('href')).toBe('/github-access');
+  });
+
+  it('shows the install banner when Hoot is installed nowhere', async () => {
+    const element = await render(OCTOCAT, {
+      access: of({
+        install_url: 'https://github.com/apps/hoot/installations/new',
+        installations: [],
+      }),
+    });
+
+    expect(element.querySelector('app-install-banner')).not.toBeNull();
+  });
+
+  it('shows no install banner once Hoot is installed somewhere', async () => {
+    const element = await render(OCTOCAT, {
+      access: of({
+        install_url: '',
+        installations: [
+          { account: 'octocat', account_type: 'User', all_repositories: true, settings_url: '' },
+        ],
+      }),
+    });
+
+    expect(element.querySelector('app-install-banner')).toBeNull();
+  });
+
+  it('hides the install banner on the GitHub access page itself', async () => {
+    const element = await render(OCTOCAT, {
+      access: of({
+        install_url: 'https://github.com/apps/hoot/installations/new',
+        installations: [],
+      }),
+    });
+
+    await TestBed.inject(Router).navigateByUrl('/github-access');
+    await fixture.whenStable();
+
+    expect(element.querySelector('app-install-banner')).toBeNull();
   });
 
   describe('layout', () => {

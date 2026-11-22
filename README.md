@@ -52,7 +52,8 @@ Hoot
 ├── frontend
 │   └── src/app
 │       ├── pages
-│       │   ├── overview   start page: the four lists and the GitHub access card
+│       │   ├── overview   start page: the four lists
+│       │   ├── github-access   where Hoot is installed, install on more accounts
 │       │   ├── organization   team view of one organization (/orgs/:organization)
 │       │   ├── login
 │       │   └── profile
@@ -135,7 +136,7 @@ python backend/setup_github_app.py
 
 It opens `http://localhost:8000` in the browser and sends GitHub a description of the app ([manifest](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest)) with the settings below (*Expire user authorization tokens* can't be set in a manifest; it's on by default, and Hoot works either way). On GitHub, check the name and click **Create GitHub App**. GitHub sends you back, and the script writes `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` and `GITHUB_APP_SLUG` to `.env`, plus a generated `SECRET_KEY` and `TOKEN_ENCRYPTION_KEY` if they are missing. Existing settings are never overwritten. If `.env` already has a `GITHUB_CLIENT_ID`, the script only adds missing keys; remove the `GITHUB_*` lines to create a new app.
 
-Then start Hoot (see *Running the Project*), sign in, and install the app on your account from Hoot's overview page.
+Then start Hoot (see *Running the Project*), sign in, and install the app on your account from the banner or the *GitHub access* page.
 
 ## Manual setup
 
@@ -154,7 +155,7 @@ Then start Hoot (see *Running the Project*), sign in, and install the app on you
 8. **Where can this GitHub App be installed?** *Only on this account* for development; *Any account* if it should also be installed on organizations
 9. Create the app, then **Generate a new client secret** (GitHub shows it only once)
 10. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, and the app's URL name as `GITHUB_APP_SLUG` (the last part of its public page `https://github.com/apps/<slug>`)
-11. Install the app on your account: after signing in, Hoot's overview page links to GitHub's install page. Hoot only sees repositories in accounts where the app is installed. Members who aren't owners of an organization can request the app there, and GitHub asks the owners to approve it. Outside collaborators (access to a repository, but no organization membership) can't: they have to ask an owner of the organization to install it.
+11. Install the app on your account: after signing in, a banner and the *GitHub access* page link to GitHub's install page. Hoot only sees repositories in accounts where the app is installed. Members who aren't owners of an organization can request the app there, and GitHub asks the owners to approve it. Outside collaborators (access to a repository, but no organization membership) can't: they have to ask an owner of the organization to install it.
 
 **Limitation:** Hoot can't list the organizations where it's still missing. A GitHub App's user token only searches accounts where the app is installed. `GET /user/orgs` only returns organization *memberships*, never organizations where the user is just a collaborator. Tested with a real Hoot token (#96): it returned no organizations for an account that only collaborates in one. The GitHub access card lists where Hoot *is* installed, and GitHub's install page offers every account the user can install or request it for.
 
@@ -655,7 +656,7 @@ Overview Page
 /
 ```
 
-The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` and `GET /github/installations` side by side:
+The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` with the user's filters:
 
 * **Four tabs** (`mat-tab-group`): *My pull requests*, *Review requests*, *Assigned* and *Mentions*, each with the number of items it shows. The page opens on the first tab with items. When GitHub found more than the 50 loaded items, the tab ends with *Show all N on GitHub*. Each list is a Material nav list (`overview-section`), and every item is one clickable row to GitHub: the title, a line with kind, `owner/repo#number` and how long ago it was updated ("3 hours ago", `item/item-meta`), and a line of chips (`item/item-chips`):
   * **Status** of your pull requests: CI (`CI passing`, `CI failing`, `CI running`) and review (`Approved`, `Changes requested`, `Review required`), always as text with an icon (the Material Symbols `check`, `close` and `schedule`) and a colour, never colour alone.
@@ -666,7 +667,18 @@ The start page after signing in (logged-out visitors go to `/login`, and `/login
   * The tab counts follow the filters, and a tab whose items are all filtered out says so. Changes are saved per user with `PUT /overview/filters`, one after the other. If saving fails, the filters still apply until the page is reloaded.
 * **Refresh** (`refresh-status`, also on the team view): "Updated 5 minutes ago" with a refresh button. A refresh keeps the current lists and the open tab visible under a thin progress bar. If it fails, the lists stay and it says "Couldn't refresh". Coming back to the browser tab after more than 5 minutes refreshes on its own, which also keeps the session alive (sliding session).
 * **States:** a skeleton in the shape of tabs and rows while loading (`layout/list-skeleton`), an empty message per tab, "Nothing waiting on you." with the `task_alt` icon above the tabs when all four are empty (the tabs stay; the filter bar only while a filter is active), and an error with **Try again** that says whether Hoot's server or GitHub failed.
-* **GitHub access card** (`pages/overview/github-access`): if the app is installed nowhere, it replaces the tabs and asks the user to install it, since every list would otherwise be empty. Otherwise it sits below the tabs and lists the accounts Hoot can see (all or selected repositories, with a link to change that on GitHub) and an "Add an account or organization" link to the same install page.
+
+---
+
+GitHub Access Page
+
+```
+/github-access
+```
+
+Linked at the bottom of the sidebar. Shows the GitHub access card (`pages/github-access`) from `GET /github/installations`: the accounts Hoot can see (all or selected repositories, with *Manage* on GitHub), *Add an account or organization*, and a hint for members and collaborators who can't install it themselves. If the app is installed nowhere, the card asks the user to install it instead.
+
+**Install banner** (`layout/install-banner`): while the app is installed nowhere, every other page shows a banner above its content ("Hoot can't see any of your repositories yet") with *Install Hoot on GitHub* and a link to this page. The overview then keeps its tabs but doesn't claim "Nothing waiting on you."
 
 ---
 

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { GitHubAccess } from '../../../services/github-access';
+import { GitHubAccess } from '../../services/github-access';
 import { GitHubAccessCard } from './github-access';
 
 const INSTALL_URL = 'https://github.com/apps/hoot/installations/new';

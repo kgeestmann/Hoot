@@ -195,14 +195,10 @@ describe('OverviewPage', () => {
     expect(element.querySelector('.more-link')).toBeNull();
   });
 
-  it('shows where Hoot is installed below the tabs', async () => {
+  it('leaves GitHub access to its own page', async () => {
     const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-    const card = element.querySelector('app-github-access');
-    expect(card?.textContent).toContain('octocat');
-    expect(element.querySelector('mat-tab-group')!.compareDocumentPosition(card!)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+    expect(element.querySelector('app-github-access')).toBeNull();
   });
 
   it('says so when nothing is waiting, and keeps the tabs', async () => {
@@ -236,12 +232,11 @@ describe('OverviewPage', () => {
     expect(element.querySelector('app-filter-bar .clear')).not.toBeNull();
   });
 
-  it('only asks to install Hoot when it is installed nowhere', async () => {
+  it('keeps the tabs but claims nothing is waiting when Hoot is installed nowhere', async () => {
     const element = await render(() => of(EMPTY), of(INSTALLED_NOWHERE));
 
-    expect(element.querySelector('.install-link')).not.toBeNull();
+    expect(element.querySelector('mat-tab-group')).not.toBeNull();
     expect(element.querySelector('.all-clear')).toBeNull();
-    expect(element.querySelector('mat-tab-group')).toBeNull();
   });
 
   it('still shows the overview when GitHub access cannot be loaded', async () => {

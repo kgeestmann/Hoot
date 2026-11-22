@@ -18,8 +18,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from '../../services/auth';
-import { GitHubAccessService } from '../../services/github-access';
+import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { PageTitle } from '../../services/page-title';
+import { InstallBanner } from '../install-banner/install-banner';
 
 const WIDE_SCREEN = '(min-width: 840px)';
 
@@ -27,6 +28,7 @@ const WIDE_SCREEN = '(min-width: 840px)';
   selector: 'app-sidenav',
   standalone: true,
   imports: [
+    InstallBanner,
     MatButtonModule,
     MatIconModule,
     MatListModule,
@@ -51,27 +53,42 @@ export class Sidenav {
     { initialValue: inject(BreakpointObserver).isMatched(WIDE_SCREEN) },
   );
 
+  /** Where Hoot is installed for the user; `undefined` until loaded or when that failed. */
+  readonly access = signal<GitHubAccess | undefined>(undefined);
   /** Organizations where Hoot is installed for the user, each with a team view. */
-  readonly organizations = signal<string[]>([]);
+  readonly organizations = computed(() =>
+    (this.access()?.installations ?? [])
+      .filter((installation) => installation.account_type === 'Organization')
+      .map((installation) => installation.account),
+  );
+  private readonly currentUrl = signal('');
+  /** The banner explains the empty lists everywhere but on the page that already does. */
+  readonly showInstallBanner = computed(
+    () =>
+      this.access()?.installations.length === 0 && !this.currentUrl().startsWith('/github-access'),
+  );
   readonly pageTitle = inject(PageTitle).current;
   /** First letter of the GitHub login, shown instead of loading the avatar from GitHub. */
   readonly initial = computed(() => this.auth.user()?.login.charAt(0).toUpperCase() ?? '');
 
   constructor(public auth: AuthService) {
     effect(() => {
-      this.organizations.set([]);
+      this.access.set(undefined);
       if (this.auth.isLoggedIn()) {
-        this.loadOrganizations();
+        this.loadAccess();
       }
     });
 
-    // On small screens the drawer covers the page, so it closes once a page is chosen.
-    inject(Router)
-      .events.pipe(
+    const router = inject(Router);
+    this.currentUrl.set(router.url);
+    router.events
+      .pipe(
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => {
+      .subscribe((event) => {
+        this.currentUrl.set(event.urlAfterRedirects);
+        // On small screens the drawer covers the page, so it closes once a page is chosen.
         if (!this.isWide()) {
           this.drawer().close();
         }
@@ -86,16 +103,11 @@ export class Sidenav {
     this.auth.logout();
   }
 
-  private loadOrganizations(): void {
+  private loadAccess(): void {
     this.gitHubAccess.load().subscribe({
-      next: (access) =>
-        this.organizations.set(
-          access.installations
-            .filter((installation) => installation.account_type === 'Organization')
-            .map((installation) => installation.account),
-        ),
-      // The links are a shortcut; without them the rest of the app still works.
-      error: () => this.organizations.set([]),
+      next: (access) => this.access.set(access),
+      // The team links and the banner are extras; without them the rest of the app still works.
+      error: () => this.access.set(undefined),
     });
   }
 }

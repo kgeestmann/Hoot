@@ -22,6 +22,14 @@ export const routes: Routes = [
   },
 
   {
+    path: 'github-access',
+    title: 'GitHub access',
+    loadComponent: () =>
+      import('./pages/github-access/github-access-page').then((page) => page.GitHubAccessPage),
+    canActivate: [authGuard]
+  },
+
+  {
     path: 'login',
     title: 'Sign in',
     loadComponent: () => import('./pages/login/login').then((page) => page.Login),
