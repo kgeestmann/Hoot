@@ -154,7 +154,9 @@ Then start Hoot (see *Running the Project*), sign in, and install the app on you
 8. **Where can this GitHub App be installed?** *Only on this account* for development; *Any account* if it should also be installed on organizations
 9. Create the app, then **Generate a new client secret** (GitHub shows it only once)
 10. Put the **Client ID** and the client secret into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, and the app's URL name as `GITHUB_APP_SLUG` (the last part of its public page `https://github.com/apps/<slug>`)
-11. Install the app on your account: after signing in, Hoot's overview page links to GitHub's install page. Hoot only sees repositories in accounts where the app is installed. Members who aren't owners of an organization can request the app there, and GitHub asks the owners to approve it.
+11. Install the app on your account: after signing in, Hoot's overview page links to GitHub's install page. Hoot only sees repositories in accounts where the app is installed. Members who aren't owners of an organization can request the app there, and GitHub asks the owners to approve it. Outside collaborators (access to a repository, but no organization membership) can't: they have to ask an owner of the organization to install it.
+
+**Limitation:** Hoot can't list the organizations where it's still missing. A GitHub App's user token only searches accounts where the app is installed. `GET /user/orgs` only returns organization *memberships*, never organizations where the user is just a collaborator. Tested with a real Hoot token (#96): it returned no organizations for an account that only collaborates in one. The GitHub access card lists where Hoot *is* installed, and GitHub's install page offers every account the user can install or request it for.
 
 ---
 
