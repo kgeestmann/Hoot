@@ -2,35 +2,9 @@
   max-width: 600px;
 }
 
-.profile-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--hoot-space-2);
+.profile-fields {
+  padding: 0;
   margin-top: var(--hoot-space-4);
-}
-
-.profile-field {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--hoot-space-3) var(--hoot-space-4);
-  border-radius: var(--mat-sys-corner-small);
-  background: var(--mat-sys-surface);
   border: 1px solid var(--mat-sys-outline-variant);
-  transition: all var(--hoot-transition);
-}
-
-.profile-field:hover {
-  background: var(--mat-sys-surface-container-high);
-  border-color: var(--mat-sys-outline);
-}
-
-.label {
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.value {
-  font: var(--mat-sys-title-medium);
-  color: var(--mat-sys-on-surface);
+  border-radius: var(--mat-sys-corner-medium);
 }

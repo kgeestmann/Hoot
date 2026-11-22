@@ -63,10 +63,23 @@ describe('OrganizationPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function headings(element: HTMLElement): string[] {
-    return Array.from(element.querySelectorAll('app-overview-section h2')).map((heading) =>
-      heading.textContent!.replace(/\s+/g, ' ').trim(),
+  function text(element: Element | null): string {
+    return element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+  }
+
+  /** Tab labels with their counts, e.g. "Failing CI 25". */
+  function tabs(element: HTMLElement): string[] {
+    return Array.from(element.querySelectorAll('[role="tab"]')).map(
+      (tab) => `${text(tab.querySelector('.tab-label'))} ${text(tab.querySelector('.tab-count'))}`,
     );
+  }
+
+  async function openTab(element: HTMLElement, label: string): Promise<void> {
+    const tab = Array.from(element.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+      (candidate) => text(candidate.querySelector('.tab-label')) === label,
+    );
+    tab!.click();
+    await fixture.whenStable();
   }
 
   it('loads the organization from the URL and shows a skeleton meanwhile', async () => {
@@ -79,16 +92,27 @@ describe('OrganizationPage', () => {
   it("shows the four team lists with GitHub's totals", async () => {
     const element = await render(() => of(OVERVIEW));
 
-    expect(headings(element)).toEqual([
+    expect(tabs(element)).toEqual([
       'Waiting for review 1',
       'Failing CI 25',
-      'Unassigned issues 0',
+      'Unassigned 0',
       'No update for 60 days 0',
     ]);
   });
 
+  it('opens on the first tab with items', async () => {
+    const element = await render(() => of({ ...OVERVIEW, waiting_for_review: list(0) }));
+
+    expect(text(element.querySelector('[role="tab"][aria-selected="true"] .tab-label'))).toBe(
+      'Failing CI',
+    );
+    expect(element.querySelectorAll('a.item').length).toBe(2);
+  });
+
   it('links to the full search when GitHub has more than the loaded items', async () => {
     const element = await render(() => of(OVERVIEW));
+
+    await openTab(element, 'Failing CI');
 
     const more = Array.from(element.querySelectorAll<HTMLAnchorElement>('.more-link'));
     expect(more.map((link) => link.textContent!.trim())).toEqual(['Show all 25 on GitHub']);
@@ -119,7 +143,7 @@ describe('OrganizationPage', () => {
     await fixture.whenStable();
 
     expect(load).toHaveBeenCalledTimes(2);
-    expect(headings(element)).toContain('Failing CI 25');
+    expect(tabs(element)).toContain('Failing CI 25');
   });
 
   it('loads the new organization when the URL changes', async () => {
@@ -131,6 +155,6 @@ describe('OrganizationPage', () => {
     await fixture.whenStable();
 
     expect(load).toHaveBeenLastCalledWith('other-org');
-    expect(headings(element)).toContain('Failing CI 25');
+    expect(tabs(element)).toContain('Failing CI 25');
   });
 });

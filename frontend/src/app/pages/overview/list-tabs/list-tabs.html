@@ -1,0 +1,24 @@
+<!-- Tabs switch without animation (#55: short or no motion). -->
+<mat-tab-group
+  mat-stretch-tabs="false"
+  mat-align-tabs="start"
+  animationDuration="0ms"
+  [selectedIndex]="selectedIndex()"
+  (selectedIndexChange)="selectedIndex.set($event)"
+>
+  @for (tab of tabs(); track tab.label) {
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-label">{{ tab.label }}</span>
+        <span class="tab-count">{{ tab.count }}</span>
+      </ng-template>
+      <app-overview-section
+        class="tab-content"
+        [items]="tab.items"
+        [total]="tab.count"
+        [moreUrl]="tab.moreUrl"
+        [emptyText]="tab.emptyText"
+      />
+    </mat-tab>
+  }
+</mat-tab-group>

@@ -17,33 +17,12 @@
           (toggleLabel)="toggleLabel($event)"
           (clear)="clearFilters()"
         />
-        <mat-tab-group
-          class="tabs"
-          mat-stretch-tabs="false"
-          mat-align-tabs="start"
-          animationDuration="0ms"
-          [selectedIndex]="selectedTab()"
-          (selectedIndexChange)="selectedTab.set($event)"
-        >
-          @for (tab of tabs(); track tab.label) {
-            <mat-tab>
-              <ng-template mat-tab-label>
-                <span class="tab-label">{{ tab.label }}</span>
-                <span class="tab-count">{{ tab.items.length }}</span>
-              </ng-template>
-              <app-overview-section
-                class="tab-content"
-                [items]="tab.items"
-                [emptyText]="tab.emptyText"
-              />
-            </mat-tab>
-          }
-        </mat-tab-group>
+        <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
       }
     } @else if (loadError(); as message) {
       <app-load-error [message]="message" (retry)="load()" />
     } @else {
-      <app-sections-skeleton label="Loading your overview" />
+      <app-list-skeleton label="Loading your overview" />
     }
 
     @if (gitHubAccess) {
