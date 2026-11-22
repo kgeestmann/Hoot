@@ -1,0 +1,21 @@
+<div class="refresh-status">
+  <span class="updated" [class.failed]="failed()" aria-live="polite">
+    @if (failed()) {
+      Couldn't refresh ·
+    }
+    Updated {{ updatedAgo() }}
+  </span>
+  <button
+    mat-icon-button
+    type="button"
+    class="refresh-button"
+    aria-label="Refresh"
+    [disabled]="refreshing()"
+    (click)="refresh.emit()"
+  >
+    <mat-icon svgIcon="refresh" />
+  </button>
+</div>
+@if (refreshing()) {
+  <mat-progress-bar class="progress" mode="indeterminate" aria-label="Refreshing" />
+}

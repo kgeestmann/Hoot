@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, concatMap, forkJoin, map, of, Subject } from 'rxjs';
+import { catchError, concatMap, finalize, forkJoin, map, of, Subject } from 'rxjs';
 
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
 import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
@@ -22,6 +22,7 @@ import { FilterBar } from './filters/filter-bar';
 import { applyFilters, countItems, filterOptions, toggleEntry } from './filters/filtering';
 import { GitHubAccessCard } from './github-access/github-access';
 import { firstTabWithItems, ListTab, ListTabs } from './list-tabs/list-tabs';
+import { RefreshStatus } from './refresh-status/refresh-status';
 
 /** The four tabs, in order: which list each shows and what it says when the list is empty. */
 const TABS = [
@@ -50,7 +51,7 @@ const TABS = [
 /** The start page: everything on GitHub that is waiting on the user, one tab per list. */
 @Component({
   selector: 'app-overview-page',
-  imports: [FilterBar, GitHubAccessCard, LoadError, ListSkeleton, ListTabs],
+  imports: [FilterBar, GitHubAccessCard, LoadError, ListSkeleton, ListTabs, RefreshStatus],
   templateUrl: './overview.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview.css',
@@ -70,6 +71,10 @@ export class OverviewPage implements OnInit {
   readonly filters = signal<OverviewFilters>(NO_FILTERS);
   readonly filterSaveFailed = signal(false);
   readonly selectedTab = signal(0);
+  /** When the shown overview came from GitHub. */
+  readonly loadedAt = signal(new Date());
+  readonly refreshing = signal(false);
+  readonly refreshFailed = signal(false);
 
   readonly visible = computed(() => {
     const overview = this.overview();
@@ -140,7 +145,7 @@ export class OverviewPage implements OnInit {
     }).subscribe({
       next: ({ overview, filters }) => {
         this.filters.set(filters);
-        this.overview.set(overview);
+        this.showOverview(overview);
         this.selectedTab.set(firstTabWithItems(this.tabs()));
       },
       error: (error: unknown) => this.loadError.set(loadErrorMessage(error)),
@@ -149,6 +154,21 @@ export class OverviewPage implements OnInit {
       next: (access) => this.access.set(access),
       error: () => this.access.set(undefined),
     });
+  }
+
+  /** Load the overview again while the current one stays visible; on failure it stays as it is. */
+  refresh(): void {
+    if (this.refreshing()) {
+      return;
+    }
+    this.refreshing.set(true);
+    this.overviewService
+      .load()
+      .pipe(finalize(() => this.refreshing.set(false)))
+      .subscribe({
+        next: (overview) => this.showOverview(overview),
+        error: () => this.refreshFailed.set(true),
+      });
   }
 
   /** Show a hidden owner or repository again, or hide a shown one. */
@@ -163,6 +183,12 @@ export class OverviewPage implements OnInit {
 
   clearFilters(): void {
     this.saveFilters(NO_FILTERS);
+  }
+
+  private showOverview(overview: Overview): void {
+    this.overview.set(overview);
+    this.loadedAt.set(new Date());
+    this.refreshFailed.set(false);
   }
 
   private saveFilters(filters: OverviewFilters): void {

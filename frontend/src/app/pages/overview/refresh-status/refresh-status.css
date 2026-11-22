@@ -1,0 +1,23 @@
+:host {
+  display: block;
+}
+
+.refresh-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--hoot-space-1);
+}
+
+.updated {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.updated.failed {
+  color: var(--mat-sys-error);
+}
+
+.progress {
+  margin-top: var(--hoot-space-1);
+}
