@@ -166,6 +166,14 @@ describe('OrganizationPage', () => {
     expect(element.querySelector('mat-progress-bar')).toBeNull();
   });
 
+  it('shows the refresh status on the subtitle line', async () => {
+    const element = await render(() => of(OVERVIEW));
+
+    const toolbar = element.querySelector('.toolbar')!;
+    expect(toolbar.querySelector('.subtitle')).not.toBeNull();
+    expect(toolbar.querySelector('app-refresh-status')).not.toBeNull();
+  });
+
   it('keeps the team view when a refresh fails', async () => {
     const answers: Observable<OrgOverview>[] = [
       of(OVERVIEW),

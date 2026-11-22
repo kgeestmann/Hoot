@@ -4,25 +4,31 @@
     <app-github-access [access]="gitHubAccess" />
   } @else {
     @if (overview()) {
-      <app-refresh-status
-        [loadedAt]="loadedAt()"
-        [refreshing]="refreshing()"
-        [failed]="refreshFailed()"
-        (refresh)="refresh()"
-      />
+      <div class="toolbar">
+        @if (!nothingWaiting()) {
+          <app-filter-bar
+            class="filters"
+            [owners]="filterOptions().owners"
+            [labels]="filterOptions().labels"
+            [shownCount]="shownCount()"
+            [totalCount]="totalCount()"
+            [saveFailed]="filterSaveFailed()"
+            (toggleScope)="toggleScope($event)"
+            (toggleLabel)="toggleLabel($event)"
+            (clear)="clearFilters()"
+          />
+        }
+        <app-refresh-status
+          class="refresh"
+          [loadedAt]="loadedAt()"
+          [refreshing]="refreshing()"
+          [failed]="refreshFailed()"
+          (refresh)="refresh()"
+        />
+      </div>
       @if (nothingWaiting()) {
         <p class="all-clear">Nothing waiting on you 🎉</p>
       } @else {
-        <app-filter-bar
-          [owners]="filterOptions().owners"
-          [labels]="filterOptions().labels"
-          [shownCount]="shownCount()"
-          [totalCount]="totalCount()"
-          [saveFailed]="filterSaveFailed()"
-          (toggleScope)="toggleScope($event)"
-          (toggleLabel)="toggleLabel($event)"
-          (clear)="clearFilters()"
-        />
         <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
       }
     } @else if (loadError(); as message) {

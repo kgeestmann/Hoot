@@ -18,6 +18,11 @@
   color: var(--mat-sys-error);
 }
 
+/* Lies just under the row of the closest positioned ancestor (the page's toolbar), so it
+   doesn't add a line or make the page jump. */
 .progress {
-  margin-top: var(--hoot-space-1);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * var(--hoot-space-2));
 }

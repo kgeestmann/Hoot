@@ -1,15 +1,20 @@
 <div class="organization-page">
-  <p class="subtitle">
-    What needs the team's attention. Lists of work only, no statistics per person.
-  </p>
+  <div class="toolbar">
+    <p class="subtitle">
+      What needs the team's attention. Lists of work only, no statistics per person.
+    </p>
+    @if (overview()) {
+      <app-refresh-status
+        class="refresh"
+        [loadedAt]="loadedAt()"
+        [refreshing]="refreshing()"
+        [failed]="refreshFailed()"
+        (refresh)="refresh()"
+      />
+    }
+  </div>
 
   @if (overview()) {
-    <app-refresh-status
-      [loadedAt]="loadedAt()"
-      [refreshing]="refreshing()"
-      [failed]="refreshFailed()"
-      (refresh)="refresh()"
-    />
     <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
   } @else if (loadError(); as message) {
     <app-load-error [message]="message" (retry)="load()" />
