@@ -45,7 +45,11 @@ def read_bool(name: str, default: bool) -> bool:
 
 
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
+# A session ends after this many minutes without a request; requests keep renewing it.
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+# However active, a session ends this many days after signing in, so a stolen cookie can't be
+# kept alive forever.
+SESSION_MAX_DAYS = int(os.getenv("SESSION_MAX_DAYS", "7"))
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:4200,http://127.0.0.1:4200").split(",")
 # Chrome, Edge and Firefox accept Secure cookies on http://localhost, so this stays on in
 # development too. Safari doesn't; set COOKIE_SECURE=false there.

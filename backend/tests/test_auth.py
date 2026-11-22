@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from backend.app.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
+from backend.app.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY, SESSION_MAX_DAYS
 from backend.app.main import SESSION_COOKIE_NAME, create_access_token, create_oauth_cookie
 
 
@@ -127,3 +127,77 @@ def test_profile_with_unsigned_token_is_unauthorized(client):
     token = unsigned_token({"sub": "1", "exp": int(in_minutes(5).timestamp())})
 
     assert get_profile(client, token).status_code == 401
+
+
+# --- Sliding session (#92) ---
+
+
+def session_claims(**claims):
+    """Valid session claims for user 1; keyword arguments override them."""
+    now = datetime.now(timezone.utc)
+    return {"sub": "1", "auth_time": int(now.timestamp()), "exp": now + timedelta(minutes=60), **claims}
+
+
+def renewed_claims(response):
+    """Decode the fresh session cookie the response sets."""
+    token = response.cookies[SESSION_COOKIE_NAME]
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+
+def test_session_token_records_the_sign_in_time():
+    claims = jwt.decode(create_access_token(data={"sub": "1"}), SECRET_KEY, algorithms=[ALGORITHM])
+
+    assert abs(claims["auth_time"] - datetime.now(timezone.utc).timestamp()) < 10
+
+
+@pytest.mark.usefixtures("user")
+def test_fresh_session_is_not_renewed(client):
+    response = get_profile(client, signed_token(session_claims()))
+
+    assert response.status_code == 200
+    assert SESSION_COOKIE_NAME not in response.cookies
+
+
+@pytest.mark.usefixtures("user")
+def test_session_in_its_second_half_is_renewed_with_the_same_sign_in_time(client):
+    signed_in_at = int(in_minutes(-45).timestamp())
+
+    response = get_profile(client, signed_token(session_claims(auth_time=signed_in_at, exp=in_minutes(15))))
+
+    assert response.status_code == 200
+    assert "httponly" in session_cookie_header(response).lower()
+    claims = renewed_claims(response)
+    assert claims["auth_time"] == signed_in_at
+    assert abs(claims["exp"] - in_minutes(ACCESS_TOKEN_EXPIRE_MINUTES).timestamp()) < 10
+
+
+@pytest.mark.usefixtures("user")
+def test_renewal_never_goes_past_the_maximum_session_length(client):
+    signed_in_at = int((datetime.now(timezone.utc) - timedelta(days=SESSION_MAX_DAYS, minutes=-10)).timestamp())
+
+    response = get_profile(client, signed_token(session_claims(auth_time=signed_in_at, exp=in_minutes(5))))
+
+    claims = renewed_claims(response)
+    assert claims["exp"] == signed_in_at + SESSION_MAX_DAYS * 24 * 60 * 60
+
+
+@pytest.mark.usefixtures("user")
+def test_session_older_than_the_maximum_is_unauthorized(client):
+    signed_in_at = int((datetime.now(timezone.utc) - timedelta(days=SESSION_MAX_DAYS, minutes=1)).timestamp())
+
+    response = get_profile(client, signed_token(session_claims(auth_time=signed_in_at)))
+
+    assert response.status_code == 401
+
+
+@pytest.mark.usefixtures("user")
+def test_session_without_sign_in_time_is_unauthorized(client):
+    claims = session_claims()
+    del claims["auth_time"]
+
+    assert get_profile(client, signed_token(claims)).status_code == 401
+
+
+@pytest.mark.usefixtures("user")
+def test_session_with_a_non_numeric_sign_in_time_is_unauthorized(client):
+    assert get_profile(client, signed_token(session_claims(auth_time="yesterday"))).status_code == 401

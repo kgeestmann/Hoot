@@ -170,6 +170,7 @@ GITHUB_CLIENT_SECRET=<client secret of your GitHub App>
 GITHUB_APP_SLUG=<URL name of your GitHub App>
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
+SESSION_MAX_DAYS=7
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 COOKIE_SECURE=true
 ```
@@ -208,7 +209,10 @@ ALGORITHM
 JWT encryption algorithm. Default: `HS256`.
 
 ACCESS_TOKEN_EXPIRE_MINUTES
-Defines how long a Hoot session remains valid. Default: `60`.
+How long a Hoot session lasts **without requests**. Requests in the second half of that time renew the session (see *Token Validation*), so an active user stays signed in. Default: `60`.
+
+SESSION_MAX_DAYS
+However active, a session ends this many days after signing in, so a stolen cookie can't be kept alive forever. Default: `7`.
 
 CORS_ORIGINS
 Comma-separated list of frontend origins allowed to call the API. Default: `http://localhost:4200,http://127.0.0.1:4200`.
@@ -395,15 +399,17 @@ create_access_token()
 Steps:
 
 1. Copy user data
-2. Add expiration timestamp
-3. Encode using SECRET_KEY
-4. Return signed token
+2. Add `auth_time`, the time of the sign-in (now, unless a renewal passes the original one)
+3. Add the expiration: `ACCESS_TOKEN_EXPIRE_MINUTES` from now, but at most `SESSION_MAX_DAYS` after `auth_time`
+4. Encode using SECRET_KEY
+5. Return signed token
 
 Example token payload:
 
 ```
 {
   "sub": "1",
+  "auth_time": 1709996400,
   "exp": 1710000000
 }
 ```
@@ -421,12 +427,14 @@ get_current_user()
 Steps:
 
 1. Read the token from the `hoot_session` cookie
-2. Decode JWT (requires `exp` and `sub`)
-3. Extract user id
-4. Query database
-5. Return authenticated user
+2. Decode JWT (requires `exp`, `sub` and `auth_time`)
+3. Reject sessions older than `SESSION_MAX_DAYS` since `auth_time`
+4. Extract user id
+5. Query database
+6. If less than half of `ACCESS_TOKEN_EXPIRE_MINUTES` is left, set a fresh `hoot_session` cookie with the same `auth_time` (sliding session)
+7. Return authenticated user
 
-A missing, invalid or expired cookie returns `401`. An `Authorization` header is not accepted.
+A missing, invalid or expired cookie returns `401`. An `Authorization` header is not accepted. Sessions from before the sliding session (no `auth_time`) are rejected once, so users sign in again.
 
 ---
 
@@ -784,7 +792,7 @@ JWT tokens contain:
 
 Protected routes require a valid session cookie.
 
-Tokens expire automatically.
+Sessions end after `ACCESS_TOKEN_EXPIRE_MINUTES` without requests, and at the latest `SESSION_MAX_DAYS` after signing in.
 
 The cookie is `HttpOnly` (unreadable for JavaScript, so XSS cannot steal it), `SameSite=Lax` (other sites can't send it along with POST requests) and `Secure` by default.
 

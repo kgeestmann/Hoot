@@ -29,6 +29,7 @@ from .config import (
     CORS_ORIGINS,
     FRONTEND_URL,
     SECRET_KEY,
+    SESSION_MAX_DAYS,
 )
 from .database import engine, SessionLocal
 
@@ -100,18 +101,33 @@ def get_github_client():
 
 
 def create_access_token(data: dict):
-    """Sign the given claims as a JWT that expires after ACCESS_TOKEN_EXPIRE_MINUTES."""
+    """Sign the claims as a session JWT.
+
+    `auth_time` (Unix time of the sign-in) defaults to now. The token expires after
+    ACCESS_TOKEN_EXPIRE_MINUTES, but never later than SESSION_MAX_DAYS after `auth_time`.
+    """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    now = datetime.now(timezone.utc)
+    signed_in_at = to_encode.setdefault("auth_time", int(now.timestamp()))
+    latest = datetime.fromtimestamp(signed_in_at, timezone.utc) + timedelta(days=SESSION_MAX_DAYS)
+    to_encode["exp"] = min(now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), latest)
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def renew_session_if_half_over(response: Response, claims: dict) -> None:
+    """Give an active session a fresh cookie once half of its idle time has passed."""
+    seconds_left = claims["exp"] - datetime.now(timezone.utc).timestamp()
+    if seconds_left < ACCESS_TOKEN_EXPIRE_MINUTES * 60 / 2:
+        token = create_access_token(data={"sub": claims["sub"], "auth_time": claims["auth_time"]})
+        set_session_cookie(response, token)
+
+
 def get_current_user(
+    response: Response,
     token: str | None = Depends(session_cookie),
     db: Session = Depends(get_db)
 ):
-    """Return the user the session cookie belongs to, or raise 401."""
+    """Return the user the session cookie belongs to, or raise 401; renews an active session."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -125,10 +141,15 @@ def get_current_user(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM],
-            options={"require": ["exp", "sub"]},
+            options={"require": ["exp", "sub", "auth_time"]},
         )
         user_id = int(payload["sub"])
-    except (jwt.PyJWTError, ValueError):
+        signed_in_at = int(payload["auth_time"])
+    except (jwt.PyJWTError, ValueError, TypeError):
+        raise credentials_exception
+
+    session_ends = signed_in_at + SESSION_MAX_DAYS * 24 * 60 * 60
+    if datetime.now(timezone.utc).timestamp() >= session_ends:
         raise credentials_exception
 
     user = db.query(models.User).filter(models.User.id == user_id).first()
@@ -136,6 +157,7 @@ def get_current_user(
     if user is None:
         raise credentials_exception
 
+    renew_session_if_half_over(response, payload)
     return user
 
 
