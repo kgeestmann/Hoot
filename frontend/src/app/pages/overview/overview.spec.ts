@@ -36,11 +36,20 @@ function item(repository: string, number: number, labels: string[] = []): Overvi
   };
 }
 
+const ALL_LOADED = { total: 0, has_more: false, search_url: '' };
+const NO_MORE: Overview['totals'] = {
+  assigned_issues: ALL_LOADED,
+  pull_requests: ALL_LOADED,
+  review_requests: ALL_LOADED,
+  mentions: ALL_LOADED,
+};
+
 const EMPTY: Overview = {
   assigned_issues: [],
   pull_requests: [],
   review_requests: [],
   mentions: [],
+  totals: NO_MORE,
 };
 
 /** Three assigned issues in two owners, one with the label "bug", and one mention. */
@@ -158,6 +167,32 @@ describe('OverviewPage', () => {
     await openTab(element, 'Mentions');
 
     expect(rows(element)).toEqual(['Issue 6']);
+  });
+
+  it('links to the rest of a list GitHub cut off', async () => {
+    const searchUrl = 'https://github.com/search?q=assignee%3A%40me&type=issues';
+    const element = await render(
+      () =>
+        of({
+          ...OVERVIEW,
+          totals: {
+            ...NO_MORE,
+            assigned_issues: { total: 70, has_more: true, search_url: searchUrl },
+          },
+        }),
+      of(INSTALLED),
+    );
+
+    expect(tabs(element)).toContain('Assigned 3');
+    const more = element.querySelector<HTMLAnchorElement>('.more-link');
+    expect(text(more)).toBe('Show all 70 on GitHub');
+    expect(more?.href).toBe(searchUrl);
+  });
+
+  it('has no link to more when GitHub returned the whole list', async () => {
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+    expect(element.querySelector('.more-link')).toBeNull();
   });
 
   it('shows where Hoot is installed below the tabs', async () => {

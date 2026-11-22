@@ -38,6 +38,24 @@ class PullRequestItem(OverviewItem):
     review_decision: str | None
 
 
+class ListTotal(BaseModel):
+    """How many items GitHub found for one overview list; the list holds at most 50 of them."""
+
+    total: int
+    # True when GitHub found more than it returned, so the list is cut off.
+    has_more: bool
+    search_url: str
+
+
+class OverviewTotals(BaseModel):
+    """The totals of the overview's four lists."""
+
+    assigned_issues: ListTotal
+    pull_requests: ListTotal
+    review_requests: ListTotal
+    mentions: ListTotal
+
+
 class Overview(BaseModel):
     """Everything on GitHub that is waiting on the user, newest activity first."""
 
@@ -45,6 +63,7 @@ class Overview(BaseModel):
     pull_requests: list[PullRequestItem]
     review_requests: list[OverviewItem]
     mentions: list[OverviewItem]
+    totals: OverviewTotals
 
 
 class Installation(BaseModel):

@@ -1,13 +1,12 @@
 """The team view of an organization: lists of work items, never statistics per person (#28)."""
 
 from datetime import date, datetime, timedelta, timezone
-from urllib.parse import urlencode
 
 import httpx
 from pydantic import ValidationError
 
 from . import github, schemas
-from .overview import ci_status, item_fields, search_nodes
+from .overview import ci_status, github_search_url, item_fields, search_nodes
 
 STALE_AFTER_DAYS = 60
 
@@ -123,7 +122,7 @@ def _team_list(search: dict | None, query: str) -> schemas.TeamList:
     return schemas.TeamList(
         total=search["issueCount"] if search else 0,
         items=[_team_item(node) for node in search_nodes(search)],
-        search_url=f"https://github.com/search?{urlencode({'q': query, 'type': 'issues'})}",
+        search_url=github_search_url(query),
     )
 
 

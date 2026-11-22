@@ -314,6 +314,14 @@ updated_at
 labels        list of { name, color }; color is GitHub's six hex digits, e.g. "d73a4a" (first 10 labels)
 ```
 
+Next to the four lists, `totals` holds one entry per list:
+
+```
+total         how many items GitHub found
+has_more      true when that's more than the list holds (at most 50)
+search_url    the same search on github.com, with every match
+```
+
 OverviewFilters
 
 Returned and accepted by `/overview/filters`.
@@ -520,7 +528,7 @@ Overview (Protected Route)
 GET /overview
 ```
 
-Requires a valid session cookie. Runs four GitHub searches as the user in one GraphQL query, each limited to the 50 most recently updated results, and only covering repositories where the GitHub App is installed:
+Requires a valid session cookie. Runs four GitHub searches as the user in one GraphQL query, each limited to the 50 most recently updated results (`totals` says when a list is cut off), and only covering repositories where the GitHub App is installed:
 
 | List              | GitHub search                                     |
 | ----------------- | ------------------------------------------------- |
@@ -647,7 +655,7 @@ Overview Page
 
 The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` and `GET /github/installations` side by side:
 
-* **Four tabs** (`mat-tab-group`): *My pull requests*, *Review requests*, *Assigned* and *Mentions*, each with its number of items. The page opens on the first tab with items. Each list is a Material nav list (`overview-section`), and every item is one clickable row to GitHub: the title, a line with kind, `owner/repo#number` and how long ago it was updated ("3 hours ago", `item/item-meta`), and a line of chips (`item/item-chips`):
+* **Four tabs** (`mat-tab-group`): *My pull requests*, *Review requests*, *Assigned* and *Mentions*, each with the number of items it shows. The page opens on the first tab with items. When GitHub found more than the 50 loaded items, the tab ends with *Show all N on GitHub*. Each list is a Material nav list (`overview-section`), and every item is one clickable row to GitHub: the title, a line with kind, `owner/repo#number` and how long ago it was updated ("3 hours ago", `item/item-meta`), and a line of chips (`item/item-chips`):
   * **Status** of your pull requests: CI (`CI passing`, `CI failing`, `CI running`) and review (`Approved`, `Changes requested`, `Review required`), always as text with an icon (✓ check, ✕ close, 🕒 schedule) and a colour, never colour alone.
   * **Labels** in GitHub's colours. The text is dark or white, whichever has more contrast on the label colour (`item/label-colors.ts`), as on GitHub.
 * **Filter bar** above the tabs (`filters/filter-bar`): *Owner*, *Repository* and *Label* buttons open Material menus whose options are `menuitemcheckbox`es with a `mat-pseudo-checkbox`, so they work with the keyboard. A button names its state ("Owner: 2 of 3", "Label: bug"), and the bar ends with "Showing 12 of 15 · 3 hidden" and *Clear filters*.

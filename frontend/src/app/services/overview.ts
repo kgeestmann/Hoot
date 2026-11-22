@@ -31,11 +31,21 @@ export interface PullRequestItem extends OverviewItem {
   review_decision: string | null;
 }
 
+/** How many items GitHub found for one list; the list holds at most 50 of them. */
+export interface ListTotal {
+  total: number;
+  /** True when GitHub found more than it returned, so the list is cut off. */
+  has_more: boolean;
+  /** The same search on github.com, with every match. */
+  search_url: string;
+}
+
 export interface Overview {
   assigned_issues: OverviewItem[];
   pull_requests: PullRequestItem[];
   review_requests: OverviewItem[];
   mentions: OverviewItem[];
+  totals: Record<'assigned_issues' | 'pull_requests' | 'review_requests' | 'mentions', ListTotal>;
 }
 
 /** Loads everything on GitHub that is waiting on the user. */

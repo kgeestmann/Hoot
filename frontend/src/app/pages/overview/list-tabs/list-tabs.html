@@ -15,7 +15,7 @@
       <app-overview-section
         class="tab-content"
         [items]="tab.items"
-        [total]="tab.count"
+        [total]="tab.total ?? tab.count"
         [moreUrl]="tab.moreUrl"
         [emptyText]="tab.emptyText"
       />

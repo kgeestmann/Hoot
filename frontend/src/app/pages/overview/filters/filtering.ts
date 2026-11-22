@@ -58,6 +58,7 @@ export function applyFilters(overview: Overview, filters: OverviewFilters): Over
     review_requests: overview.review_requests.filter(shows),
     assigned_issues: overview.assigned_issues.filter(shows),
     mentions: overview.mentions.filter(shows),
+    totals: overview.totals,
   };
 }
 

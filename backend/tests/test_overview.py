@@ -77,13 +77,18 @@ def pull_request(number=2, ci_status="SUCCESS", review_decision="APPROVED", **fi
     }
 
 
-def graphql_response(assigned_issues=(), pull_requests=(), review_requests=(), mentions=()):
-    """GitHub's answer to the overview query."""
+def graphql_response(assigned_issues=(), pull_requests=(), review_requests=(), mentions=(), totals=None):
+    """GitHub's answer to the overview query; `totals` maps a list to an issueCount to report."""
+    totals = totals or {}
+    lists = {
+        "assigned_issues": assigned_issues,
+        "pull_requests": pull_requests,
+        "review_requests": review_requests,
+        "mentions": mentions,
+    }
     data = {
-        "assigned_issues": {"nodes": list(assigned_issues)},
-        "pull_requests": {"nodes": list(pull_requests)},
-        "review_requests": {"nodes": list(review_requests)},
-        "mentions": {"nodes": list(mentions)},
+        name: {"issueCount": totals.get(name, len(nodes)), "nodes": list(nodes)}
+        for name, nodes in lists.items()
     }
     return httpx.Response(200, json={"data": data})
 
@@ -274,6 +279,43 @@ def test_label_colours_in_an_unexpected_format_become_grey(client, fake_github):
 
 def test_the_queries_ask_for_labels():
     assert "labels(first: 10) { nodes { name color } }" in overview.OVERVIEW_QUERY
+
+
+def test_each_list_has_its_total_and_a_link_to_the_search(client, fake_github):
+    fake_github.graphql_responses = [graphql_response(assigned_issues=[issue(1), issue(2)])]
+
+    totals = get_overview(client, store_user()).json()["totals"]
+
+    assert totals["assigned_issues"]["total"] == 2
+    assert totals["assigned_issues"]["has_more"] is False
+    assert totals["assigned_issues"]["search_url"] == (
+        "https://github.com/search?q=is%3Aopen+is%3Aissue+assignee%3A%40me+archived%3Afalse"
+        "+sort%3Aupdated-desc&type=issues"
+    )
+    assert totals["mentions"] == {
+        "total": 0,
+        "has_more": False,
+        "search_url": totals["mentions"]["search_url"],
+    }
+
+
+def test_a_list_cut_off_by_github_says_so(client, fake_github):
+    fake_github.graphql_responses = [
+        graphql_response(
+            review_requests=[issue(number) for number in range(1, 51)],
+            totals={"review_requests": 70},
+        )
+    ]
+
+    body = get_overview(client, store_user()).json()
+
+    assert len(body["review_requests"]) == 50
+    assert body["totals"]["review_requests"]["total"] == 70
+    assert body["totals"]["review_requests"]["has_more"] is True
+
+
+def test_the_query_asks_for_the_totals():
+    assert overview.OVERVIEW_QUERY.count("issueCount") == 4
 
 
 def test_github_tokens_never_appear_in_the_overview(client, fake_github):
