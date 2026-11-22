@@ -4,6 +4,12 @@ import { Observable } from 'rxjs';
 
 import { API_URL } from '../api';
 
+/** A GitHub label; `color` is six hex digits without "#", e.g. "d73a4a". */
+export interface Label {
+  name: string;
+  color: string;
+}
+
 /** An issue or pull request that is waiting on the user. */
 export interface OverviewItem {
   kind: 'issue' | 'pull_request';
@@ -14,6 +20,7 @@ export interface OverviewItem {
   url: string;
   /** ISO 8601 timestamp of the last update. */
   updated_at: string;
+  labels: Label[];
 }
 
 /** One of the user's own pull requests. */

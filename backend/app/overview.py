@@ -1,3 +1,5 @@
+import re
+
 import httpx
 from pydantic import ValidationError
 
@@ -32,6 +34,7 @@ fragment Item on SearchResultItem {
     url
     updatedAt
     repository { nameWithOwner }
+    labels(first: 10) { nodes { name color } }
     author { __typename }
     comments(last: 1) { nodes { author { __typename } } }
   }
@@ -41,6 +44,7 @@ fragment Item on SearchResultItem {
     url
     updatedAt
     repository { nameWithOwner }
+    labels(first: 10) { nodes { name color } }
     author { __typename }
     comments(last: 1) { nodes { author { __typename } } }
     reviewDecision
@@ -50,6 +54,10 @@ fragment Item on SearchResultItem {
 """
 
 KINDS = {"Issue": "issue", "PullRequest": "pull_request"}
+
+# GitHub label colours are six hex digits without "#".
+LABEL_COLOR = re.compile(r"[0-9a-fA-F]{6}")
+NEUTRAL_LABEL_COLOR = "ededed"
 
 
 def fetch_overview(client: httpx.Client, access_token: str) -> schemas.Overview:
@@ -119,4 +127,17 @@ def item_fields(node: dict) -> dict:
         "number": node["number"],
         "url": node["url"],
         "updated_at": node["updatedAt"],
+        "labels": _labels(node),
     }
+
+
+def _labels(node: dict) -> list[dict]:
+    """The item's labels; a colour GitHub sends in an unexpected format becomes a neutral grey."""
+    return [
+        {
+            "name": label["name"],
+            "color": label["color"] if LABEL_COLOR.fullmatch(label["color"] or "") else NEUTRAL_LABEL_COLOR,
+        }
+        for label in node["labels"]["nodes"]
+        if label
+    ]

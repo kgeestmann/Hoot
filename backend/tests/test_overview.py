@@ -47,10 +47,11 @@ def get_overview(client, user_id):
     return client.get("/overview")
 
 
-def issue(number=1, last_commenter="User", author="User", **fields):
-    """A GraphQL search result for an issue."""
+def issue(number=1, last_commenter="User", author="User", labels=(), **fields):
+    """A GraphQL search result for an issue; labels are (name, color) pairs."""
     comments = [{"author": {"__typename": last_commenter}}] if last_commenter else []
     return {
+        "labels": {"nodes": [{"name": name, "color": color} for name, color in labels]},
         "__typename": "Issue",
         "title": "Login button does nothing",
         "number": number,
@@ -156,6 +157,7 @@ def test_overview_lists_everything_waiting_on_the_user(client, fake_github):
             "number": 1,
             "url": "https://github.com/octo/hoot/issues/1",
             "updated_at": "2026-11-20T10:00:00Z",
+            "labels": [],
         }
     ]
     assert body["pull_requests"] == [
@@ -166,6 +168,7 @@ def test_overview_lists_everything_waiting_on_the_user(client, fake_github):
             "number": 2,
             "url": "https://github.com/octo/hoot/pull/2",
             "updated_at": "2026-11-20T10:00:00Z",
+            "labels": [],
             "ci_status": "FAILURE",
             "review_decision": "CHANGES_REQUESTED",
         }
@@ -244,6 +247,33 @@ def test_items_github_could_not_load_are_skipped(client, fake_github):
     assert response.status_code == 200
     assert [item["number"] for item in response.json()["assigned_issues"]] == [1]
     assert response.json()["mentions"] == []
+
+
+def test_items_carry_their_labels_with_colours(client, fake_github):
+    fake_github.graphql_responses = [
+        graphql_response(assigned_issues=[issue(1, labels=[("bug", "d73a4a"), ("good first issue", "7057FF")])])
+    ]
+
+    [item] = get_overview(client, store_user()).json()["assigned_issues"]
+
+    assert item["labels"] == [
+        {"name": "bug", "color": "d73a4a"},
+        {"name": "good first issue", "color": "7057FF"},
+    ]
+
+
+def test_label_colours_in_an_unexpected_format_become_grey(client, fake_github):
+    fake_github.graphql_responses = [
+        graphql_response(assigned_issues=[issue(1, labels=[("odd", "red;}"), ("empty", None)])])
+    ]
+
+    [item] = get_overview(client, store_user()).json()["assigned_issues"]
+
+    assert [label["color"] for label in item["labels"]] == ["ededed", "ededed"]
+
+
+def test_the_queries_ask_for_labels():
+    assert "labels(first: 10) { nodes { name color } }" in overview.OVERVIEW_QUERY
 
 
 def test_github_tokens_never_appear_in_the_overview(client, fake_github):

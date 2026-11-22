@@ -1,0 +1,30 @@
+:host {
+  display: block;
+  /* Compact chips, so a row of them fits the list item's third line. */
+  --mat-chip-container-height: 24px;
+  --mat-chip-label-text-size: var(--mat-sys-label-medium-size);
+}
+
+.status {
+  --mat-chip-outline-color: currentColor;
+  --mat-chip-with-icon-icon-color: currentColor;
+}
+
+.status-success {
+  color: var(--hoot-status-success);
+  --mat-chip-label-text-color: var(--hoot-status-success);
+}
+
+.status-danger {
+  color: var(--hoot-status-danger);
+  --mat-chip-label-text-color: var(--hoot-status-danger);
+}
+
+.status-neutral {
+  color: var(--hoot-status-neutral);
+  --mat-chip-label-text-color: var(--hoot-status-neutral);
+}
+
+.label {
+  --mat-chip-outline-width: 0;
+}

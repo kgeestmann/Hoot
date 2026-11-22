@@ -1,0 +1,18 @@
+<mat-chip-set aria-label="Status and labels">
+  @for (status of statuses(); track status.label) {
+    <mat-chip [class]="'status status-' + status.tone" disableRipple>
+      <mat-icon matChipAvatar [svgIcon]="status.icon" />
+      {{ status.label }}
+    </mat-chip>
+  }
+  @for (label of labels(); track label.name) {
+    <mat-chip
+      class="label"
+      disableRipple
+      [style.--mat-chip-elevated-container-color]="label.background"
+      [style.--mat-chip-label-text-color]="label.text"
+    >
+      {{ label.name }}
+    </mat-chip>
+  }
+</mat-chip-set>

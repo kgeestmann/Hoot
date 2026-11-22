@@ -18,6 +18,7 @@ const ITEM: TeamItem = {
   number: 7,
   url: 'https://github.com/Octo-Org/hoot/pull/7',
   updated_at: '2026-11-20T10:00:00Z',
+  labels: [],
   created_at: '2026-11-01T10:00:00Z',
   author: 'alice',
   assignees: ['bob'],

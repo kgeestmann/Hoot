@@ -4,13 +4,23 @@
     <span class="count">{{ count() }}</span>
   </h2>
   @if (items().length > 0) {
-    <ul class="items">
-      @for (item of items(); track item.url) {
-        <li><app-overview-item [item]="item" /></li>
+    <mat-nav-list class="items">
+      @for (row of rows(); track row.item.url) {
+        <a mat-list-item class="item" [href]="row.item.url" [lines]="row.hasChips ? 3 : 2">
+          <span matListItemTitle class="title">{{ row.item.title }}</span>
+          <span matListItemLine class="meta"><app-item-meta [item]="row.item" /></span>
+          @if (row.hasChips) {
+            <span matListItemLine class="chips"><app-item-chips [item]="row.item" /></span>
+          }
+        </a>
+        <mat-divider />
       }
-    </ul>
+    </mat-nav-list>
     @if (hasMore()) {
-      <a mat-button class="more-link" [href]="moreUrl()">Show all {{ count() }} on GitHub</a>
+      <a mat-button class="more-link" [href]="moreUrl()">
+        <mat-icon svgIcon="open_in_new" />
+        Show all {{ count() }} on GitHub
+      </a>
     }
   } @else {
     <p class="empty">{{ emptyText() }}</p>

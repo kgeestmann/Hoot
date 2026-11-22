@@ -45,6 +45,7 @@ fragment TeamItem on SearchResultItem {
     createdAt
     updatedAt
     repository { nameWithOwner }
+    labels(first: 10) { nodes { name color } }
     author { login }
     assignees(first: 10) { nodes { login } }
   }
@@ -55,6 +56,7 @@ fragment TeamItem on SearchResultItem {
     createdAt
     updatedAt
     repository { nameWithOwner }
+    labels(first: 10) { nodes { name color } }
     author { login }
     assignees(first: 10) { nodes { login } }
     reviewDecision
