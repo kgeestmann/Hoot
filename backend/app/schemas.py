@@ -78,16 +78,24 @@ Scope = Annotated[
 ]
 
 
+# A GitHub label name (at most 50 characters on GitHub), compared in lowercase.
+LabelName = Annotated[
+    str, StringConstraints(strip_whitespace=True, to_lower=True, min_length=1, max_length=50)
+]
+
+
 class OverviewFilters(BaseModel):
-    """What the user hid from the overview; everything else is shown."""
+    """The overview's filters: owners/repositories the user hid, and labels to show only."""
 
     hidden: list[Scope] = Field(max_length=500)
+    # Empty means every label shows.
+    labels: list[LabelName] = Field(default_factory=list, max_length=100)
 
-    @field_validator("hidden")
+    @field_validator("hidden", "labels")
     @classmethod
-    def sorted_without_duplicates(cls, hidden: list[str]) -> list[str]:
-        """Store each scope once, in a stable order."""
-        return sorted(set(hidden))
+    def sorted_without_duplicates(cls, entries: list[str]) -> list[str]:
+        """Store each entry once, in a stable order."""
+        return sorted(set(entries))
 
 
 class TeamItem(OverviewItem):

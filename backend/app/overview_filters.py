@@ -3,14 +3,20 @@ from sqlalchemy.orm import Session
 from . import models
 
 
-def hidden_scopes(db: Session, user: models.User) -> list[str]:
-    """Return the owners and repositories the user hid from the overview, sorted."""
-    rows = db.query(models.HiddenScope.scope).filter(models.HiddenScope.user_id == user.id)
-    return sorted(scope for (scope,) in rows)
+def stored_filters(db: Session, user: models.User) -> dict[str, list[str]]:
+    """Return the user's overview filters: hidden owners/repositories and shown labels, sorted."""
+    hidden = db.query(models.HiddenScope.scope).filter(models.HiddenScope.user_id == user.id)
+    labels = db.query(models.ShownLabel.label).filter(models.ShownLabel.user_id == user.id)
+    return {
+        "hidden": sorted(scope for (scope,) in hidden),
+        "labels": sorted(label for (label,) in labels),
+    }
 
 
-def replace_hidden_scopes(db: Session, user: models.User, scopes: list[str]) -> None:
-    """Store exactly these owners and repositories as hidden for the user."""
+def replace_filters(db: Session, user: models.User, hidden: list[str], labels: list[str]) -> None:
+    """Store exactly these filters for the user, in one transaction."""
     db.query(models.HiddenScope).filter(models.HiddenScope.user_id == user.id).delete()
-    db.add_all(models.HiddenScope(user_id=user.id, scope=scope) for scope in scopes)
+    db.query(models.ShownLabel).filter(models.ShownLabel.user_id == user.id).delete()
+    db.add_all(models.HiddenScope(user_id=user.id, scope=scope) for scope in hidden)
+    db.add_all(models.ShownLabel(user_id=user.id, label=label) for label in labels)
     db.commit()

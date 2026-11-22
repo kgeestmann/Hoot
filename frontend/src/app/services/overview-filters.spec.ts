@@ -3,11 +3,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { API_URL } from '../api';
-import { OverviewFiltersService } from './overview-filters';
+import { OverviewFilters, OverviewFiltersService } from './overview-filters';
 
 describe('OverviewFiltersService', () => {
   let service: OverviewFiltersService;
   let http: HttpTestingController;
+  const FILTERS: OverviewFilters = { hidden: ['octo-org'], labels: ['bug'] };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -21,23 +22,21 @@ describe('OverviewFiltersService', () => {
     http.verify();
   });
 
-  it('loads the hidden scopes', () => {
-    let hidden: string[] | undefined;
+  it('loads the filters', () => {
+    let loaded: OverviewFilters | undefined;
 
-    service.load().subscribe((result) => (hidden = result));
-    http.expectOne(`${API_URL}/overview/filters`).flush({ hidden: ['octo-org'] });
+    service.load().subscribe((result) => (loaded = result));
+    http.expectOne(`${API_URL}/overview/filters`).flush(FILTERS);
 
-    expect(hidden).toEqual(['octo-org']);
+    expect(loaded).toEqual(FILTERS);
   });
 
-  it('saves the hidden scopes with PUT', () => {
-    let saved: string[] | undefined;
+  it('saves the filters with PUT', () => {
+    service.save(FILTERS).subscribe();
 
-    service.save(['kgeestmann/hoot']).subscribe((result) => (saved = result));
     const request = http.expectOne({ method: 'PUT', url: `${API_URL}/overview/filters` });
-    request.flush({ hidden: ['kgeestmann/hoot'] });
+    request.flush(FILTERS);
 
-    expect(request.request.body).toEqual({ hidden: ['kgeestmann/hoot'] });
-    expect(saved).toEqual(['kgeestmann/hoot']);
+    expect(request.request.body).toEqual(FILTERS);
   });
 });

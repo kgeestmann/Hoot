@@ -3,38 +3,42 @@
   @if (installedNowhere() && gitHubAccess) {
     <app-github-access [access]="gitHubAccess" />
   } @else {
-    @if (visible(); as overview) {
+    @if (overview()) {
       @if (nothingWaiting()) {
         <p class="all-clear">Nothing waiting on you 🎉</p>
       } @else {
-        <app-overview-filters
-          [options]="filterOptions()"
-          [hiddenCount]="hiddenCount()"
+        <app-filter-bar
+          [owners]="filterOptions().owners"
+          [labels]="filterOptions().labels"
+          [shownCount]="shownCount()"
+          [totalCount]="totalCount()"
           [saveFailed]="filterSaveFailed()"
-          (toggle)="toggleFilter($event)"
+          (toggleScope)="toggleScope($event)"
+          (toggleLabel)="toggleLabel($event)"
+          (clear)="clearFilters()"
         />
-        <div class="sections">
-          <app-overview-section
-            heading="Your pull requests"
-            [items]="overview.pull_requests"
-            emptyText="You have no open pull requests."
-          />
-          <app-overview-section
-            heading="Review requests"
-            [items]="overview.review_requests"
-            emptyText="No reviews are waiting on you."
-          />
-          <app-overview-section
-            heading="Assigned issues"
-            [items]="overview.assigned_issues"
-            emptyText="No open issues are assigned to you."
-          />
-          <app-overview-section
-            heading="Mentions"
-            [items]="overview.mentions"
-            emptyText="Nobody mentioned you in an open issue or pull request."
-          />
-        </div>
+        <mat-tab-group
+          class="tabs"
+          mat-stretch-tabs="false"
+          mat-align-tabs="start"
+          animationDuration="0ms"
+          [selectedIndex]="selectedTab()"
+          (selectedIndexChange)="selectedTab.set($event)"
+        >
+          @for (tab of tabs(); track tab.label) {
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <span class="tab-label">{{ tab.label }}</span>
+                <span class="tab-count">{{ tab.items.length }}</span>
+              </ng-template>
+              <app-overview-section
+                class="tab-content"
+                [items]="tab.items"
+                [emptyText]="tab.emptyText"
+              />
+            </mat-tab>
+          }
+        </mat-tab-group>
       }
     } @else if (loadError(); as message) {
       <app-load-error [message]="message" (retry)="load()" />

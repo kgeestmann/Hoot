@@ -4,7 +4,11 @@ import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { Overview, OverviewItem, OverviewService } from '../../services/overview';
-import { OverviewFiltersService } from '../../services/overview-filters';
+import {
+  NO_FILTERS,
+  OverviewFilters,
+  OverviewFiltersService,
+} from '../../services/overview-filters';
 import { OverviewPage } from './overview';
 
 const INSTALLED: GitHubAccess = {
@@ -20,15 +24,17 @@ const INSTALLED: GitHubAccess = {
 };
 const INSTALLED_NOWHERE: GitHubAccess = { ...INSTALLED, installations: [] };
 
-const ISSUE: OverviewItem = {
-  kind: 'issue',
-  title: 'Login button does nothing',
-  repository: 'octo/hoot',
-  number: 1,
-  url: 'https://github.com/octo/hoot/issues/1',
-  updated_at: '2026-11-21T10:00:00Z',
-  labels: [],
-};
+function item(repository: string, number: number, labels: string[] = []): OverviewItem {
+  return {
+    kind: 'issue',
+    title: `Issue ${number}`,
+    repository,
+    number,
+    url: `https://github.com/${repository}/issues/${number}`,
+    updated_at: '2026-11-21T10:00:00Z',
+    labels: labels.map((name) => ({ name, color: 'd73a4a' })),
+  };
+}
 
 const EMPTY: Overview = {
   assigned_issues: [],
@@ -37,15 +43,29 @@ const EMPTY: Overview = {
   mentions: [],
 };
 
+/** Three assigned issues in two owners, one with the label "bug", and one mention. */
+const OVERVIEW: Overview = {
+  ...EMPTY,
+  assigned_issues: [
+    item('dipt-pa1469-ht26/team-14', 3),
+    item('kgeestmann/hoot', 4, ['bug']),
+    item('kgeestmann/old-repo', 5),
+  ],
+  mentions: [item('kgeestmann/hoot', 6)],
+};
+
 describe('OverviewPage', () => {
   let fixture: ComponentFixture<OverviewPage>;
   let filters: {
-    load: () => Observable<string[]>;
-    save: ReturnType<typeof vi.fn<(hidden: string[]) => Observable<string[]>>>;
+    load: () => Observable<OverviewFilters>;
+    save: ReturnType<typeof vi.fn<(filters: OverviewFilters) => Observable<OverviewFilters>>>;
   };
 
   beforeEach(() => {
-    filters = { load: () => of([]), save: vi.fn((hidden: string[]) => of(hidden)) };
+    filters = {
+      load: () => of(NO_FILTERS),
+      save: vi.fn((saved: OverviewFilters) => of(saved)),
+    };
   });
 
   async function render(overview: () => Observable<Overview>, access: Observable<GitHubAccess>) {
@@ -63,40 +83,89 @@ describe('OverviewPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function headings(element: HTMLElement): string[] {
-    return Array.from(element.querySelectorAll('app-overview-section h2')).map((heading) =>
-      heading.textContent!.replace(/\s+/g, ' ').trim(),
+  function text(element: Element | null): string {
+    return element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+  }
+
+  /** A tab's label with its count, e.g. "Assigned 3". */
+  function tabText(tab: Element | null): string {
+    return `${text(tab?.querySelector('.tab-label') ?? null)} ${text(tab?.querySelector('.tab-count') ?? null)}`;
+  }
+
+  function tabs(element: HTMLElement): string[] {
+    return Array.from(element.querySelectorAll('[role="tab"]')).map(tabText);
+  }
+
+  function selectedTab(element: HTMLElement): string {
+    return tabText(element.querySelector('[role="tab"][aria-selected="true"]'));
+  }
+
+  /** Titles of the rows in the open tab. */
+  function rows(element: HTMLElement): string[] {
+    return Array.from(element.querySelectorAll('a.item .title')).map(text);
+  }
+
+  async function openTab(element: HTMLElement, label: string): Promise<void> {
+    const tab = Array.from(element.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+      (candidate) => text(candidate).startsWith(label),
     );
+    tab!.click();
+    await fixture.whenStable();
+  }
+
+  /** Open a filter menu ("Owner", "Repository", "Label") and click one of its options. */
+  async function clickFilterOption(element: HTMLElement, menu: string, option: string) {
+    const button = Array.from(element.querySelectorAll<HTMLElement>('.filter-button')).find(
+      (candidate) => text(candidate).startsWith(menu),
+    );
+    button!.click();
+    await fixture.whenStable();
+    const choice = Array.from(
+      document.querySelectorAll<HTMLElement>('[role="menuitemcheckbox"]'),
+    ).find((candidate) => text(candidate) === option);
+    choice!.click();
+    await fixture.whenStable();
   }
 
   it('shows a skeleton while loading', async () => {
     const element = await render(() => NEVER, NEVER);
 
     expect(element.querySelector('[aria-busy="true"]')).not.toBeNull();
-    expect(element.querySelectorAll('.skeleton-section').length).toBe(4);
   });
 
-  it('shows the four sections with their item counts', async () => {
-    const element = await render(
-      () => of({ ...EMPTY, assigned_issues: [ISSUE], mentions: [ISSUE, { ...ISSUE, number: 2 }] }),
-      of(INSTALLED),
-    );
+  it('shows the four lists as tabs with their counts', async () => {
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-    expect(headings(element)).toEqual([
-      'Your pull requests 0',
+    expect(tabs(element)).toEqual([
+      'My pull requests 0',
       'Review requests 0',
-      'Assigned issues 1',
-      'Mentions 2',
+      'Assigned 3',
+      'Mentions 1',
     ]);
     expect(element.querySelector('[aria-busy]')).toBeNull();
   });
 
-  it('shows where Hoot is installed below the sections', async () => {
-    const element = await render(() => of({ ...EMPTY, assigned_issues: [ISSUE] }), of(INSTALLED));
+  it('opens on the first tab that has items', async () => {
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+    expect(selectedTab(element)).toBe('Assigned 3');
+    expect(rows(element)).toEqual(['Issue 3', 'Issue 4', 'Issue 5']);
+  });
+
+  it('shows the items of another tab when it is chosen', async () => {
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+    await openTab(element, 'Mentions');
+
+    expect(rows(element)).toEqual(['Issue 6']);
+  });
+
+  it('shows where Hoot is installed below the tabs', async () => {
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
     const card = element.querySelector('app-github-access');
     expect(card?.textContent).toContain('octocat');
-    expect(element.querySelector('.sections')!.compareDocumentPosition(card!)).toBe(
+    expect(element.querySelector('mat-tab-group')!.compareDocumentPosition(card!)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
   });
@@ -105,7 +174,7 @@ describe('OverviewPage', () => {
     const element = await render(() => of(EMPTY), of(INSTALLED));
 
     expect(element.querySelector('.all-clear')?.textContent).toContain('Nothing waiting on you');
-    expect(element.querySelector('app-overview-section')).toBeNull();
+    expect(element.querySelector('mat-tab-group')).toBeNull();
   });
 
   it('only asks to install Hoot when it is installed nowhere', async () => {
@@ -113,16 +182,16 @@ describe('OverviewPage', () => {
 
     expect(element.querySelector('.install-link')).not.toBeNull();
     expect(element.querySelector('.all-clear')).toBeNull();
-    expect(element.querySelector('app-overview-section')).toBeNull();
+    expect(element.querySelector('mat-tab-group')).toBeNull();
   });
 
   it('still shows the overview when GitHub access cannot be loaded', async () => {
     const element = await render(
-      () => of({ ...EMPTY, assigned_issues: [ISSUE] }),
+      () => of(OVERVIEW),
       throwError(() => new Error('502')),
     );
 
-    expect(headings(element)).toContain('Assigned issues 1');
+    expect(tabs(element)).toContain('Assigned 3');
     expect(element.querySelector('app-github-access')).toBeNull();
   });
 
@@ -136,21 +205,18 @@ describe('OverviewPage', () => {
     );
 
     expect(element.querySelector('[role="alert"]')?.textContent).toContain(message);
-    expect(element.querySelector('.retry')?.textContent?.trim()).toBe('Try again');
+    expect(text(element.querySelector('.retry'))).toBe('Try again');
   });
 
   it('loads again when retrying', async () => {
-    const answers = [
-      throwError(() => new HttpErrorResponse({ status: 502 })),
-      of({ ...EMPTY, review_requests: [ISSUE] }),
-    ];
+    const answers = [throwError(() => new HttpErrorResponse({ status: 502 })), of(OVERVIEW)];
     const element = await render(() => answers.shift()!, of(INSTALLED));
 
     element.querySelector<HTMLButtonElement>('.retry')!.click();
     await fixture.whenStable();
 
     expect(element.querySelector('[role="alert"]')).toBeNull();
-    expect(headings(element)).toContain('Review requests 1');
+    expect(tabs(element)).toContain('Assigned 3');
   });
 
   it('shows the skeleton again while retrying', async () => {
@@ -168,55 +234,68 @@ describe('OverviewPage', () => {
   });
 
   describe('with filters', () => {
-    const OVERVIEW: Overview = {
-      ...EMPTY,
-      assigned_issues: [
-        { ...ISSUE, repository: 'dipt-pa1469-ht26/team-14', number: 3 },
-        { ...ISSUE, repository: 'kgeestmann/hoot', number: 4 },
-      ],
-      mentions: [{ ...ISSUE, repository: 'kgeestmann/old-repo', number: 5 }],
-    };
-
-    function filterCheckbox(element: HTMLElement, label: string): HTMLInputElement {
-      const option = Array.from(element.querySelectorAll('app-overview-filters label')).find(
-        (candidate) => candidate.textContent!.trim() === label,
-      );
-      return option!.querySelector('input')!;
-    }
-
-    it('leaves out what the user hid and says how much is hidden', async () => {
-      filters.load = () => of(['dipt-pa1469-ht26', 'kgeestmann/old-repo']);
+    it('applies the stored filters and says how much they hide', async () => {
+      filters.load = () => of({ hidden: ['dipt-pa1469-ht26', 'kgeestmann/old-repo'], labels: [] });
 
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      expect(headings(element)).toEqual([
-        'Your pull requests 0',
+      expect(tabs(element)).toEqual([
+        'My pull requests 0',
         'Review requests 0',
-        'Assigned issues 1',
-        'Mentions 0',
+        'Assigned 1',
+        'Mentions 1',
       ]);
-      expect(element.querySelector('.hidden-count')!.textContent!.trim()).toBe('2 hidden');
+      expect(text(element.querySelector('.summary'))).toBe('Showing 2 of 4 · 2 hidden');
     });
 
-    it('hides an owner when its checkbox is unchecked and saves that', async () => {
+    it('hides an owner chosen in the Owner menu and saves that', async () => {
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      filterCheckbox(element, 'dipt-pa1469-ht26').click();
-      await fixture.whenStable();
+      await clickFilterOption(element, 'Owner', 'dipt-pa1469-ht26');
 
-      expect(headings(element)).toContain('Assigned issues 1');
-      expect(filters.save).toHaveBeenCalledWith(['dipt-pa1469-ht26']);
+      expect(tabs(element)).toContain('Assigned 2');
+      expect(text(element.querySelector('.filter-button'))).toBe('Owner: 1 of 2');
+      expect(filters.save).toHaveBeenCalledWith({ hidden: ['dipt-pa1469-ht26'], labels: [] });
     });
 
-    it('shows a hidden repository again when its checkbox is checked', async () => {
-      filters.load = () => of(['kgeestmann/old-repo']);
+    it('hides a repository chosen in the Repository menu', async () => {
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      filterCheckbox(element, 'kgeestmann/old-repo').click();
+      await clickFilterOption(element, 'Repository', 'kgeestmann/old-repo');
+
+      expect(rows(element)).toEqual(['Issue 3', 'Issue 4']);
+      expect(filters.save).toHaveBeenCalledWith({ hidden: ['kgeestmann/old-repo'], labels: [] });
+    });
+
+    it('shows only items with a label picked in the Label menu', async () => {
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      await clickFilterOption(element, 'Label', 'bug');
+
+      expect(tabs(element)).toContain('Assigned 1');
+      expect(rows(element)).toEqual(['Issue 4']);
+      expect(filters.save).toHaveBeenCalledWith({ hidden: [], labels: ['bug'] });
+    });
+
+    it('says when everything in a tab is hidden by the filters', async () => {
+      filters.load = () => of({ hidden: ['kgeestmann'], labels: [] });
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      await openTab(element, 'Mentions');
+
+      expect(text(element.querySelector('.empty'))).toBe('All 1 hidden by your filters.');
+    });
+
+    it('clears every filter at once', async () => {
+      filters.load = () => of({ hidden: ['kgeestmann'], labels: ['bug'] });
+      const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+      element.querySelector<HTMLButtonElement>('.clear')!.click();
       await fixture.whenStable();
 
-      expect(headings(element)).toContain('Mentions 1');
-      expect(filters.save).toHaveBeenCalledWith([]);
+      expect(tabs(element)).toContain('Assigned 3');
+      expect(element.querySelector('.clear')).toBeNull();
+      expect(filters.save).toHaveBeenCalledWith(NO_FILTERS);
     });
 
     it('shows everything when the filters cannot be loaded', async () => {
@@ -224,37 +303,39 @@ describe('OverviewPage', () => {
 
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      expect(headings(element)).toContain('Assigned issues 2');
+      expect(tabs(element)).toContain('Assigned 3');
     });
 
     it('warns when a filter change cannot be saved, but keeps applying it', async () => {
       filters.save = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500 })));
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      filterCheckbox(element, 'dipt-pa1469-ht26').click();
-      await fixture.whenStable();
+      await clickFilterOption(element, 'Owner', 'dipt-pa1469-ht26');
 
-      expect(element.querySelector('app-overview-filters [role="alert"]')).not.toBeNull();
-      expect(headings(element)).toContain('Assigned issues 1');
+      expect(element.querySelector('app-filter-bar [role="alert"]')).not.toBeNull();
+      expect(tabs(element)).toContain('Assigned 2');
     });
 
     it('saves changes one after the other, so the last one is stored', async () => {
-      const pending: Subject<string[]>[] = [];
+      const pending: Subject<OverviewFilters>[] = [];
       filters.save = vi.fn(() => {
-        const save = new Subject<string[]>();
+        const save = new Subject<OverviewFilters>();
         pending.push(save);
         return save;
       });
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      filterCheckbox(element, 'dipt-pa1469-ht26').click();
-      filterCheckbox(element, 'kgeestmann/hoot').click();
+      await clickFilterOption(element, 'Owner', 'dipt-pa1469-ht26');
+      await clickFilterOption(element, 'Label', 'bug');
       expect(filters.save).toHaveBeenCalledTimes(1);
 
-      pending[0].next([]);
+      pending[0].next(NO_FILTERS);
       pending[0].complete();
 
-      expect(filters.save).toHaveBeenLastCalledWith(['dipt-pa1469-ht26', 'kgeestmann/hoot']);
+      expect(filters.save).toHaveBeenLastCalledWith({
+        hidden: ['dipt-pa1469-ht26'],
+        labels: ['bug'],
+      });
     });
   });
 });

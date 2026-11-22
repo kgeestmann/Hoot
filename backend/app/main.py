@@ -328,8 +328,8 @@ def get_overview_filters(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return the owners and repositories the user hid from the overview."""
-    return {"hidden": overview_filters.hidden_scopes(db, current_user)}
+    """Return the user's overview filters: hidden owners/repositories and shown labels."""
+    return overview_filters.stored_filters(db, current_user)
 
 
 @app.put("/overview/filters", response_model=schemas.OverviewFilters)
@@ -339,8 +339,8 @@ def put_overview_filters(
     db: Session = Depends(get_db),
 ):
     """Replace the user's overview filters and return them as stored."""
-    overview_filters.replace_hidden_scopes(db, current_user, filters.hidden)
-    return {"hidden": overview_filters.hidden_scopes(db, current_user)}
+    overview_filters.replace_filters(db, current_user, filters.hidden, filters.labels)
+    return overview_filters.stored_filters(db, current_user)
 
 
 @app.get("/orgs/{organization}/overview", response_model=schemas.OrgOverview)

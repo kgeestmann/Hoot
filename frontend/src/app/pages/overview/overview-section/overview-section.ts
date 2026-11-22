@@ -18,7 +18,8 @@ import { ItemMeta } from '../item/item-meta';
   styleUrl: './overview-section.css',
 })
 export class OverviewSection {
-  readonly heading = input.required<string>();
+  /** Shown above the list; tabs name their list themselves and leave it out. */
+  readonly heading = input<string>();
   readonly items = input.required<readonly OverviewItem[]>();
   readonly emptyText = input.required<string>();
   /** All matches when `items` holds only some of them; defaults to the number of items. */
