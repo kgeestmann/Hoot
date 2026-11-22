@@ -4,6 +4,12 @@
     <app-github-access [access]="gitHubAccess" />
   } @else {
     @if (overview()) {
+      <app-refresh-status
+        [loadedAt]="loadedAt()"
+        [refreshing]="refreshing()"
+        [failed]="refreshFailed()"
+        (refresh)="refresh()"
+      />
       @if (nothingWaiting()) {
         <p class="all-clear">Nothing waiting on you 🎉</p>
       } @else {

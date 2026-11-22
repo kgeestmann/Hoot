@@ -8,11 +8,12 @@ import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error'
 import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
 import { OrganizationsService, OrgOverview, TeamList } from '../../services/organizations';
 import { firstTabWithItems, ListTab, ListTabs } from '../overview/list-tabs/list-tabs';
+import { RefreshStatus } from '../overview/refresh-status/refresh-status';
 
 /** The team view of one organization: what needs the team's attention, no per-person numbers. */
 @Component({
   selector: 'app-organization-page',
-  imports: [ListSkeleton, ListTabs, LoadError],
+  imports: [ListSkeleton, ListTabs, LoadError, RefreshStatus],
   templateUrl: './organization.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './organization.css',
@@ -20,8 +21,11 @@ import { firstTabWithItems, ListTab, ListTabs } from '../overview/list-tabs/list
 export class OrganizationPage {
   private readonly organizations = inject(OrganizationsService);
   private readonly route = inject(ActivatedRoute);
-  /** Each organization to load; a new one cancels the request still running. */
-  private readonly loads = new Subject<string>();
+  /**
+   * Each organization to load; a new one cancels the request still running. A quiet load is a
+   * refresh: the current team view stays visible meanwhile and on failure.
+   */
+  private readonly loads = new Subject<{ organization: string; quiet: boolean }>();
 
   readonly organization = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('organization') ?? '')),
@@ -35,26 +39,42 @@ export class OrganizationPage {
   /** `undefined` while loading or after an error. */
   readonly overview = signal<OrgOverview | undefined>(undefined);
   readonly loadError = signal<string | undefined>(undefined);
+  /** When the shown team view came from GitHub. */
+  readonly loadedAt = signal(new Date());
+  readonly refreshing = signal(false);
+  readonly refreshFailed = signal(false);
 
   constructor() {
     this.loads
       .pipe(
-        tap(() => {
-          this.overview.set(undefined);
-          this.loadError.set(undefined);
+        tap(({ quiet }) => {
+          this.refreshing.set(quiet);
+          if (!quiet) {
+            this.overview.set(undefined);
+            this.loadError.set(undefined);
+          }
         }),
-        switchMap((organization) =>
+        switchMap(({ organization, quiet }) =>
           this.organizations.load(organization).pipe(
-            map((overview) => ({ overview })),
-            catchError((error: unknown) => of({ error: orgLoadErrorMessage(error, organization) })),
+            map((overview) => ({ overview, quiet })),
+            catchError((error: unknown) =>
+              of({ error: orgLoadErrorMessage(error, organization), quiet }),
+            ),
           ),
         ),
         takeUntilDestroyed(),
       )
       .subscribe((result) => {
+        this.refreshing.set(false);
         if ('overview' in result) {
           this.overview.set(result.overview);
-          this.selectedTab.set(firstTabWithItems(this.tabs()));
+          this.loadedAt.set(new Date());
+          this.refreshFailed.set(false);
+          if (!result.quiet) {
+            this.selectedTab.set(firstTabWithItems(this.tabs()));
+          }
+        } else if (result.quiet) {
+          this.refreshFailed.set(true);
         } else {
           this.loadError.set(result.error);
         }
@@ -62,12 +82,21 @@ export class OrganizationPage {
 
     this.route.paramMap
       .pipe(takeUntilDestroyed())
-      .subscribe((params) => this.loads.next(params.get('organization') ?? ''));
+      .subscribe((params) =>
+        this.loads.next({ organization: params.get('organization') ?? '', quiet: false }),
+      );
   }
 
   /** Load the team view again, e.g. after an error. */
   load(): void {
-    this.loads.next(this.organization());
+    this.loads.next({ organization: this.organization(), quiet: false });
+  }
+
+  /** Load the team view again while the current one stays visible. */
+  refresh(): void {
+    if (!this.refreshing() && this.overview()) {
+      this.loads.next({ organization: this.organization(), quiet: true });
+    }
   }
 }
 

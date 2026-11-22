@@ -268,6 +268,47 @@ describe('OverviewPage', () => {
     expect(element.querySelector('[aria-busy="true"]')).not.toBeNull();
   });
 
+  describe('refreshing', () => {
+    it('keeps the lists and the open tab while the new overview loads', async () => {
+      const refreshed = new Subject<Overview>();
+      const answers: Observable<Overview>[] = [of(OVERVIEW), refreshed];
+      const element = await render(() => answers.shift()!, of(INSTALLED));
+      await openTab(element, 'Mentions');
+
+      element.querySelector<HTMLButtonElement>('[aria-label="Refresh"]')!.click();
+      await fixture.whenStable();
+
+      expect(element.querySelector('mat-progress-bar')).not.toBeNull();
+      expect(element.querySelector('[aria-busy]')).toBeNull();
+      expect(rows(element)).toEqual(['Issue 6']);
+
+      refreshed.next({
+        ...OVERVIEW,
+        mentions: [item('kgeestmann/hoot', 6), item('kgeestmann/hoot', 7)],
+      });
+      refreshed.complete();
+      await fixture.whenStable();
+
+      expect(element.querySelector('mat-progress-bar')).toBeNull();
+      expect(selectedTab(element)).toBe('Mentions 2');
+      expect(rows(element)).toEqual(['Issue 6', 'Issue 7']);
+    });
+
+    it('keeps the overview and says so when a refresh fails', async () => {
+      const answers: Observable<Overview>[] = [
+        of(OVERVIEW),
+        throwError(() => new HttpErrorResponse({ status: 502 })),
+      ];
+      const element = await render(() => answers.shift()!, of(INSTALLED));
+
+      element.querySelector<HTMLButtonElement>('[aria-label="Refresh"]')!.click();
+      await fixture.whenStable();
+
+      expect(tabs(element)).toContain('Assigned 3');
+      expect(text(element.querySelector('.updated'))).toContain("Couldn't refresh");
+    });
+  });
+
   describe('with filters', () => {
     it('applies the stored filters and says how much they hide', async () => {
       filters.load = () => of({ hidden: ['dipt-pa1469-ht26', 'kgeestmann/old-repo'], labels: [] });

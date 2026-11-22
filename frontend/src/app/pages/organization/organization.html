@@ -4,6 +4,12 @@
   </p>
 
   @if (overview()) {
+    <app-refresh-status
+      [loadedAt]="loadedAt()"
+      [refreshing]="refreshing()"
+      [failed]="refreshFailed()"
+      (refresh)="refresh()"
+    />
     <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
   } @else if (loadError(); as message) {
     <app-load-error [message]="message" (retry)="load()" />

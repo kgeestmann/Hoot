@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
-import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 
 import {
   OrganizationsService,
@@ -144,6 +144,40 @@ describe('OrganizationPage', () => {
 
     expect(load).toHaveBeenCalledTimes(2);
     expect(tabs(element)).toContain('Failing CI 25');
+  });
+
+  it('refreshes while the current team view stays visible', async () => {
+    const refreshed = new Subject<OrgOverview>();
+    const answers: Observable<OrgOverview>[] = [of(OVERVIEW), refreshed];
+    const element = await render(() => answers.shift()!);
+
+    element.querySelector<HTMLButtonElement>('[aria-label="Refresh"]')!.click();
+    await fixture.whenStable();
+
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(element.querySelector('mat-progress-bar')).not.toBeNull();
+    expect(tabs(element)).toContain('Failing CI 25');
+
+    refreshed.next({ ...OVERVIEW, failing_ci: list(26, OVERVIEW.failing_ci.items) });
+    refreshed.complete();
+    await fixture.whenStable();
+
+    expect(tabs(element)).toContain('Failing CI 26');
+    expect(element.querySelector('mat-progress-bar')).toBeNull();
+  });
+
+  it('keeps the team view when a refresh fails', async () => {
+    const answers: Observable<OrgOverview>[] = [
+      of(OVERVIEW),
+      throwError(() => new HttpErrorResponse({ status: 502 })),
+    ];
+    const element = await render(() => answers.shift()!);
+
+    element.querySelector<HTMLButtonElement>('[aria-label="Refresh"]')!.click();
+    await fixture.whenStable();
+
+    expect(tabs(element)).toContain('Failing CI 25');
+    expect(text(element.querySelector('.updated'))).toContain("Couldn't refresh");
   });
 
   it('loads the new organization when the URL changes', async () => {
