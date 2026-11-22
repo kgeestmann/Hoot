@@ -205,14 +205,35 @@ describe('OverviewPage', () => {
     );
   });
 
-  it('says so when nothing is waiting', async () => {
+  it('says so when nothing is waiting, and keeps the tabs', async () => {
     const element = await render(() => of(EMPTY), of(INSTALLED));
 
     expect(element.querySelector('.all-clear')?.textContent).toContain('Nothing waiting on you');
     expect(element.querySelector('.all-clear mat-icon')?.getAttribute('data-mat-icon-name')).toBe(
       'task_alt',
     );
-    expect(element.querySelector('mat-tab-group')).toBeNull();
+    expect(tabs(element)).toEqual([
+      'My pull requests 0',
+      'Review requests 0',
+      'Assigned 0',
+      'Mentions 0',
+    ]);
+    expect(text(element.querySelector('.empty'))).toBe('You have no open pull requests.');
+  });
+
+  it('hides the empty filter menus when nothing is waiting', async () => {
+    const element = await render(() => of(EMPTY), of(INSTALLED));
+
+    expect(element.querySelector('app-filter-bar')).toBeNull();
+    expect(element.querySelector('app-refresh-status')).not.toBeNull();
+  });
+
+  it('keeps an active filter clearable when nothing is waiting', async () => {
+    filters.load = () => of({ hidden: ['kgeestmann'], labels: [] });
+
+    const element = await render(() => of(EMPTY), of(INSTALLED));
+
+    expect(element.querySelector('app-filter-bar .clear')).not.toBeNull();
   });
 
   it('only asks to install Hoot when it is installed nowhere', async () => {

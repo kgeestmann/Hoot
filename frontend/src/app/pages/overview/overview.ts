@@ -124,6 +124,11 @@ export class OverviewPage implements OnInit {
   /** Without any installation every list would be empty, which would wrongly read as "nothing to do". */
   readonly installedNowhere = computed(() => this.access()?.installations.length === 0);
   readonly nothingWaiting = computed(() => !!this.overview() && this.totalCount() === 0);
+  /** Without items the filter menus would be empty; an active filter stays clearable. */
+  readonly showFilters = computed(() => {
+    const filters = this.filters();
+    return this.totalCount() > 0 || filters.hidden.length > 0 || filters.labels.length > 0;
+  });
 
   constructor() {
     this.filterSaves
