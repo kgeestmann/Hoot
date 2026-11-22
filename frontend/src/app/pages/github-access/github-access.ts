@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 
-import { GitHubAccess } from '../../../services/github-access';
+import { GitHubAccess } from '../../services/github-access';
 
 /** Shows where Hoot can see the user's repositories and links to GitHub to add more. */
 @Component({

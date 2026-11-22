@@ -54,6 +54,21 @@
         }
       </mat-nav-list>
 
+      @if (auth.isLoggedIn()) {
+        <mat-nav-list class="secondary-nav">
+          <a
+            mat-list-item
+            routerLink="/github-access"
+            routerLinkActive
+            #accessLink="routerLinkActive"
+            [activated]="accessLink.isActive"
+          >
+            <mat-icon matListItemIcon svgIcon="extension" />
+            <span matListItemTitle>GitHub access</span>
+          </a>
+        </mat-nav-list>
+      }
+
       @if (auth.user(); as user) {
         <div class="account">
           <button mat-button class="account-button" type="button" [matMenuTriggerFor]="accountMenu">
@@ -91,6 +106,9 @@
       <h1 class="page-title">{{ pageTitle() }}</h1>
     </mat-toolbar>
     <main class="content">
+      @if (showInstallBanner()) {
+        <app-install-banner class="install-banner" [installUrl]="access()!.install_url" />
+      }
       <ng-content></ng-content>
     </main>
   </mat-sidenav-content>

@@ -1,0 +1,9 @@
+<div class="github-access-page">
+  @if (access(); as access) {
+    <app-github-access [access]="access" />
+  } @else if (loadError(); as message) {
+    <app-load-error [message]="message" (retry)="load()" />
+  } @else {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading where Hoot is installed" />
+  }
+</div>

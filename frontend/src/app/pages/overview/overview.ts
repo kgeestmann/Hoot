@@ -21,7 +21,6 @@ import {
 } from '../../services/overview-filters';
 import { FilterBar } from './filters/filter-bar';
 import { applyFilters, countItems, filterOptions, toggleEntry } from './filters/filtering';
-import { GitHubAccessCard } from './github-access/github-access';
 import { firstTabWithItems, ListTab, ListTabs } from './list-tabs/list-tabs';
 import { RefreshStatus } from './refresh-status/refresh-status';
 
@@ -52,15 +51,7 @@ const TABS = [
 /** The start page: everything on GitHub that is waiting on the user, one tab per list. */
 @Component({
   selector: 'app-overview-page',
-  imports: [
-    FilterBar,
-    GitHubAccessCard,
-    ListSkeleton,
-    ListTabs,
-    LoadError,
-    MatIconModule,
-    RefreshStatus,
-  ],
+  imports: [FilterBar, ListSkeleton, ListTabs, LoadError, MatIconModule, RefreshStatus],
   templateUrl: './overview.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview.css',
@@ -121,7 +112,7 @@ export class OverviewPage implements OnInit {
     });
   });
 
-  /** Without any installation every list would be empty, which would wrongly read as "nothing to do". */
+  /** Without any installation every list is empty for that reason; the layout's banner explains it. */
   readonly installedNowhere = computed(() => this.access()?.installations.length === 0);
   readonly nothingWaiting = computed(() => !!this.overview() && this.totalCount() === 0);
   /** Without items the filter menus would be empty; an active filter stays clearable. */
@@ -148,7 +139,7 @@ export class OverviewPage implements OnInit {
     this.load();
   }
 
-  /** Load the overview with the user's filters, and the GitHub access, e.g. again after an error. */
+  /** Load the overview with the user's filters, e.g. again after an error. */
   load(): void {
     this.overview.set(undefined);
     this.loadError.set(undefined);
