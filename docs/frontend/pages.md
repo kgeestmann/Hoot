@@ -37,7 +37,7 @@ What needs a team's attention in one organization, from `GET /orgs/{organization
 
 ## GitHub access (`/github-access`, `pages/github-access`)
 
-Linked at the bottom of the sidebar. A card (`github-access`) from `GET /github/installations`: the accounts Hoot can see (all or selected repositories, with *Manage* on GitHub), *Add an account or organization*, and a hint for members and outside collaborators who can't install it themselves. If the app is installed nowhere, the card asks the user to install it.
+Linked at the bottom of the sidebar. A card (`app-github-access`, see [components.md](components.md#app-github-access-pagesgithub-accessgithub-access)) from `GET /github/installations`: the accounts Hoot can see (all or selected repositories, with *Manage* on GitHub), *Add an account or organization*, and a hint for members and outside collaborators who can't install it themselves. If the app is installed nowhere, the card asks the user to install it.
 
 ## Profile (`/profile`, `pages/profile`)
 

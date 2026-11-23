@@ -31,8 +31,8 @@ Grey placeholders in the shape of a list, shown while it loads.
 
 | | |
 | --- | --- |
-| `label` (input, required) | What is loading, for screen readers |
-| `tabs` (input) | Also draw a tab row (team view) |
+| `label` (input, required) | What is loading, read out by screen readers, e.g. "Loading your overview" |
+| `tabs` (input, default `true`) | Draw a tab row above the rows; pass `false` on pages without tabs |
 
 ### `app-install-banner` (`layout/install-banner`)
 
@@ -41,6 +41,14 @@ Explains that Hoot can't see any repository yet, with *Install Hoot on GitHub* a
 | | |
 | --- | --- |
 | `installUrl` (input, required) | GitHub's install page for the app |
+
+### `app-github-access` (`pages/github-access/github-access`)
+
+The card listing where Hoot can see the user's repositories: each account with all or selected repositories and *Manage* on GitHub, *Add an account or organization*, and a hint for members and outside collaborators. Asks to install the app when it is installed nowhere. Used by the *GitHub access* page.
+
+| | |
+| --- | --- |
+| `access` (input, required) | The `GitHubAccess` from `GET /github/installations` |
 
 ## Items (`pages/overview/item/`)
 

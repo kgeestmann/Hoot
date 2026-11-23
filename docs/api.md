@@ -102,8 +102,8 @@ Pull requests (in `pull_requests` and on list pages) also carry:
 | `ci_status` | GitHub's `SUCCESS`, `FAILURE`, `PENDING`, `ERROR`, `EXPECTED`, or `null` without checks |
 | `review_decision` | `APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED`, or `null` |
 | `draft` | `true` for draft pull requests |
-| `reviewers` | `{ name, state }` per reviewer: `REQUESTED`, or the latest review `APPROVED`, `CHANGES_REQUESTED`, `COMMENTED`, `DISMISSED`, `PENDING`. A new request wins over an older review. |
-| `checks` | `{ name, state, url }` for each check run and commit status of the last commit. `state` is reduced to `success`, `failure`, `pending` or `neutral` (cancelled, skipped and stale count as neutral). |
+| `reviewers` | `{ name, state }` per reviewer, from the first 10 review requests and the first 10 latest reviews: `REQUESTED`, or the latest review `APPROVED`, `CHANGES_REQUESTED`, `COMMENTED`, `DISMISSED`, `PENDING`. A new request wins over an older review. |
+| `checks` | `{ name, state, url }` for each check run and commit status of the last commit (at most 30). `state` is reduced to `success`, `failure`, `pending` or `neutral` (cancelled, skipped and stale count as neutral). |
 
 ## One list, page by page
 
@@ -111,7 +111,7 @@ Pull requests (in `pull_requests` and on list pages) also carry:
 
 - `name`: `pull_requests`, `review_requests`, `assigned_issues` or `mentions`. The same searches as `/overview`, so pull requests carry CI and review state and mentions skip bot activity.
 - `sort`: `updated` (default, recently updated first), `oldest` (created first) or `created` (recently created first).
-- `after`: the previous page's `end_cursor`.
+- `after`: the previous page's `end_cursor`, passed back unchanged (at most 200 characters of base64).
 
 ```json
 {
