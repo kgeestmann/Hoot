@@ -656,7 +656,7 @@ Framework: Angular (standalone components)
 
 Layout (`layout/sidenav`):
 
-* **Navigation:** a Material nav list with icons: *Overview*, and under *Teams* every organization where Hoot is installed. The active page is tinted in the brand orange. At the bottom, an account button (the login's initial and the GitHub login) opens a menu with *Profile* and *Sign out*. The initial replaces the GitHub avatar, which would load from GitHub's servers and send every visitor's IP address there.
+* **Navigation:** a Material nav list with icons: *Overview*, and under *Teams* every organization where Hoot is installed. The active page is tinted in the brand orange. At the bottom, an account button (the login's initial and the GitHub login) opens a menu with *Profile* and *Sign out*. The initial replaces the GitHub avatar, which would load from GitHub's servers and send every visitor's IP address there. The list pages show their count next to their name, after the filters, from the same overview as the dashboard.
 * **Top bar:** shows the current page's title (from the route's `title`, also used for the browser tab: "Overview · Hoot").
 * **Responsive:** from 840 px wide (Material 3's "expanded" size) the navigation stays open beside the content. Below that it is a drawer behind a menu button in the top bar, and it closes once a page is chosen.
 * **Icons:** Material Symbols Outlined as SVG, registered once in `icons.ts` and used as `<mat-icon svgIcon="…">`.
@@ -682,17 +682,18 @@ Overview Page
 /
 ```
 
-The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` with the user's filters:
+The start page after signing in (logged-out visitors go to `/login`, and `/login` sends logged-in users here). It loads `GET /overview` with the user's filters (`overview-store.ts`, shared with the sidebar's counts) and summarises it as a dashboard:
 
-* **Four tabs** (`mat-tab-group`): *My pull requests*, *Review requests*, *Assigned* and *Mentions*, each with the number of items it shows. The page opens on the first tab with items. When GitHub found more than the 50 loaded items, the tab ends with *Show all N on GitHub*. Each list is a Material nav list (`overview-section`), and every item is one clickable row to GitHub: the title, a line with kind, `owner/repo#number` and how long ago it was updated ("3 hours ago", `item/item-meta`), and a line of chips (`item/item-chips`):
+* **Four cards** (`mat-card`, `summary.ts`): *Pull requests*, *Review requests*, *Assigned issues* and *Mentions*, each with its icon, the number of items the filters let through ("50+" when GitHub cut the list off), the 3 most recently updated items as rows linking to GitHub (title and a line with kind, `owner/repo#number` and age, `item/item-meta`), and *Show all*, which opens the list's own page.
+* **Item chips** (`item/item-chips`, on the list pages and the team view):
   * **Status** of your pull requests: CI (`CI passing`, `CI failing`, `CI running`) and review (`Approved`, `Changes requested`, `Review required`), always as text with an icon (the Material Symbols `check`, `close` and `schedule`) and a colour, never colour alone.
   * **Labels** in GitHub's colours. The text is dark or white, whichever has more contrast on the label colour (`item/label-colors.ts`), as on GitHub.
-* **Filter bar** above the tabs (`filters/filter-bar`): *Owner*, *Repository* and *Label* buttons open Material menus whose options are `menuitemcheckbox`es with a `mat-pseudo-checkbox`, so they work with the keyboard. A button names its state ("Owner: 2 of 3", "Label: bug"), and the bar ends with "Showing 12 of 15 · 3 hidden" and *Clear filters*.
+* **Filter bar** above the cards (`filters/filter-bar`): *Owner*, *Repository* and *Label* buttons open Material menus whose options are `menuitemcheckbox`es with a `mat-pseudo-checkbox`, so they work with the keyboard. A button names its state ("Owner: 2 of 3", "Label: bug"), and the bar ends with "Showing 12 of 15 · 3 hidden" and *Clear filters*.
   * **Owner and repository:** unchecking hides them. New owners and repositories show up automatically, and a hidden owner's repositories are disabled.
   * **Label:** picking labels shows only items carrying at least one of them. With none picked, every item shows.
-  * The tab counts follow the filters, and a tab whose items are all filtered out says so. Changes are saved per user with `PUT /overview/filters`, one after the other. If saving fails, the filters still apply until the page is reloaded.
-* **Refresh** (`refresh-status`, also on the team view): "Updated 5 minutes ago" with a refresh button. A refresh keeps the current lists and the open tab visible under a thin progress bar. If it fails, the lists stay and it says "Couldn't refresh". Coming back to the browser tab after more than 5 minutes refreshes on its own, which also keeps the session alive (sliding session).
-* **States:** a skeleton in the shape of tabs and rows while loading (`layout/list-skeleton`), an empty message per tab, "Nothing waiting on you." with the `task_alt` icon above the tabs when all four are empty (the tabs stay; the filter bar only while a filter is active), and an error with **Try again** that says whether Hoot's server or GitHub failed.
+  * The card counts follow the filters, and a card whose items are all filtered out says so. Changes are saved per user with `PUT /overview/filters`, one after the other. If saving fails, the filters still apply until the page is reloaded.
+* **Refresh** (`refresh-status`, also on the team view): "Updated 5 minutes ago" with a refresh button. A refresh keeps the current cards (and on the team view the open tab) visible under a thin progress bar, and updates the sidebar's counts too. If it fails, the lists stay and it says "Couldn't refresh". Coming back to the browser tab after more than 5 minutes refreshes on its own, which also keeps the session alive (sliding session).
+* **States:** a skeleton while loading (`layout/list-skeleton`), an empty message per card, "Nothing waiting on you." with the `task_alt` icon above the cards when all four are empty (the cards stay; the filter bar only while a filter is active), and an error with **Try again** that says whether Hoot's server or GitHub failed.
 
 ---
 

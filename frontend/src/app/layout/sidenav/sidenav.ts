@@ -21,6 +21,9 @@ import { AuthService } from '../../services/auth';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { PageTitle } from '../../services/page-title';
 import { LIST_PAGES } from '../../pages/list/list-pages';
+import { FilterState } from '../../pages/overview/filters/filter-state';
+import { OverviewStore } from '../../pages/overview/overview-store';
+import { summarize } from '../../pages/overview/summary';
 import { InstallBanner } from '../install-banner/install-banner';
 
 const WIDE_SCREEN = '(min-width: 840px)';
@@ -54,7 +57,22 @@ export class Sidenav {
     { initialValue: inject(BreakpointObserver).isMatched(WIDE_SCREEN) },
   );
 
+  private readonly overviewStore = inject(OverviewStore);
+  private readonly filterState = inject(FilterState);
   readonly listPages = LIST_PAGES;
+  /** Each list's count after the filters, by list; empty until the overview has loaded. */
+  readonly listCounts = computed(() => {
+    const overview = this.overviewStore.overview();
+    if (!overview) {
+      return {} as Record<string, string>;
+    }
+    return Object.fromEntries(
+      summarize(overview, this.filterState.filters()).map((summary) => [
+        summary.page.list,
+        summary.count,
+      ]),
+    );
+  });
   /** Where Hoot is installed for the user; `undefined` until loaded or when that failed. */
   readonly access = signal<GitHubAccess | undefined>(undefined);
   /** Organizations where Hoot is installed for the user, each with a team view. */
@@ -78,6 +96,7 @@ export class Sidenav {
       this.access.set(undefined);
       if (this.auth.isLoggedIn()) {
         this.loadAccess();
+        this.loadCounts();
       }
     });
 
@@ -103,6 +122,12 @@ export class Sidenav {
 
   logout() {
     this.auth.logout();
+  }
+
+  /** The counts are extras; the pages show their own errors, so failures are ignored here. */
+  private loadCounts(): void {
+    this.overviewStore.load().subscribe({ error: () => undefined });
+    this.filterState.load().subscribe();
   }
 
   private loadAccess(): void {

@@ -6,103 +6,78 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
 import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
-import { Overview, OverviewService } from '../../services/overview';
 import { FilterBar } from './filters/filter-bar';
 import { FilterState } from './filters/filter-state';
 import { applyFilters, countItems, filterOptions } from './filters/filtering';
-import { firstTabWithItems, ListTab, ListTabs } from './list-tabs/list-tabs';
+import { ItemMeta } from './item/item-meta';
+import { OverviewStore } from './overview-store';
 import { RefreshStatus } from './refresh-status/refresh-status';
+import { summarize } from './summary';
 
-/** The four tabs, in order: which list each shows and what it says when the list is empty. */
-const TABS = [
-  {
-    section: 'pull_requests',
-    label: 'My pull requests',
-    emptyText: 'You have no open pull requests.',
-  },
-  {
-    section: 'review_requests',
-    label: 'Review requests',
-    emptyText: 'No reviews are waiting on you.',
-  },
-  {
-    section: 'assigned_issues',
-    label: 'Assigned',
-    emptyText: 'No open issues are assigned to you.',
-  },
-  {
-    section: 'mentions',
-    label: 'Mentions',
-    emptyText: 'Nobody mentioned you in an open issue or pull request.',
-  },
-] as const;
-
-/** The start page: everything on GitHub that is waiting on the user, one tab per list. */
+/**
+ * The start page: a dashboard with one card per list (count, newest items, link to the list's
+ * own page), with the shared filters applied.
+ */
 @Component({
   selector: 'app-overview-page',
-  imports: [FilterBar, ListSkeleton, ListTabs, LoadError, MatIconModule, RefreshStatus],
+  imports: [
+    FilterBar,
+    ItemMeta,
+    ListSkeleton,
+    LoadError,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatListModule,
+    RefreshStatus,
+    RouterLink,
+  ],
   templateUrl: './overview.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview.css',
 })
 export class OverviewPage implements OnInit {
-  private readonly overviewService = inject(OverviewService);
+  private readonly store = inject(OverviewStore);
   private readonly gitHubAccessService = inject(GitHubAccessService);
   /** The user's filters, shared with the list pages. */
   readonly filterState = inject(FilterState);
 
-  /** Everything GitHub returned; `undefined` while loading or after an error. */
-  readonly overview = signal<Overview | undefined>(undefined);
+  /** The shared overview; `undefined` until it first arrived. */
+  readonly overview = this.store.overview;
   readonly loadError = signal<string | undefined>(undefined);
   /** `undefined` until loaded; the page works without it. */
   readonly access = signal<GitHubAccess | undefined>(undefined);
   readonly filters = this.filterState.filters;
-  readonly selectedTab = signal(0);
   /** When the shown overview came from GitHub. */
   readonly loadedAt = signal(new Date());
   readonly refreshing = signal(false);
   readonly refreshFailed = signal(false);
 
-  readonly visible = computed(() => {
-    const overview = this.overview();
-    return overview && applyFilters(overview, this.filters());
-  });
   readonly totalCount = computed(() => {
     const overview = this.overview();
     return overview ? countItems(overview) : 0;
   });
   readonly shownCount = computed(() => {
-    const visible = this.visible();
-    return visible ? countItems(visible) : 0;
+    const overview = this.overview();
+    return overview ? countItems(applyFilters(overview, this.filters())) : 0;
   });
   readonly filterOptions = computed(() => {
     const overview = this.overview();
     return overview ? filterOptions(overview, this.filters()) : { owners: [], labels: [] };
   });
-  readonly tabs = computed<ListTab[]>(() => {
+  readonly cards = computed(() => {
     const overview = this.overview();
-    const visible = this.visible();
-    if (!overview || !visible) {
-      return [];
-    }
-    return TABS.map((tab) => {
-      const hiddenHere = overview[tab.section].length - visible[tab.section].length;
-      const onGitHub = overview.totals[tab.section];
-      return {
-        label: tab.label,
-        // What the tab shows, so the count always matches the list.
-        count: visible[tab.section].length,
-        items: visible[tab.section],
-        emptyText: hiddenHere > 0 ? `All ${hiddenHere} hidden by your filters.` : tab.emptyText,
-        ...(onGitHub.has_more && { total: onGitHub.total, moreUrl: onGitHub.search_url }),
-      };
-    });
+    return overview ? summarize(overview, this.filters()) : [];
   });
 
   /** Without any installation every list is empty for that reason; the layout's banner explains it. */
@@ -118,19 +93,15 @@ export class OverviewPage implements OnInit {
     this.load();
   }
 
-  /** Load the overview with the user's filters, e.g. again after an error. */
+  /** Load the overview (shared with the sidebar) with the user's filters, e.g. after an error. */
   load(): void {
-    this.overview.set(undefined);
     this.loadError.set(undefined);
     forkJoin({
-      overview: this.overviewService.load(),
+      overview: this.store.load(),
       // Without stored filters the overview is still useful, just unfiltered.
       filters: this.filterState.load(),
     }).subscribe({
-      next: ({ overview }) => {
-        this.showOverview(overview);
-        this.selectedTab.set(firstTabWithItems(this.tabs()));
-      },
+      next: () => this.loadedAt.set(new Date()),
       error: (error: unknown) => this.loadError.set(loadErrorMessage(error)),
     });
     this.gitHubAccessService.load().subscribe({
@@ -145,18 +116,15 @@ export class OverviewPage implements OnInit {
       return;
     }
     this.refreshing.set(true);
-    this.overviewService
-      .load()
+    this.store
+      .reload()
       .pipe(finalize(() => this.refreshing.set(false)))
       .subscribe({
-        next: (overview) => this.showOverview(overview),
+        next: () => {
+          this.loadedAt.set(new Date());
+          this.refreshFailed.set(false);
+        },
         error: () => this.refreshFailed.set(true),
       });
-  }
-
-  private showOverview(overview: Overview): void {
-    this.overview.set(overview);
-    this.loadedAt.set(new Date());
-    this.refreshFailed.set(false);
   }
 }

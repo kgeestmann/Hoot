@@ -28,10 +28,42 @@
         Nothing waiting on you.
       </p>
     }
-    <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />
+    <div class="cards">
+      @for (card of cards(); track card.page.path) {
+        <mat-card appearance="outlined" class="summary-card">
+          <mat-card-header class="card-header">
+            <mat-icon mat-card-avatar class="card-icon" [svgIcon]="card.page.icon" />
+            <h2 mat-card-title class="card-title">
+              <span class="card-name">{{ card.page.title }}</span>
+              <span class="card-count">{{ card.count }}</span>
+            </h2>
+          </mat-card-header>
+          <mat-card-content class="card-content">
+            @if (card.newest.length > 0) {
+              <mat-nav-list class="card-items">
+                @for (item of card.newest; track item.url) {
+                  <a mat-list-item class="card-item" [href]="item.url" [lines]="2">
+                    <span matListItemTitle class="item-title">{{ item.title }}</span>
+                    <span matListItemLine><app-item-meta [item]="item" /></span>
+                  </a>
+                }
+              </mat-nav-list>
+            } @else {
+              <p class="empty">{{ card.emptyText }}</p>
+            }
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <a mat-button class="show-all" [routerLink]="['/', card.page.path]">
+              Show all
+              <mat-icon iconPositionEnd svgIcon="chevron_right" />
+            </a>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
   } @else if (loadError(); as message) {
     <app-load-error [message]="message" (retry)="load()" />
   } @else {
-    <app-list-skeleton label="Loading your overview" />
+    <app-list-skeleton [tabs]="false" label="Loading your overview" />
   }
 </div>
