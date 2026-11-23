@@ -34,6 +34,12 @@
   padding: 0 var(--hoot-space-3);
 }
 
+.nav-count {
+  align-self: center;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .secondary-nav {
   padding: var(--hoot-space-2) var(--hoot-space-3);
   border-top: 1px solid var(--mat-sys-outline-variant);

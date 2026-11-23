@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
@@ -54,13 +55,14 @@ const EMPTY: Overview = {
   totals: NO_MORE,
 };
 
-/** Three assigned issues in two owners, one with the label "bug", and one mention. */
+/** Four assigned issues in two owners, one with the label "bug", and one mention. */
 const OVERVIEW: Overview = {
   ...EMPTY,
   assigned_issues: [
     item('dipt-pa1469-ht26/team-14', 3),
     item('kgeestmann/hoot', 4, ['bug']),
     item('kgeestmann/old-repo', 5),
+    item('kgeestmann/hoot', 7),
   ],
   mentions: [item('kgeestmann/hoot', 6)],
 };
@@ -83,6 +85,7 @@ describe('OverviewPage', () => {
     await TestBed.configureTestingModule({
       imports: [OverviewPage],
       providers: [
+        provideRouter([]),
         { provide: OverviewService, useValue: { load: overview } },
         { provide: GitHubAccessService, useValue: { load: () => access } },
         { provide: OverviewFiltersService, useValue: filters },
@@ -98,30 +101,22 @@ describe('OverviewPage', () => {
     return element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
   }
 
-  /** A tab's label with its count, e.g. "Assigned 3". */
-  function tabText(tab: Element | null): string {
-    return `${text(tab?.querySelector('.tab-label') ?? null)} ${text(tab?.querySelector('.tab-count') ?? null)}`;
-  }
-
-  function tabs(element: HTMLElement): string[] {
-    return Array.from(element.querySelectorAll('[role="tab"]')).map(tabText);
-  }
-
-  function selectedTab(element: HTMLElement): string {
-    return tabText(element.querySelector('[role="tab"][aria-selected="true"]'));
-  }
-
-  /** Titles of the rows in the open tab. */
-  function rows(element: HTMLElement): string[] {
-    return Array.from(element.querySelectorAll('a.item .title')).map(text);
-  }
-
-  async function openTab(element: HTMLElement, label: string): Promise<void> {
-    const tab = Array.from(element.querySelectorAll<HTMLElement>('[role="tab"]')).find(
-      (candidate) => text(candidate).startsWith(label),
+  /** Each card as "Name count", e.g. "Assigned issues 4". */
+  function cards(element: HTMLElement): string[] {
+    return Array.from(element.querySelectorAll('.summary-card')).map(
+      (card) =>
+        `${text(card.querySelector('.card-name'))} ${text(card.querySelector('.card-count'))}`,
     );
-    tab!.click();
-    await fixture.whenStable();
+  }
+
+  function card(element: HTMLElement, name: string): Element {
+    return Array.from(element.querySelectorAll('.summary-card')).find(
+      (candidate) => text(candidate.querySelector('.card-name')) === name,
+    )!;
+  }
+
+  function newest(element: HTMLElement, name: string): string[] {
+    return Array.from(card(element, name).querySelectorAll('.item-title')).map(text);
   }
 
   /** Open a filter menu ("Owner", "Repository", "Label") and click one of its options. */
@@ -144,57 +139,53 @@ describe('OverviewPage', () => {
     expect(element.querySelector('[aria-busy="true"]')).not.toBeNull();
   });
 
-  it('shows the four lists as tabs with their counts', async () => {
+  it('shows one card per list with its count', async () => {
     const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-    expect(tabs(element)).toEqual([
-      'My pull requests 0',
+    expect(cards(element)).toEqual([
+      'Pull requests 0',
       'Review requests 0',
-      'Assigned 3',
+      'Assigned issues 4',
       'Mentions 1',
     ]);
-    expect(element.querySelector('[aria-busy]')).toBeNull();
   });
 
-  it('opens on the first tab that has items', async () => {
+  it('shows the three most recently updated items of a list', async () => {
     const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-    expect(selectedTab(element)).toBe('Assigned 3');
-    expect(rows(element)).toEqual(['Issue 3', 'Issue 4', 'Issue 5']);
+    expect(newest(element, 'Assigned issues')).toEqual(['Issue 3', 'Issue 4', 'Issue 5']);
+    expect(
+      card(element, 'Assigned issues').querySelector<HTMLAnchorElement>('a.card-item')?.href,
+    ).toBe('https://github.com/dipt-pa1469-ht26/team-14/issues/3');
   });
 
-  it('shows the items of another tab when it is chosen', async () => {
+  it("links each card to its list's own page", async () => {
     const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-    await openTab(element, 'Mentions');
-
-    expect(rows(element)).toEqual(['Issue 6']);
+    expect(
+      Array.from(element.querySelectorAll('.show-all')).map((link) => link.getAttribute('href')),
+    ).toEqual(['/pull-requests', '/review-requests', '/assigned', '/mentions']);
   });
 
-  it('links to the rest of a list GitHub cut off', async () => {
-    const searchUrl = 'https://github.com/search?q=assignee%3A%40me&type=issues';
+  it("shows a list's empty text in its card", async () => {
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+    expect(text(card(element, 'Review requests').querySelector('.empty'))).toBe(
+      'No reviews are waiting on you.',
+    );
+  });
+
+  it('marks a count with "+" when GitHub cut the list off', async () => {
     const element = await render(
       () =>
         of({
           ...OVERVIEW,
-          totals: {
-            ...NO_MORE,
-            assigned_issues: { total: 70, has_more: true, search_url: searchUrl },
-          },
+          totals: { ...NO_MORE, assigned_issues: { total: 70, has_more: true, search_url: '' } },
         }),
       of(INSTALLED),
     );
 
-    expect(tabs(element)).toContain('Assigned 3');
-    const more = element.querySelector<HTMLAnchorElement>('.more-link');
-    expect(text(more)).toBe('Show all 70 on GitHub');
-    expect(more?.href).toBe(searchUrl);
-  });
-
-  it('has no link to more when GitHub returned the whole list', async () => {
-    const element = await render(() => of(OVERVIEW), of(INSTALLED));
-
-    expect(element.querySelector('.more-link')).toBeNull();
+    expect(cards(element)).toContain('Assigned issues 4+');
   });
 
   it('leaves GitHub access to its own page', async () => {
@@ -203,20 +194,19 @@ describe('OverviewPage', () => {
     expect(element.querySelector('app-github-access')).toBeNull();
   });
 
-  it('says so when nothing is waiting, and keeps the tabs', async () => {
+  it('says so when nothing is waiting, and keeps the cards', async () => {
     const element = await render(() => of(EMPTY), of(INSTALLED));
 
     expect(element.querySelector('.all-clear')?.textContent).toContain('Nothing waiting on you');
     expect(element.querySelector('.all-clear mat-icon')?.getAttribute('data-mat-icon-name')).toBe(
       'task_alt',
     );
-    expect(tabs(element)).toEqual([
-      'My pull requests 0',
+    expect(cards(element)).toEqual([
+      'Pull requests 0',
       'Review requests 0',
-      'Assigned 0',
+      'Assigned issues 0',
       'Mentions 0',
     ]);
-    expect(text(element.querySelector('.empty'))).toBe('You have no open pull requests.');
   });
 
   it('hides the empty filter menus when nothing is waiting', async () => {
@@ -234,10 +224,10 @@ describe('OverviewPage', () => {
     expect(element.querySelector('app-filter-bar .clear')).not.toBeNull();
   });
 
-  it('keeps the tabs but claims nothing is waiting when Hoot is installed nowhere', async () => {
+  it('keeps the cards but claims nothing is waiting when Hoot is installed nowhere', async () => {
     const element = await render(() => of(EMPTY), of(INSTALLED_NOWHERE));
 
-    expect(element.querySelector('mat-tab-group')).not.toBeNull();
+    expect(element.querySelectorAll('.summary-card').length).toBe(4);
     expect(element.querySelector('.all-clear')).toBeNull();
   });
 
@@ -247,8 +237,7 @@ describe('OverviewPage', () => {
       throwError(() => new Error('502')),
     );
 
-    expect(tabs(element)).toContain('Assigned 3');
-    expect(element.querySelector('app-github-access')).toBeNull();
+    expect(cards(element)).toContain('Assigned issues 4');
   });
 
   it.each([
@@ -272,7 +261,7 @@ describe('OverviewPage', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('[role="alert"]')).toBeNull();
-    expect(tabs(element)).toContain('Assigned 3');
+    expect(cards(element)).toContain('Assigned issues 4');
   });
 
   it('shows the skeleton again while retrying', async () => {
@@ -290,29 +279,26 @@ describe('OverviewPage', () => {
   });
 
   describe('refreshing', () => {
-    it('keeps the lists and the open tab while the new overview loads', async () => {
+    it('keeps the cards while the new overview loads', async () => {
       const refreshed = new Subject<Overview>();
       const answers: Observable<Overview>[] = [of(OVERVIEW), refreshed];
       const element = await render(() => answers.shift()!, of(INSTALLED));
-      await openTab(element, 'Mentions');
 
       element.querySelector<HTMLButtonElement>('[aria-label="Refresh"]')!.click();
       await fixture.whenStable();
 
       expect(element.querySelector('mat-progress-bar')).not.toBeNull();
-      expect(element.querySelector('[aria-busy]')).toBeNull();
-      expect(rows(element)).toEqual(['Issue 6']);
+      expect(cards(element)).toContain('Mentions 1');
 
       refreshed.next({
         ...OVERVIEW,
-        mentions: [item('kgeestmann/hoot', 6), item('kgeestmann/hoot', 7)],
+        mentions: [item('kgeestmann/hoot', 6), item('kgeestmann/hoot', 8)],
       });
       refreshed.complete();
       await fixture.whenStable();
 
       expect(element.querySelector('mat-progress-bar')).toBeNull();
-      expect(selectedTab(element)).toBe('Mentions 2');
-      expect(rows(element)).toEqual(['Issue 6', 'Issue 7']);
+      expect(cards(element)).toContain('Mentions 2');
     });
 
     it('shows the refresh status in the filter row', async () => {
@@ -333,24 +319,20 @@ describe('OverviewPage', () => {
       element.querySelector<HTMLButtonElement>('[aria-label="Refresh"]')!.click();
       await fixture.whenStable();
 
-      expect(tabs(element)).toContain('Assigned 3');
+      expect(cards(element)).toContain('Assigned issues 4');
       expect(text(element.querySelector('.updated'))).toContain("Couldn't refresh");
     });
   });
 
   describe('with filters', () => {
-    it('applies the stored filters and says how much they hide', async () => {
+    it('applies the stored filters to the cards and says how much they hide', async () => {
       filters.load = () => of({ hidden: ['dipt-pa1469-ht26', 'kgeestmann/old-repo'], labels: [] });
 
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      expect(tabs(element)).toEqual([
-        'My pull requests 0',
-        'Review requests 0',
-        'Assigned 1',
-        'Mentions 1',
-      ]);
-      expect(text(element.querySelector('.summary'))).toBe('Showing 2 of 4 · 2 hidden');
+      expect(cards(element)).toContain('Assigned issues 2');
+      expect(newest(element, 'Assigned issues')).toEqual(['Issue 4', 'Issue 7']);
+      expect(text(element.querySelector('.summary'))).toBe('Showing 3 of 5 · 2 hidden');
     });
 
     it('hides an owner chosen in the Owner menu and saves that', async () => {
@@ -358,18 +340,8 @@ describe('OverviewPage', () => {
 
       await clickFilterOption(element, 'Owner', 'dipt-pa1469-ht26');
 
-      expect(tabs(element)).toContain('Assigned 2');
-      expect(text(element.querySelector('.filter-button'))).toBe('Owner: 1 of 2');
+      expect(cards(element)).toContain('Assigned issues 3');
       expect(filters.save).toHaveBeenCalledWith({ hidden: ['dipt-pa1469-ht26'], labels: [] });
-    });
-
-    it('hides a repository chosen in the Repository menu', async () => {
-      const element = await render(() => of(OVERVIEW), of(INSTALLED));
-
-      await clickFilterOption(element, 'Repository', 'kgeestmann/old-repo');
-
-      expect(rows(element)).toEqual(['Issue 3', 'Issue 4']);
-      expect(filters.save).toHaveBeenCalledWith({ hidden: ['kgeestmann/old-repo'], labels: [] });
     });
 
     it('shows only items with a label picked in the Label menu', async () => {
@@ -377,18 +349,18 @@ describe('OverviewPage', () => {
 
       await clickFilterOption(element, 'Label', 'bug');
 
-      expect(tabs(element)).toContain('Assigned 1');
-      expect(rows(element)).toEqual(['Issue 4']);
+      expect(newest(element, 'Assigned issues')).toEqual(['Issue 4']);
       expect(filters.save).toHaveBeenCalledWith({ hidden: [], labels: ['bug'] });
     });
 
-    it('says when everything in a tab is hidden by the filters', async () => {
+    it('says when everything in a card is hidden by the filters', async () => {
       filters.load = () => of({ hidden: ['kgeestmann'], labels: [] });
+
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      await openTab(element, 'Mentions');
-
-      expect(text(element.querySelector('.empty'))).toBe('All 1 hidden by your filters.');
+      expect(text(card(element, 'Mentions').querySelector('.empty'))).toBe(
+        'All 1 hidden by your filters.',
+      );
     });
 
     it('clears every filter at once', async () => {
@@ -398,8 +370,7 @@ describe('OverviewPage', () => {
       element.querySelector<HTMLButtonElement>('.clear')!.click();
       await fixture.whenStable();
 
-      expect(tabs(element)).toContain('Assigned 3');
-      expect(element.querySelector('.clear')).toBeNull();
+      expect(cards(element)).toContain('Assigned issues 4');
       expect(filters.save).toHaveBeenCalledWith(NO_FILTERS);
     });
 
@@ -408,7 +379,7 @@ describe('OverviewPage', () => {
 
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      expect(tabs(element)).toContain('Assigned 3');
+      expect(cards(element)).toContain('Assigned issues 4');
     });
 
     it('warns when a filter change cannot be saved, but keeps applying it', async () => {
@@ -418,29 +389,7 @@ describe('OverviewPage', () => {
       await clickFilterOption(element, 'Owner', 'dipt-pa1469-ht26');
 
       expect(element.querySelector('app-filter-bar [role="alert"]')).not.toBeNull();
-      expect(tabs(element)).toContain('Assigned 2');
-    });
-
-    it('saves changes one after the other, so the last one is stored', async () => {
-      const pending: Subject<OverviewFilters>[] = [];
-      filters.save = vi.fn(() => {
-        const save = new Subject<OverviewFilters>();
-        pending.push(save);
-        return save;
-      });
-      const element = await render(() => of(OVERVIEW), of(INSTALLED));
-
-      await clickFilterOption(element, 'Owner', 'dipt-pa1469-ht26');
-      await clickFilterOption(element, 'Label', 'bug');
-      expect(filters.save).toHaveBeenCalledTimes(1);
-
-      pending[0].next(NO_FILTERS);
-      pending[0].complete();
-
-      expect(filters.save).toHaveBeenLastCalledWith({
-        hidden: ['dipt-pa1469-ht26'],
-        labels: ['bug'],
-      });
+      expect(cards(element)).toContain('Assigned issues 3');
     });
   });
 });

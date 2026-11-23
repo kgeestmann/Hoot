@@ -35,6 +35,9 @@
             >
               <mat-icon matListItemIcon [svgIcon]="page.icon" />
               <span matListItemTitle>{{ page.title }}</span>
+              @if (listCounts()[page.list]; as count) {
+                <span matListItemMeta class="nav-count">{{ count }}</span>
+              }
             </a>
           }
 

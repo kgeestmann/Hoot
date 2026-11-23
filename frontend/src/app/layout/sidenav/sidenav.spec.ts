@@ -4,10 +4,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { NEVER, Observable, of, throwError } from 'rxjs';
 
 import { AuthService, User } from '../../services/auth';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
+import { Overview, OverviewService } from '../../services/overview';
+import { NO_FILTERS, OverviewFiltersService } from '../../services/overview-filters';
 import { PageTitle } from '../../services/page-title';
 import { Sidenav } from './sidenav';
 
@@ -25,7 +27,12 @@ describe('Sidenav', () => {
     {
       access = of(NO_INSTALLATIONS),
       wide = true,
-    }: { access?: Observable<GitHubAccess>; wide?: boolean } = {},
+      overview = NEVER,
+    }: {
+      access?: Observable<GitHubAccess>;
+      wide?: boolean;
+      overview?: Observable<Overview>;
+    } = {},
   ) {
     logout = vi.fn();
     await TestBed.configureTestingModule({
@@ -40,6 +47,11 @@ describe('Sidenav', () => {
           useValue: { user: signal(user), isLoggedIn: signal(!!user), logout },
         },
         { provide: GitHubAccessService, useValue: { load: () => access } },
+        { provide: OverviewService, useValue: { load: () => overview } },
+        {
+          provide: OverviewFiltersService,
+          useValue: { load: () => of(NO_FILTERS), save: () => of(NO_FILTERS) },
+        },
         {
           provide: BreakpointObserver,
           useValue: {
@@ -163,6 +175,46 @@ describe('Sidenav', () => {
     expect(
       links.map((link) => link.querySelector('mat-icon')?.getAttribute('data-mat-icon-name')),
     ).toEqual(['merge', 'rate_review', 'assignment_ind', 'alternate_email']);
+  });
+
+  it('shows how many items wait in each list', async () => {
+    const issue = (number: number) => ({
+      kind: 'issue' as const,
+      title: `Issue ${number}`,
+      repository: 'octo/hoot',
+      number,
+      url: `https://github.com/octo/hoot/issues/${number}`,
+      updated_at: '2026-11-21T10:00:00Z',
+      labels: [],
+      comment_count: 0,
+      milestone: null,
+    });
+    const allLoaded = { total: 0, has_more: false, search_url: '' };
+    const element = await render(OCTOCAT, {
+      overview: of({
+        pull_requests: [],
+        review_requests: [issue(1)],
+        assigned_issues: [issue(2), issue(3)],
+        mentions: [],
+        totals: {
+          pull_requests: allLoaded,
+          review_requests: allLoaded,
+          assigned_issues: { total: 80, has_more: true, search_url: '' },
+          mentions: allLoaded,
+        },
+      }),
+    });
+
+    const counts = Array.from(element.querySelectorAll('a.nav-list')).map(
+      (link) => link.querySelector('.nav-count')?.textContent?.trim() ?? '',
+    );
+    expect(counts).toEqual(['0', '1', '2+', '0']);
+  });
+
+  it('shows no counts until the overview has loaded', async () => {
+    const element = await render(OCTOCAT);
+
+    expect(element.querySelector('.nav-count')).toBeNull();
   });
 
   it('links to GitHub access at the bottom of the navigation', async () => {
