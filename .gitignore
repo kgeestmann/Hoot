@@ -16,6 +16,7 @@ frontend/dist/
 
 # SQLite database
 backend/hoot.db
+backend/hoot-fake.db
 
 # OS
 Thumbs.db

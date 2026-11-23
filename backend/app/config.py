@@ -68,6 +68,11 @@ GITHUB_CLIENT_ID = read_required("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = read_required("GITHUB_CLIENT_SECRET")
 # The app's URL name (github.com/apps/<slug>), for links to its install page.
 GITHUB_APP_SLUG = read_required("GITHUB_APP_SLUG")
+# Where GitHub lives. Only changed to run against the fake GitHub (python -m backend.fake_github_server).
+DEFAULT_GITHUB_URL = "https://github.com"
+DEFAULT_GITHUB_API_URL = "https://api.github.com"
+GITHUB_URL = os.getenv("GITHUB_URL", DEFAULT_GITHUB_URL).rstrip("/")
+GITHUB_API_URL = os.getenv("GITHUB_API_URL", DEFAULT_GITHUB_API_URL).rstrip("/")
 GITHUB_CALLBACK_URL = os.getenv("GITHUB_CALLBACK_URL", "http://localhost:8000/auth/github/callback")
 # Where the browser lands after the sign-in. Fixed, so the callback can't be used as an open redirect.
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:4200").rstrip("/")

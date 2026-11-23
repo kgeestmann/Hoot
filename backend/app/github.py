@@ -7,20 +7,22 @@ from urllib.parse import urlencode
 import httpx
 
 from .config import (
+    GITHUB_API_URL,
     GITHUB_APP_SLUG,
     GITHUB_CALLBACK_URL,
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
+    GITHUB_URL,
 )
 
 logger = logging.getLogger(__name__)
 
-AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
-TOKEN_URL = "https://github.com/login/oauth/access_token"
-USER_URL = "https://api.github.com/user"
-GRAPHQL_URL = "https://api.github.com/graphql"
-INSTALLATIONS_URL = "https://api.github.com/user/installations"
-INSTALL_URL = f"https://github.com/apps/{GITHUB_APP_SLUG}/installations/new"
+AUTHORIZE_URL = f"{GITHUB_URL}/login/oauth/authorize"
+TOKEN_URL = f"{GITHUB_URL}/login/oauth/access_token"
+USER_URL = f"{GITHUB_API_URL}/user"
+GRAPHQL_URL = f"{GITHUB_API_URL}/graphql"
+INSTALLATIONS_URL = f"{GITHUB_API_URL}/user/installations"
+INSTALL_URL = f"{GITHUB_URL}/apps/{GITHUB_APP_SLUG}/installations/new"
 API_HEADERS = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 
