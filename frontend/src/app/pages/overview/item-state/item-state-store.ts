@@ -73,6 +73,10 @@ export class ItemStateStore {
   private readonly api = inject(ItemStatesService);
   private loading?: Observable<void>;
   private queue: Observable<unknown> = of(undefined);
+  /** What the backend has stored, to fall back to when a change fails. */
+  private readonly confirmed = new Map<string, ItemState>();
+  /** Per item, the number of the latest change; answers to older changes are not shown. */
+  private readonly versions = new Map<string, number>();
 
   readonly states = signal<ReadonlyMap<string, ItemState>>(new Map());
   /** The time hiding is judged by; moves on when a snooze ends, so the item shows again. */
@@ -94,7 +98,10 @@ export class ItemStateStore {
   /** Load the stored states once; if that fails, nothing is hidden and the next call asks again. */
   load(): Observable<void> {
     this.loading ??= this.api.load().pipe(
-      tap((states) => this.states.set(new Map(states.map((state) => [state.url, state])))),
+      tap((states) => {
+        states.forEach((state) => this.confirmed.set(state.url, state));
+        this.states.set(new Map(states.map((state) => [state.url, state])));
+      }),
       map(() => undefined),
       catchError(() => {
         this.loading = undefined;
@@ -124,22 +131,38 @@ export class ItemStateStore {
     );
   }
 
-  /** Apply `state` at once, save it after the earlier changes, and take it back if saving fails. */
+  /**
+   * Apply `state` at once and save it after the earlier changes. An answer only shows if no newer
+   * change to the item came since; a failure falls back to what the backend has stored.
+   */
   private change(
     url: string,
     state: ItemState | undefined,
     save: () => Observable<ItemState | undefined>,
   ): Observable<void> {
-    const before = this.states().get(url);
+    const version = (this.versions.get(url) ?? 0) + 1;
+    this.versions.set(url, version);
+    const isLatest = () => this.versions.get(url) === version;
     this.put(url, state);
     const saving = this.queue.pipe(
       // Each queued change emits once; an earlier failure doesn't stop the next one.
       catchError(() => of(undefined)),
       concatMap(save),
-      tap((saved) => this.put(url, saved ?? undefined)),
+      tap((saved) => {
+        if (saved) {
+          this.confirmed.set(url, saved);
+        } else {
+          this.confirmed.delete(url);
+        }
+        if (isLatest()) {
+          this.put(url, saved ?? undefined);
+        }
+      }),
       map(() => undefined),
       catchError((error: unknown) => {
-        this.put(url, before);
+        if (isLatest()) {
+          this.put(url, this.confirmed.get(url));
+        }
         return throwError(() => error);
       }),
       // Replays the outcome, failure included, to late subscribers such as the undo snack bar,

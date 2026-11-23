@@ -214,6 +214,31 @@ describe('ItemStateStore', () => {
     }
   });
 
+  it('keeps an undo when the answer to the change it undoes arrives later', () => {
+    const marking = new Subject<ItemState>();
+    const forgetting = new Subject<undefined>();
+    const store = setUp({ markDone: () => marking, forget: () => forgetting });
+
+    store.markDone(item(1));
+    store.restore(item(1));
+    marking.next(done(item(1).url, '2026-11-23T12:00:00Z'));
+    marking.complete();
+
+    expect(store.states().has(item(1).url)).toBe(false);
+  });
+
+  it('falls back to what the backend stored when newer changes fail', () => {
+    const store = setUp({
+      markDone: () => throwError(() => new Error('502')),
+      snooze: () => throwError(() => new Error('502')),
+    });
+
+    store.markDone(item(1)).subscribe({ error: () => undefined });
+    store.snooze(item(1), new Date('2026-11-24T09:00:00Z')).subscribe({ error: () => undefined });
+
+    expect(store.states().has(item(1).url)).toBe(false);
+  });
+
   it('keeps saving after an earlier change failed', () => {
     const store = setUp({
       markDone: () => throwError(() => new Error('502')),
