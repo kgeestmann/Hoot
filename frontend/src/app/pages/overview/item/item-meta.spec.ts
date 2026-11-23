@@ -38,6 +38,12 @@ describe('ItemMeta', () => {
     expect(element.querySelector('time')?.getAttribute('datetime')).toBe(ISSUE.updated_at);
   });
 
+  it('starts right at the text, so it lines up with the title above', async () => {
+    const element = await render(ISSUE);
+
+    expect(element.textContent).toMatch(/^Issue/);
+  });
+
   it('names pull requests as such', async () => {
     expect(text(await render({ ...ISSUE, kind: 'pull_request' }))).toContain('Pull request ·');
   });

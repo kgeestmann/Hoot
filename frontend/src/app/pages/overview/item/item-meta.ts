@@ -7,8 +7,7 @@ import { relativeTime } from './relative-time';
 /** The line under an item's title: kind, repo#number, age, and for team items the people. */
 @Component({
   selector: 'app-item-meta',
-  template: `
-    {{ kindLabel() }} · {{ item().repository }}#{{ item().number }}
+  template: `{{ kindLabel() }} · {{ item().repository }}#{{ item().number }}
     @if (team(); as team) {
       · opened
       <time [attr.datetime]="team.createdAt" [title]="team.createdAt">{{ team.openedAgo }}</time>
@@ -18,8 +17,7 @@ import { relativeTime } from './relative-time';
     <time [attr.datetime]="item().updated_at" [title]="item().updated_at">{{ updatedAgo() }}</time>
     @if (team(); as team) {
       · assigned to {{ team.assignees }}
-    }
-  `,
+    } `,
   changeDetection: ChangeDetectionStrategy.Eager,
 })
 export class ItemMeta {
