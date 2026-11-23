@@ -24,6 +24,20 @@
             <span matListItemTitle>Overview</span>
           </a>
 
+          @for (page of listPages; track page.path) {
+            <a
+              mat-list-item
+              class="nav-list"
+              [routerLink]="['/', page.path]"
+              routerLinkActive
+              #listLink="routerLinkActive"
+              [activated]="listLink.isActive"
+            >
+              <mat-icon matListItemIcon [svgIcon]="page.icon" />
+              <span matListItemTitle>{{ page.title }}</span>
+            </a>
+          }
+
           @if (organizations().length > 0) {
             <div mat-subheader>Teams</div>
             @for (organization of organizations(); track organization) {

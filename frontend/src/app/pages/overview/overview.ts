@@ -6,21 +6,16 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
-import { catchError, concatMap, finalize, forkJoin, map, of, Subject } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
 import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { Overview, OverviewService } from '../../services/overview';
-import {
-  NO_FILTERS,
-  OverviewFilters,
-  OverviewFiltersService,
-} from '../../services/overview-filters';
 import { FilterBar } from './filters/filter-bar';
-import { applyFilters, countItems, filterOptions, toggleEntry } from './filters/filtering';
+import { FilterState } from './filters/filter-state';
+import { applyFilters, countItems, filterOptions } from './filters/filtering';
 import { firstTabWithItems, ListTab, ListTabs } from './list-tabs/list-tabs';
 import { RefreshStatus } from './refresh-status/refresh-status';
 
@@ -58,18 +53,16 @@ const TABS = [
 })
 export class OverviewPage implements OnInit {
   private readonly overviewService = inject(OverviewService);
-  private readonly filtersService = inject(OverviewFiltersService);
   private readonly gitHubAccessService = inject(GitHubAccessService);
-  /** Saves one after the other, so the last change is the one that stays stored. */
-  private readonly filterSaves = new Subject<OverviewFilters>();
+  /** The user's filters, shared with the list pages. */
+  readonly filterState = inject(FilterState);
 
   /** Everything GitHub returned; `undefined` while loading or after an error. */
   readonly overview = signal<Overview | undefined>(undefined);
   readonly loadError = signal<string | undefined>(undefined);
   /** `undefined` until loaded; the page works without it. */
   readonly access = signal<GitHubAccess | undefined>(undefined);
-  readonly filters = signal<OverviewFilters>(NO_FILTERS);
-  readonly filterSaveFailed = signal(false);
+  readonly filters = this.filterState.filters;
   readonly selectedTab = signal(0);
   /** When the shown overview came from GitHub. */
   readonly loadedAt = signal(new Date());
@@ -121,20 +114,6 @@ export class OverviewPage implements OnInit {
     return this.totalCount() > 0 || filters.hidden.length > 0 || filters.labels.length > 0;
   });
 
-  constructor() {
-    this.filterSaves
-      .pipe(
-        concatMap((filters) =>
-          this.filtersService.save(filters).pipe(
-            map(() => true),
-            catchError(() => of(false)),
-          ),
-        ),
-        takeUntilDestroyed(),
-      )
-      .subscribe((saved) => this.filterSaveFailed.set(!saved));
-  }
-
   ngOnInit(): void {
     this.load();
   }
@@ -146,10 +125,9 @@ export class OverviewPage implements OnInit {
     forkJoin({
       overview: this.overviewService.load(),
       // Without stored filters the overview is still useful, just unfiltered.
-      filters: this.filtersService.load().pipe(catchError(() => of(NO_FILTERS))),
+      filters: this.filterState.load(),
     }).subscribe({
-      next: ({ overview, filters }) => {
-        this.filters.set(filters);
+      next: ({ overview }) => {
         this.showOverview(overview);
         this.selectedTab.set(firstTabWithItems(this.tabs()));
       },
@@ -176,28 +154,9 @@ export class OverviewPage implements OnInit {
       });
   }
 
-  /** Show a hidden owner or repository again, or hide a shown one. */
-  toggleScope(scope: string): void {
-    this.saveFilters({ ...this.filters(), hidden: toggleEntry(this.filters().hidden, scope) });
-  }
-
-  /** Pick a label to show only items carrying it, or unpick it. */
-  toggleLabel(label: string): void {
-    this.saveFilters({ ...this.filters(), labels: toggleEntry(this.filters().labels, label) });
-  }
-
-  clearFilters(): void {
-    this.saveFilters(NO_FILTERS);
-  }
-
   private showOverview(overview: Overview): void {
     this.overview.set(overview);
     this.loadedAt.set(new Date());
     this.refreshFailed.set(false);
-  }
-
-  private saveFilters(filters: OverviewFilters): void {
-    this.filters.set(filters);
-    this.filterSaves.next(filters);
   }
 }

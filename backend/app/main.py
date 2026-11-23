@@ -15,13 +15,13 @@ if not __package__:
 import httpx
 import jwt
 import uvicorn
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Path as PathParam, Request, Response, status
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Path as PathParam, Query, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import APIKeyCookie
 from sqlalchemy.orm import Session
 
-from . import github, github_tokens, models, org_overview, overview, overview_filters, schemas
+from . import github, github_tokens, lists, models, org_overview, overview, overview_filters, schemas
 from .config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
@@ -320,6 +320,24 @@ def get_overview(
         github_client,
         current_user,
         lambda access_token: overview.fetch_overview(github_client, access_token),
+    )
+
+
+@app.get("/lists/{name}", response_model=schemas.ListPage)
+def get_list(
+    name: lists.ListName,
+    sort: lists.ListSort = "updated",
+    after: str | None = Query(None, max_length=200, pattern=r"^[A-Za-z0-9+/=_-]+$"),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    github_client: httpx.Client = Depends(get_github_client),
+):
+    """Return one page of one of the overview's lists; `after` continues from the previous page."""
+    return github_tokens.call_as_user(
+        db,
+        github_client,
+        current_user,
+        lambda access_token: lists.fetch_list(github_client, access_token, name, sort, after),
     )
 
 

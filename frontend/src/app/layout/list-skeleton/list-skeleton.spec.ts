@@ -15,4 +15,16 @@ describe('ListSkeleton', () => {
     expect(element.querySelectorAll('.skeleton-tab').length).toBe(4);
     expect(element.querySelectorAll('.skeleton-row').length).toBe(5);
   });
+
+  it('can leave out the placeholder tabs', async () => {
+    await TestBed.configureTestingModule({ imports: [ListSkeleton] }).compileComponents();
+    const fixture = TestBed.createComponent(ListSkeleton);
+    fixture.componentRef.setInput('label', 'Loading Mentions');
+    fixture.componentRef.setInput('tabs', false);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.skeleton-tabs')).toBeNull();
+    expect(element.querySelectorAll('.skeleton-row').length).toBe(5);
+  });
 });

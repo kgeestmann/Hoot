@@ -3,7 +3,9 @@ import { NO_FILTERS } from '../../../services/overview-filters';
 import {
   applyFilters,
   countItems,
+  filterItems,
   filterOptions,
+  filterOptionsFor,
   hasPickedLabel,
   isHidden,
   toggleEntry,
@@ -142,5 +144,28 @@ describe('toggleEntry', () => {
 
   it('removes an entry that is there', () => {
     expect(toggleEntry(['kgeestmann/hoot', 'octo-org'], 'octo-org')).toEqual(['kgeestmann/hoot']);
+  });
+});
+
+describe('filterItems', () => {
+  it('filters a single list by owner, repository and label, keeping the order', () => {
+    const items = [
+      item('octo/hoot', 1, ['bug']),
+      item('octo/other', 2, ['bug']),
+      item('kg/hoot', 3),
+    ];
+
+    expect(
+      filterItems(items, { hidden: ['octo/other'], labels: ['bug'] }).map((entry) => entry.number),
+    ).toEqual([1]);
+  });
+});
+
+describe('filterOptionsFor', () => {
+  it('offers the owners and labels of a single list', () => {
+    const options = filterOptionsFor([item('octo/hoot', 1, ['bug'])], NO_FILTERS);
+
+    expect(options.owners.map((owner) => owner.scope)).toEqual(['octo']);
+    expect(options.labels.map((label) => label.key)).toEqual(['bug']);
   });
 });

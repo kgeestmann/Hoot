@@ -48,16 +48,23 @@ export function hasPickedLabel(item: OverviewItem, picked: ReadonlySet<string>):
   return picked.size === 0 || item.labels.some((label) => picked.has(label.name.toLowerCase()));
 }
 
-/** The overview without the items the filters leave out. */
-export function applyFilters(overview: Overview, filters: OverviewFilters): Overview {
+/** The items the filters let through, in their order. */
+export function filterItems<T extends OverviewItem>(
+  items: readonly T[],
+  filters: OverviewFilters,
+): T[] {
   const hidden = new Set(filters.hidden);
   const picked = new Set(filters.labels);
-  const shows = (item: OverviewItem) => !isHidden(item, hidden) && hasPickedLabel(item, picked);
+  return items.filter((item) => !isHidden(item, hidden) && hasPickedLabel(item, picked));
+}
+
+/** The overview without the items the filters leave out. */
+export function applyFilters(overview: Overview, filters: OverviewFilters): Overview {
   return {
-    pull_requests: overview.pull_requests.filter(shows),
-    review_requests: overview.review_requests.filter(shows),
-    assigned_issues: overview.assigned_issues.filter(shows),
-    mentions: overview.mentions.filter(shows),
+    pull_requests: filterItems(overview.pull_requests, filters),
+    review_requests: filterItems(overview.review_requests, filters),
+    assigned_issues: filterItems(overview.assigned_issues, filters),
+    mentions: filterItems(overview.mentions, filters),
     totals: overview.totals,
   };
 }
@@ -71,7 +78,17 @@ export function countItems(overview: Overview): number {
  * the overview, plus filtered ones that no longer appear, so they can still be switched off.
  */
 export function filterOptions(overview: Overview, filters: OverviewFilters): FilterOptions {
-  const items = SECTIONS.flatMap((section) => overview[section]);
+  return filterOptionsFor(
+    SECTIONS.flatMap((section) => overview[section]),
+    filters,
+  );
+}
+
+/** The filter menu options for a single list of items; see `filterOptions`. */
+export function filterOptionsFor(
+  items: readonly OverviewItem[],
+  filters: OverviewFilters,
+): FilterOptions {
   return {
     owners: ownerOptions(items, new Set(filters.hidden)),
     labels: labelOptions(items, new Set(filters.labels)),
@@ -85,7 +102,7 @@ export function toggleEntry(entries: readonly string[], entry: string): string[]
     : [...entries, entry].sort();
 }
 
-function ownerOptions(items: OverviewItem[], hidden: ReadonlySet<string>): OwnerOption[] {
+function ownerOptions(items: readonly OverviewItem[], hidden: ReadonlySet<string>): OwnerOption[] {
   const owners = new Map<string, OwnerOption>();
 
   const addOwner = (name: string): OwnerOption => {
@@ -119,7 +136,7 @@ function ownerOptions(items: OverviewItem[], hidden: ReadonlySet<string>): Owner
     .sort(byScope);
 }
 
-function labelOptions(items: OverviewItem[], picked: ReadonlySet<string>): LabelOption[] {
+function labelOptions(items: readonly OverviewItem[], picked: ReadonlySet<string>): LabelOption[] {
   const labels = new Map<string, LabelOption>();
   for (const label of items.flatMap((item) => item.labels)) {
     const key = label.name.toLowerCase();

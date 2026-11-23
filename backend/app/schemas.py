@@ -56,6 +56,18 @@ class OverviewTotals(BaseModel):
     mentions: ListTotal
 
 
+class ListPage(BaseModel):
+    """One page (up to 50 items) of one of the overview's lists, for the list pages."""
+
+    # PullRequestItem for the user's pull requests, OverviewItem for the other lists.
+    items: list[PullRequestItem | OverviewItem]
+    total: int
+    has_more: bool
+    # Pass as `after` to load the next page; None on the last page.
+    end_cursor: str | None
+    search_url: str
+
+
 class Overview(BaseModel):
     """Everything on GitHub that is waiting on the user, newest activity first."""
 

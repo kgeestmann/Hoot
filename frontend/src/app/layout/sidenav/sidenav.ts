@@ -20,6 +20,7 @@ import { filter, map } from 'rxjs';
 import { AuthService } from '../../services/auth';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { PageTitle } from '../../services/page-title';
+import { LIST_PAGES } from '../../pages/list/list-pages';
 import { InstallBanner } from '../install-banner/install-banner';
 
 const WIDE_SCREEN = '(min-width: 840px)';
@@ -53,6 +54,7 @@ export class Sidenav {
     { initialValue: inject(BreakpointObserver).isMatched(WIDE_SCREEN) },
   );
 
+  readonly listPages = LIST_PAGES;
   /** Where Hoot is installed for the user; `undefined` until loaded or when that failed. */
   readonly access = signal<GitHubAccess | undefined>(undefined);
   /** Organizations where Hoot is installed for the user, each with a team view. */

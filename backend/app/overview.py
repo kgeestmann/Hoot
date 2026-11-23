@@ -6,39 +6,19 @@ from pydantic import ValidationError
 
 from . import github, schemas
 
-# GitHub's search syntax; the keys are the GraphQL variables and aliases in OVERVIEW_QUERY.
-SEARCHES = {
-    "assigned_issues": "is:open is:issue assignee:@me archived:false sort:updated-desc",
-    "pull_requests": "is:open is:pr author:@me archived:false sort:updated-desc",
-    "review_requests": "is:open is:pr review-requested:@me archived:false sort:updated-desc",
-    "mentions": "is:open mentions:@me archived:false sort:updated-desc",
+# GitHub's search syntax for the four lists, without an order.
+LIST_SEARCHES = {
+    "assigned_issues": "is:open is:issue assignee:@me archived:false",
+    "pull_requests": "is:open is:pr author:@me archived:false",
+    "review_requests": "is:open is:pr review-requested:@me archived:false",
+    "mentions": "is:open mentions:@me archived:false",
 }
 
-OVERVIEW_QUERY = """
-query Overview(
-  $assigned_issues: String!
-  $pull_requests: String!
-  $review_requests: String!
-  $mentions: String!
-) {
-  assigned_issues: search(type: ISSUE, query: $assigned_issues, first: 50) {
-    issueCount
-    nodes { ...Item }
-  }
-  pull_requests: search(type: ISSUE, query: $pull_requests, first: 50) {
-    issueCount
-    nodes { ...Item }
-  }
-  review_requests: search(type: ISSUE, query: $review_requests, first: 50) {
-    issueCount
-    nodes { ...Item }
-  }
-  mentions: search(type: ISSUE, query: $mentions, first: 50) {
-    issueCount
-    nodes { ...Item }
-  }
-}
+# The overview's searches, newest activity first; the keys are the GraphQL variables and
+# aliases in OVERVIEW_QUERY.
+SEARCHES = {name: f"{query} sort:updated-desc" for name, query in LIST_SEARCHES.items()}
 
+ITEM_FRAGMENT = """
 fragment Item on SearchResultItem {
   __typename
   ... on Issue {
@@ -66,6 +46,35 @@ fragment Item on SearchResultItem {
 }
 """
 
+OVERVIEW_QUERY = (
+    """
+query Overview(
+  $assigned_issues: String!
+  $pull_requests: String!
+  $review_requests: String!
+  $mentions: String!
+) {
+  assigned_issues: search(type: ISSUE, query: $assigned_issues, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
+  pull_requests: search(type: ISSUE, query: $pull_requests, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
+  review_requests: search(type: ISSUE, query: $review_requests, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
+  mentions: search(type: ISSUE, query: $mentions, first: 50) {
+    issueCount
+    nodes { ...Item }
+  }
+}
+"""
+    + ITEM_FRAGMENT
+)
+
 KINDS = {"Issue": "issue", "PullRequest": "pull_request"}
 
 # GitHub label colours are six hex digits without "#".
@@ -84,12 +93,12 @@ def fetch_overview(client: httpx.Client, access_token: str) -> schemas.Overview:
 
 def build_overview(data: dict) -> schemas.Overview:
     """Turn the GraphQL search results into the overview."""
-    mentions = [node for node in search_nodes(data["mentions"]) if not _latest_activity_by_bot(node)]
+    mentions = [node for node in search_nodes(data["mentions"]) if not latest_activity_by_bot(node)]
     return schemas.Overview(
-        assigned_issues=[_item(node) for node in search_nodes(data["assigned_issues"])],
-        pull_requests=[_pull_request_item(node) for node in search_nodes(data["pull_requests"])],
-        review_requests=[_item(node) for node in search_nodes(data["review_requests"])],
-        mentions=[_item(node) for node in mentions],
+        assigned_issues=[overview_item(node) for node in search_nodes(data["assigned_issues"])],
+        pull_requests=[pull_request_item(node) for node in search_nodes(data["pull_requests"])],
+        review_requests=[overview_item(node) for node in search_nodes(data["review_requests"])],
+        mentions=[overview_item(node) for node in mentions],
         totals={section: _list_total(data[section], query) for section, query in SEARCHES.items()},
     )
 
@@ -116,19 +125,19 @@ def search_nodes(search: dict | None) -> list[dict]:
     return [node for node in search["nodes"] if node and node.get("__typename") in KINDS]
 
 
-def _latest_activity_by_bot(node: dict) -> bool:
+def latest_activity_by_bot(node: dict) -> bool:
     """Tell whether the newest comment, or the item itself if it has none, comes from a bot."""
     comments = node["comments"]["nodes"]
     author = comments[-1]["author"] if comments else node["author"]
     return author is not None and author["__typename"] == "Bot"
 
 
-def _item(node: dict) -> schemas.OverviewItem:
+def overview_item(node: dict) -> schemas.OverviewItem:
     """Turn a search result into an overview item."""
     return schemas.OverviewItem(**item_fields(node))
 
 
-def _pull_request_item(node: dict) -> schemas.PullRequestItem:
+def pull_request_item(node: dict) -> schemas.PullRequestItem:
     """Turn a pull request search result into an item with CI status and review state."""
     return schemas.PullRequestItem(
         **item_fields(node),

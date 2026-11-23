@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './guards/auth-guard';
 import { publicGuard } from './guards/public-guard';
+import { LIST_PAGES } from './pages/list/list-pages';
 
 // Pages load on demand, so the first download only holds the app shell.
 export const routes: Routes = [
@@ -12,6 +13,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/overview/overview').then((page) => page.OverviewPage),
     canActivate: [authGuard]
   },
+
+  ...LIST_PAGES.map((page) => ({
+    path: page.path,
+    title: page.title,
+    data: { page },
+    loadComponent: () => import('./pages/list/work-list').then((list) => list.WorkList),
+    canActivate: [authGuard]
+  })),
 
   {
     path: 'orgs/:organization',

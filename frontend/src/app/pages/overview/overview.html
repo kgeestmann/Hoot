@@ -8,10 +8,10 @@
           [labels]="filterOptions().labels"
           [shownCount]="shownCount()"
           [totalCount]="totalCount()"
-          [saveFailed]="filterSaveFailed()"
-          (toggleScope)="toggleScope($event)"
-          (toggleLabel)="toggleLabel($event)"
-          (clear)="clearFilters()"
+          [saveFailed]="filterState.saveFailed()"
+          (toggleScope)="filterState.toggleScope($event)"
+          (toggleLabel)="filterState.toggleLabel($event)"
+          (clear)="filterState.clear()"
         />
       }
       <app-refresh-status
