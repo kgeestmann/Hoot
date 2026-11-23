@@ -77,7 +77,13 @@ describe('Sidenav', () => {
   it('shows the overview and an account button with the initial and login', async () => {
     const element = await render(OCTOCAT);
 
-    expect(navTitles(element)).toEqual(['Overview']);
+    expect(navTitles(element)).toEqual([
+      'Overview',
+      'Pull requests',
+      'Review requests',
+      'Assigned issues',
+      'Mentions',
+    ]);
     const account = element.querySelector('.account-button')!;
     expect(account.querySelector('.avatar')!.textContent!.trim()).toBe('O');
     expect(account.querySelector('.login')!.textContent!.trim()).toBe('octocat');
@@ -110,7 +116,14 @@ describe('Sidenav', () => {
       }),
     });
 
-    expect(navTitles(element)).toEqual(['Overview', 'Octo-Org']);
+    expect(navTitles(element)).toEqual([
+      'Overview',
+      'Pull requests',
+      'Review requests',
+      'Assigned issues',
+      'Mentions',
+      'Octo-Org',
+    ]);
     expect(element.querySelector('[mat-subheader]')!.textContent!.trim()).toBe('Teams');
     expect(element.querySelector('.nav-organization')!.getAttribute('href')).toBe('/orgs/Octo-Org');
   });
@@ -118,7 +131,13 @@ describe('Sidenav', () => {
   it('shows no Teams section when the organizations cannot be loaded', async () => {
     const element = await render(OCTOCAT, { access: throwError(() => new Error('502')) });
 
-    expect(navTitles(element)).toEqual(['Overview']);
+    expect(navTitles(element)).toEqual([
+      'Overview',
+      'Pull requests',
+      'Review requests',
+      'Assigned issues',
+      'Mentions',
+    ]);
     expect(element.querySelector('[mat-subheader]')).toBeNull();
   });
 
@@ -129,6 +148,21 @@ describe('Sidenav', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('.top-bar h1')!.textContent!.trim()).toBe('Overview');
+  });
+
+  it('links each list to its own page with an icon', async () => {
+    const element = await render(OCTOCAT);
+
+    const links = Array.from(element.querySelectorAll('a.nav-list'));
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/pull-requests',
+      '/review-requests',
+      '/assigned',
+      '/mentions',
+    ]);
+    expect(
+      links.map((link) => link.querySelector('mat-icon')?.getAttribute('data-mat-icon-name')),
+    ).toEqual(['merge', 'rate_review', 'assignment_ind', 'alternate_email']);
   });
 
   it('links to GitHub access at the bottom of the navigation', async () => {

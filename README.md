@@ -43,6 +43,7 @@ Hoot
 │       ├── overview.py    GraphQL searches behind GET /overview
 │       ├── overview_filters.py  the owners/repositories a user hid from the overview
 │       ├── org_overview.py  GraphQL searches behind GET /orgs/{organization}/overview
+│       ├── lists.py   one list page by page (GET /lists/{name})
 │       ├── crypto.py      encryption of the stored GitHub tokens
 │       ├── config.py      settings from .env
 │       ├── models.py
@@ -53,6 +54,7 @@ Hoot
 │   └── src/app
 │       ├── pages
 │       │   ├── overview   start page: the four lists
+│       │   ├── list   one list on its own page (pull requests, review requests, ...)
 │       │   ├── github-access   where Hoot is installed, install on more accounts
 │       │   ├── organization   team view of one organization (/orgs/:organization)
 │       │   ├── login
@@ -325,6 +327,18 @@ has_more      true when that's more than the list holds (at most 50)
 search_url    the same search on github.com, with every match
 ```
 
+ListPage
+
+Returned by `/lists/{name}`: one page of a list.
+
+```
+items         up to 50 items, like the overview's (with ci_status / review_decision for pull_requests)
+total         how many items GitHub found
+has_more      true when there are more pages
+end_cursor    pass as `after` to load the next page; null on the last page
+search_url    the same search on github.com
+```
+
 OverviewFilters
 
 Returned and accepted by `/overview/filters`.
@@ -574,6 +588,16 @@ Items are like the overview's, plus `created_at`, `author` (`null` for deleted a
 
 ---
 
+One list, page by page (Protected Route)
+
+```
+GET /lists/{name}?sort=updated|oldest|created&after=<cursor>
+```
+
+Requires a valid session cookie. `name` is `pull_requests`, `review_requests`, `assigned_issues` or `mentions`: the same searches as `/overview` (so pull requests carry CI and review state, and mentions skip items whose latest activity comes from a bot), 50 items per page. `sort` picks the order: `updated` (default, recently updated first), `oldest` (created first) or `created` (recently created first). `after` is the previous page's `end_cursor`. An unknown name, order or a malformed cursor answers `422`.
+
+---
+
 Overview filters (Protected Route)
 
 ```
@@ -667,6 +691,22 @@ The start page after signing in (logged-out visitors go to `/login`, and `/login
   * The tab counts follow the filters, and a tab whose items are all filtered out says so. Changes are saved per user with `PUT /overview/filters`, one after the other. If saving fails, the filters still apply until the page is reloaded.
 * **Refresh** (`refresh-status`, also on the team view): "Updated 5 minutes ago" with a refresh button. A refresh keeps the current lists and the open tab visible under a thin progress bar. If it fails, the lists stay and it says "Couldn't refresh". Coming back to the browser tab after more than 5 minutes refreshes on its own, which also keeps the session alive (sliding session).
 * **States:** a skeleton in the shape of tabs and rows while loading (`layout/list-skeleton`), an empty message per tab, "Nothing waiting on you." with the `task_alt` icon above the tabs when all four are empty (the tabs stay; the filter bar only while a filter is active), and an error with **Try again** that says whether Hoot's server or GitHub failed.
+
+---
+
+List Pages
+
+```
+/pull-requests  /review-requests  /assigned  /mentions
+```
+
+Each of the overview's lists on its own page (`pages/list/work-list`), linked in the sidebar under *Overview* with its icon (`pages/list/list-pages.ts` holds the paths, titles, icons and empty texts for the routes and the sidebar):
+
+* **Every item:** the first 50 load with the page; *Load more* appends the next 50 ("Loaded 50 of 120"). If that fails, the loaded items stay with "Couldn't load more".
+* **Sort** menu: *Recently updated*, *Oldest first*, *Recently created*. Changing it reloads from the start while the current items stay visible.
+* **Group by repository** (a Material slide toggle): one section per repository, sorted by name, with its count.
+* The **filter bar** and **refresh status** work as on the overview. The filters are shared state (`filters/filter-state.ts`), so a change on one page applies everywhere and is saved once.
+* An answer that arrives after a newer request (e.g. after changing the order again) is dropped.
 
 ---
 
