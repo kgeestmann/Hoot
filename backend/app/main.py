@@ -28,6 +28,7 @@ from .config import (
     COOKIE_SECURE,
     CORS_ORIGINS,
     FRONTEND_URL,
+    ROOT_PATH,
     SECRET_KEY,
     SESSION_MAX_DAYS,
 )
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(root_path=ROOT_PATH)
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,7 +55,8 @@ session_cookie = APIKeyCookie(name=SESSION_COOKIE_NAME, auto_error=False)
 
 # Holds state and PKCE verifier between /auth/github/login and the callback.
 OAUTH_COOKIE_NAME = "hoot_oauth"
-OAUTH_COOKIE_PATH = "/auth/github"
+# The browser sees the routes under the proxy's prefix, so the cookie path needs it too.
+OAUTH_COOKIE_PATH = f"{ROOT_PATH}/auth/github"
 OAUTH_COOKIE_MINUTES = 10
 # An audience keeps OAuth cookies and session tokens from being accepted in place of each other.
 OAUTH_AUDIENCE = "hoot:github-oauth"

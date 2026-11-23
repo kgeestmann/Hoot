@@ -1,0 +1,16 @@
+# Keep secrets, local state and build output out of the images.
+.env
+.git
+.github
+.vscode
+venv
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+backend/hoot.db
+backend/tests
+frontend/node_modules
+frontend/dist
+frontend/.angular
+docs

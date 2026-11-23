@@ -1,6 +1,6 @@
 import pytest
 
-from backend.app.config import MIN_SECRET_KEY_BYTES, read_bool, read_secret_key
+from backend.app.config import MIN_SECRET_KEY_BYTES, read_bool, read_root_path, read_secret_key
 
 
 def test_missing_secret_key_is_rejected(monkeypatch):
@@ -48,3 +48,22 @@ def test_bool_setting_rejects_other_values(monkeypatch):
 
     with pytest.raises(RuntimeError, match="COOKIE_SECURE"):
         read_bool("COOKIE_SECURE", default=True)
+
+
+def test_root_path_is_empty_by_default(monkeypatch):
+    monkeypatch.delenv("ROOT_PATH", raising=False)
+
+    assert read_root_path() == ""
+
+
+def test_root_path_drops_a_trailing_slash(monkeypatch):
+    monkeypatch.setenv("ROOT_PATH", "/api/")
+
+    assert read_root_path() == "/api"
+
+
+def test_root_path_without_leading_slash_is_rejected(monkeypatch):
+    monkeypatch.setenv("ROOT_PATH", "api")
+
+    with pytest.raises(RuntimeError, match="ROOT_PATH"):
+        read_root_path()

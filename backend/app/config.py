@@ -44,6 +44,14 @@ def read_bool(name: str, default: bool) -> bool:
     return value.lower() == "true"
 
 
+def read_root_path() -> str:
+    """Return ROOT_PATH without a trailing slash; empty, or a path starting with "/"."""
+    root_path = os.getenv("ROOT_PATH", "").rstrip("/")
+    if root_path and not root_path.startswith("/"):
+        raise RuntimeError(f'ROOT_PATH must start with "/", got "{root_path}".')
+    return root_path
+
+
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 # A session ends after this many minutes without a request; requests keep renewing it.
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
@@ -65,6 +73,10 @@ GITHUB_CALLBACK_URL = os.getenv("GITHUB_CALLBACK_URL", "http://localhost:8000/au
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:4200").rstrip("/")
 # Fernet key for the GitHub tokens in the database; deliberately separate from SECRET_KEY.
 TOKEN_ENCRYPTION_KEY = read_required("TOKEN_ENCRYPTION_KEY")
+
+# Path prefix under which a reverse proxy serves the backend (e.g. "/api" in the Docker setup),
+# with the proxy stripping it from requests. Empty when the backend is served at the root.
+ROOT_PATH = read_root_path()
 
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parent.parent / "hoot.db"
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DATABASE_PATH.as_posix()}")

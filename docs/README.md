@@ -8,6 +8,7 @@
 | [api.md](api.md) | The backend's routes and response shapes |
 | [security.md](security.md) | Tokens, cookies, CORS, privacy |
 | [backend.md](backend.md) | The FastAPI modules, adding a route, backend tests |
+| [deployment.md](deployment.md) | Running Hoot on a server with Docker Compose and HTTPS |
 
 Frontend:
 
