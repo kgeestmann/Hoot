@@ -9,6 +9,7 @@ start, and reads .env for anything not set here.
 
 import os
 import secrets
+import signal
 import socket
 import subprocess
 import sys
@@ -52,6 +53,27 @@ def port_in_use(port: int) -> bool:
         return probe.connect_ex(("localhost", port)) == 0
 
 
+def start_backend() -> subprocess.Popen:
+    """Start the Hoot backend with reload, in its own process group so it can be stopped as a whole."""
+    command = [
+        sys.executable, "-m", "uvicorn", "backend.app.main:app",
+        "--port", str(BACKEND_PORT), "--reload", "--reload-dir", str(REPO / "backend" / "app"),
+    ]
+    if os.name == "nt":
+        return subprocess.Popen(command, cwd=REPO, env=backend_environment())
+    return subprocess.Popen(command, cwd=REPO, env=backend_environment(), start_new_session=True)
+
+
+def stop(process: subprocess.Popen) -> None:
+    """Stop a process and everything it started, such as the worker of uvicorn's reloader."""
+    if process.poll() is None:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+        else:
+            os.killpg(process.pid, signal.SIGTERM)
+    process.wait()
+
+
 def main() -> None:
     """Start the backend in a child process and the fake GitHub in this one; Ctrl+C stops both."""
     # On Windows a second server can start on a port in use, and requests then reach either one.
@@ -59,21 +81,13 @@ def main() -> None:
     if busy:
         sys.exit(f"Port {', '.join(map(str, busy))} is in use. Stop the other server first (e.g. your normal backend).")
     DATABASE.unlink(missing_ok=True)
-    backend = subprocess.Popen(
-        [
-            sys.executable, "-m", "uvicorn", "backend.app.main:app",
-            "--port", str(BACKEND_PORT), "--reload", "--reload-dir", str(REPO / "backend" / "app"),
-        ],
-        cwd=REPO,
-        env=backend_environment(),
-    )
+    backend = start_backend()
     print(f"Fake GitHub on http://localhost:{FAKE_GITHUB_PORT}, Hoot backend on http://localhost:{BACKEND_PORT}")
     print("Start the frontend with npm start in frontend/ and sign in: the fake GitHub approves at once.")
     try:
         uvicorn.run("backend.fake_github_server.server:app", host="localhost", port=FAKE_GITHUB_PORT)
     finally:
-        backend.terminate()
-        backend.wait()
+        stop(backend)
 
 
 if __name__ == "__main__":

@@ -4,8 +4,11 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.app import models
+from backend.app.crypto import decrypt_token
+from backend.app.database import SessionLocal
 from backend.app.main import app, get_github_client
-from backend.fake_github_server import data
+from backend.fake_github_server import data, server
 from backend.fake_github_server.search import UnsupportedQuery, search
 from backend.fake_github_server.server import create_app
 
@@ -98,3 +101,76 @@ def test_the_team_view_and_installations_come_from_the_fake_data(hoot):
     assert team["failing_ci"]["total"] == 1
     assert team["unassigned_issues"]["total"] >= 2
     assert [entry["account"] for entry in access["installations"]] == ["demo-user", "demo-labs", "demo-orbit"]
+
+
+def fake_tokens(fake: TestClient) -> dict:
+    """Sign in at the fake GitHub directly and return the token response."""
+    approved = fake.get(
+        "/login/oauth/authorize",
+        params={"redirect_uri": "http://hoot.test/callback", "state": "s"},
+        follow_redirects=False,
+    )
+    code = parse_qs(urlparse(approved.headers["location"]).query)["code"][0]
+    return fake.post("/login/oauth/access_token", data={"code": code}).json()
+
+
+def test_a_refresh_token_gives_a_new_pair_once():
+    fake = TestClient(create_app())
+    first = fake_tokens(fake)
+
+    renewed = fake.post(
+        "/login/oauth/access_token",
+        data={"grant_type": "refresh_token", "refresh_token": first["refresh_token"]},
+    ).json()
+    reused = fake.post(
+        "/login/oauth/access_token",
+        data={"grant_type": "refresh_token", "refresh_token": first["refresh_token"]},
+    ).json()
+
+    assert renewed["access_token"] != first["access_token"]
+    assert fake.get("/user", headers={"Authorization": f"Bearer {renewed['access_token']}"}).status_code == 200
+    assert reused == {"error": "bad_refresh_token"}
+
+
+def test_unknown_codes_and_refresh_tokens_are_rejected():
+    fake = TestClient(create_app())
+
+    code = fake.post("/login/oauth/access_token", data={"code": "made-up"}).json()
+    refresh = fake.post(
+        "/login/oauth/access_token", data={"grant_type": "refresh_token", "refresh_token": "made-up"}
+    ).json()
+
+    assert code == {"error": "bad_verification_code"}
+    assert refresh == {"error": "bad_refresh_token"}
+
+
+def test_an_expired_access_token_is_refused(monkeypatch):
+    monkeypatch.setattr(server, "TOKEN_SECONDS", -1)
+    fake = TestClient(create_app())
+
+    expired = fake_tokens(fake)["access_token"]
+
+    assert fake.get("/user", headers={"Authorization": f"Bearer {expired}"}).status_code == 401
+
+
+@pytest.fixture
+def short_tokens(monkeypatch):
+    """Access tokens from the fake GitHub that Hoot counts as expired (under a minute left)."""
+    monkeypatch.setattr(server, "TOKEN_SECONDS", 30)
+
+
+def stored_access_token() -> str:
+    with SessionLocal() as db:
+        return decrypt_token(db.query(models.User).one().github_access_token)
+
+
+def test_the_backend_refreshes_tokens_that_expire_quickly(short_tokens, hoot):
+    before = stored_access_token()
+
+    first = hoot.get("/overview")
+    between = stored_access_token()
+    second = hoot.get("/overview")
+
+    assert (first.status_code, second.status_code) == (200, 200)
+    assert len(second.json()["pull_requests"]) == 5
+    assert len({before, between, stored_access_token()}) == 3
