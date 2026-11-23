@@ -19,6 +19,8 @@ Every change (feature, fix or docs) starts from a GitHub issue and gets its own 
 5. **Pull request:** put `Closes #<n>` in the description, so the merge closes the issue.
 6. **Review and merge:** CI (`Tests`) and the automatic review must pass. Act on valid findings, then merge with `gh pr merge <n> --merge --delete-branch`. Don't merge while CI is red.
 
+`main` is protected by the ruleset *Protect main* (repo settings → Rules): changes only through pull requests, the `backend` and `frontend` checks must pass, and force pushes and deleting the branch are blocked, for everyone including admins. No approval is required, because nobody can approve their own PR. The `claude-review` check isn't required, because it skips some PRs (e.g. docs-only ones).
+
 Something you notice outside your current change (a bug, a gap, docs that disagree with the code) gets its own issue instead of a silent fix in an unrelated PR.
 
 ## Labels
