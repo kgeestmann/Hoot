@@ -3,6 +3,12 @@
   margin: var(--hoot-space-8) auto;
 }
 
+.logo {
+  width: var(--hoot-space-10);
+  height: var(--hoot-space-10);
+  color: var(--mat-sys-primary);
+}
+
 .login-content {
   display: flex;
   flex-direction: column;

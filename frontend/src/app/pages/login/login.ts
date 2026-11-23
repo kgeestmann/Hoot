@@ -1,13 +1,14 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { API_URL } from '../../api';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [MatButtonModule, MatCardModule],
+  imports: [MatButtonModule, MatCardModule, MatIconModule],
   templateUrl: './login.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./login.css'],
