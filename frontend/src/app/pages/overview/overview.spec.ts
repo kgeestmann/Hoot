@@ -116,14 +116,9 @@ describe('OverviewPage', () => {
     );
   }
 
-  function card(element: HTMLElement, name: string): Element {
-    return Array.from(element.querySelectorAll('.summary-card')).find(
-      (candidate) => text(candidate.querySelector('.card-name')) === name,
-    )!;
-  }
-
-  function newest(element: HTMLElement, name: string): string[] {
-    return Array.from(card(element, name).querySelectorAll('.item-title')).map(text);
+  /** The titles in the latest activity, newest first. */
+  function feed(element: HTMLElement): string[] {
+    return Array.from(element.querySelectorAll('.feed .item-title')).map(text);
   }
 
   /** Open a filter menu ("Owner", "Repository", "Label") and click one of its options. */
@@ -178,33 +173,32 @@ describe('OverviewPage', () => {
       'Assigned issues 3',
       'Mentions 0',
     ]);
-    expect(newest(element, 'Assigned issues')).toEqual(['Issue 4', 'Issue 5', 'Issue 7']);
-    expect(card(element, 'Assigned issues').querySelectorAll('app-item-actions').length).toBe(3);
+    expect(feed(element)).toEqual(['Issue 4', 'Issue 5', 'Issue 7']);
+    expect(element.querySelectorAll('.feed app-item-actions').length).toBe(3);
   });
 
-  it('shows the three most recently updated items of a list', async () => {
+  it('shows the latest activity across all lists, saying where each item comes from', async () => {
     const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-    expect(newest(element, 'Assigned issues')).toEqual(['Issue 3', 'Issue 4', 'Issue 5']);
-    expect(
-      card(element, 'Assigned issues').querySelector<HTMLAnchorElement>('a.card-item')?.href,
-    ).toBe('https://github.com/dipt-pa1469-ht26/team-14/issues/3');
-  });
-
-  it("links each card to its list's own page", async () => {
-    const element = await render(() => of(OVERVIEW), of(INSTALLED));
-
-    expect(
-      Array.from(element.querySelectorAll('.show-all')).map((link) => link.getAttribute('href')),
-    ).toEqual(['/pull-requests', '/review-requests', '/assigned', '/mentions']);
-  });
-
-  it("shows a list's empty text in its card", async () => {
-    const element = await render(() => of(OVERVIEW), of(INSTALLED));
-
-    expect(text(card(element, 'Review requests').querySelector('.empty'))).toBe(
-      'No reviews are waiting on you.',
+    expect(feed(element)).toEqual(['Issue 3', 'Issue 4', 'Issue 5', 'Issue 7', 'Issue 6']);
+    expect(Array.from(element.querySelectorAll('.feed .from')).map(text)).toEqual([
+      'Assigned to you',
+      'Assigned to you',
+      'Assigned to you',
+      'Assigned to you',
+      'Mention',
+    ]);
+    expect(element.querySelector<HTMLAnchorElement>('.feed a.card-item')?.href).toBe(
+      'https://github.com/dipt-pa1469-ht26/team-14/issues/3',
     );
+  });
+
+  it("links each tile to its list's own page", async () => {
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+    expect(
+      Array.from(element.querySelectorAll('a.tile')).map((link) => link.getAttribute('href')),
+    ).toEqual(['/pull-requests', '/review-requests', '/assigned', '/mentions']);
   });
 
   it('marks a count with "+" when GitHub cut the list off', async () => {
@@ -363,7 +357,7 @@ describe('OverviewPage', () => {
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
       expect(cards(element)).toContain('Assigned issues 2');
-      expect(newest(element, 'Assigned issues')).toEqual(['Issue 4', 'Issue 7']);
+      expect(feed(element)).toEqual(['Issue 4', 'Issue 7', 'Issue 6']);
       expect(text(element.querySelector('.summary'))).toBe('Showing 3 of 5 · 2 hidden');
     });
 
@@ -381,17 +375,18 @@ describe('OverviewPage', () => {
 
       await clickFilterOption(element, 'Label', 'bug');
 
-      expect(newest(element, 'Assigned issues')).toEqual(['Issue 4']);
+      expect(feed(element)).toEqual(['Issue 4']);
       expect(filters.save).toHaveBeenCalledWith({ hidden: [], labels: ['bug'] });
     });
 
-    it('says when everything in a card is hidden by the filters', async () => {
-      filters.load = () => of({ hidden: ['kgeestmann'], labels: [] });
+    it('says when the filters hide everything that is waiting', async () => {
+      filters.load = () => of({ hidden: ['kgeestmann', 'dipt-pa1469-ht26'], labels: [] });
 
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      expect(text(card(element, 'Mentions').querySelector('.empty'))).toBe(
-        'All 1 hidden by your filters.',
+      expect(feed(element)).toEqual([]);
+      expect(text(element.querySelector('.feed .empty'))).toBe(
+        'Your filters hide everything that is waiting.',
       );
     });
 

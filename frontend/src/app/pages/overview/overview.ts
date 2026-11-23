@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 
@@ -24,7 +25,7 @@ import { ItemStateStore, overviewWithoutSettled } from './item-state/item-state-
 import { ItemMeta } from './item/item-meta';
 import { OverviewStore } from './overview-store';
 import { RefreshStatus } from './refresh-status/refresh-status';
-import { summarize } from './summary';
+import { latest, summarize } from './summary';
 
 /**
  * The start page: a dashboard with one card per list (count, newest items, link to the list's
@@ -42,6 +43,7 @@ import { summarize } from './summary';
     MatCardModule,
     MatIconModule,
     MatListModule,
+    NgTemplateOutlet,
     RefreshStatus,
     RouterLink,
   ],
@@ -86,6 +88,10 @@ export class OverviewPage implements OnInit {
   readonly filterOptions = computed(() => {
     const overview = this.waiting();
     return overview ? filterOptions(overview, this.filters()) : { owners: [], labels: [] };
+  });
+  readonly latest = computed(() => {
+    const overview = this.waiting();
+    return overview ? latest(overview, this.filters()) : [];
   });
   readonly cards = computed(() => {
     const overview = this.waiting();
