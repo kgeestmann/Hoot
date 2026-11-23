@@ -24,6 +24,8 @@ function item(repository: string, number: number, labels: string[] = []): Overvi
     url: `https://github.com/${repository}/issues/${number}`,
     updated_at: '2026-11-21T10:00:00Z',
     labels: labels.map((name) => ({ name, color: 'd73a4a' })),
+    comment_count: 0,
+    milestone: null,
   };
 }
 
@@ -78,7 +80,7 @@ describe('WorkList', () => {
   }
 
   function rows(element: HTMLElement): string[] {
-    return Array.from(element.querySelectorAll('a.item .title')).map(text);
+    return Array.from(element.querySelectorAll('.panel .title')).map(text);
   }
 
   async function click(element: HTMLElement | null): Promise<void> {
@@ -187,7 +189,7 @@ describe('WorkList', () => {
 
     await click(element.querySelector<HTMLElement>('.group-toggle button'));
 
-    const headings = Array.from(element.querySelectorAll('app-overview-section h2')).map(text);
+    const headings = Array.from(element.querySelectorAll('.group-heading')).map(text);
     expect(headings).toEqual(['octo/hoot 1', 'octo/zoo 2']);
   });
 

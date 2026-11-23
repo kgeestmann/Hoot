@@ -21,6 +21,22 @@ export interface OverviewItem {
   /** ISO 8601 timestamp of the last update. */
   updated_at: string;
   labels: Label[];
+  comment_count: number;
+  milestone: string | null;
+}
+
+/** A reviewer of a pull request and where the review stands. */
+export interface Reviewer {
+  name: string;
+  /** REQUESTED, or the latest review: APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED, PENDING. */
+  state: string;
+}
+
+/** One CI check or commit status of a pull request's last commit. */
+export interface Check {
+  name: string;
+  state: 'success' | 'failure' | 'pending' | 'neutral';
+  url: string | null;
 }
 
 /** One of the user's own pull requests. */
@@ -29,6 +45,9 @@ export interface PullRequestItem extends OverviewItem {
   ci_status: string | null;
   /** GitHub's APPROVED, CHANGES_REQUESTED or REVIEW_REQUIRED; null if no review is required. */
   review_decision: string | null;
+  draft: boolean;
+  reviewers: Reviewer[];
+  checks: Check[];
 }
 
 /** How many items GitHub found for one list; the list holds at most 50 of them. */

@@ -14,6 +14,8 @@ const ISSUE: OverviewItem = {
   url: 'https://github.com/octo/hoot/issues/12',
   updated_at: new Date(Date.now() - 3 * HOURS).toISOString(),
   labels: [],
+  comment_count: 0,
+  milestone: null,
 };
 
 describe('ItemMeta', () => {

@@ -47,6 +47,8 @@ fragment TeamItem on SearchResultItem {
     labels(first: 10) { nodes { name color } }
     author { login }
     assignees(first: 10) { nodes { login } }
+    commentCount: comments { totalCount }
+    milestone { title }
   }
   ... on PullRequest {
     title
@@ -58,6 +60,8 @@ fragment TeamItem on SearchResultItem {
     labels(first: 10) { nodes { name color } }
     author { login }
     assignees(first: 10) { nodes { login } }
+    commentCount: comments { totalCount }
+    milestone { title }
     reviewDecision
     commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
   }

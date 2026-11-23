@@ -1,0 +1,40 @@
+.panels {
+  display: block;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  overflow: hidden;
+}
+
+.panel {
+  /* The header holds title, meta and chips, so it grows with them instead of a fixed height. */
+  --mat-expansion-header-collapsed-state-height: auto;
+  --mat-expansion-header-expanded-state-height: auto;
+  --mat-expansion-container-shape: 0;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.panel + .panel {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.panel-header {
+  padding-top: var(--hoot-space-3);
+  padding-bottom: var(--hoot-space-3);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hoot-space-1);
+  min-width: 0;
+}
+
+.title {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.meta {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}

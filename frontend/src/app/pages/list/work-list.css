@@ -59,3 +59,34 @@
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-error);
 }
+
+.empty {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hoot-space-3);
+}
+
+.group-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--hoot-space-2);
+  margin: 0;
+  font: var(--mat-sys-title-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.group-count {
+  min-width: var(--hoot-space-6);
+  padding: 0 var(--hoot-space-2);
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+  text-align: center;
+}

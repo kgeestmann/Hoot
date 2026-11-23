@@ -12,6 +12,8 @@ function item(number: number): OverviewItem {
     url: `https://github.com/octo/hoot/issues/${number}`,
     updated_at: '2026-11-21T10:00:00Z',
     labels: [],
+    comment_count: 0,
+    milestone: null,
   };
 }
 

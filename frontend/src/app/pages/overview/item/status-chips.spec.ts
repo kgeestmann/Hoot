@@ -9,10 +9,24 @@ const ISSUE: OverviewItem = {
   url: 'https://github.com/octo/hoot/issues/1',
   updated_at: '2026-11-21T10:00:00Z',
   labels: [],
+  comment_count: 0,
+  milestone: null,
 };
 
-function pullRequest(ci_status: string | null, review_decision: string | null): PullRequestItem {
-  return { ...ISSUE, kind: 'pull_request', ci_status, review_decision };
+function pullRequest(
+  ci_status: string | null,
+  review_decision: string | null,
+  draft = false,
+): PullRequestItem {
+  return {
+    ...ISSUE,
+    kind: 'pull_request',
+    ci_status,
+    review_decision,
+    draft,
+    reviewers: [],
+    checks: [],
+  };
 }
 
 describe('statusChips', () => {
@@ -47,5 +61,12 @@ describe('statusChips', () => {
 
   it('leaves out states it does not know', () => {
     expect(statusChips(pullRequest('SOMETHING_NEW', null))).toEqual([]);
+  });
+
+  it('marks a draft first, with its own icon', () => {
+    expect(statusChips(pullRequest('SUCCESS', null, true))).toEqual([
+      { label: 'Draft', tone: 'neutral', icon: 'draft' },
+      { label: 'CI passing', tone: 'success' },
+    ]);
   });
 });

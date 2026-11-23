@@ -18,7 +18,7 @@ export class ItemChips {
   readonly item = input.required<OverviewItem | PullRequestItem>();
 
   readonly statuses = computed(() =>
-    statusChips(this.item()).map((chip) => ({ ...chip, icon: TONE_ICONS[chip.tone] })),
+    statusChips(this.item()).map((chip) => ({ ...chip, icon: chip.icon ?? TONE_ICONS[chip.tone] })),
   );
   readonly labels = computed(() =>
     this.item().labels.map((label) => ({ name: label.name, ...labelColors(label.color) })),

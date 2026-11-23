@@ -27,6 +27,24 @@ class OverviewItem(BaseModel):
     url: str
     updated_at: datetime
     labels: list[Label]
+    comment_count: int
+    milestone: str | None
+
+
+class Reviewer(BaseModel):
+    """A reviewer of a pull request: a user's or team's name and where the review stands."""
+
+    name: str
+    # REQUESTED, or the latest review: APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED, PENDING.
+    state: str
+
+
+class Check(BaseModel):
+    """One CI check or commit status of a pull request's last commit."""
+
+    name: str
+    state: Literal["success", "failure", "pending", "neutral"]
+    url: str | None
 
 
 class PullRequestItem(OverviewItem):
@@ -36,6 +54,9 @@ class PullRequestItem(OverviewItem):
     ci_status: str | None
     # GitHub's values: APPROVED, CHANGES_REQUESTED or REVIEW_REQUIRED; None if no review is required.
     review_decision: str | None
+    draft: bool
+    reviewers: list[Reviewer]
+    checks: list[Check]
 
 
 class ListTotal(BaseModel):

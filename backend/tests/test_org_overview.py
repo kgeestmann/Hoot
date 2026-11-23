@@ -35,6 +35,8 @@ def team_node(number=1, kind="Issue", author="alice", assignees=(), **fields):
         "author": {"login": author} if author else None,
         "assignees": {"nodes": [{"login": login} for login in assignees]},
         "labels": {"nodes": [{"name": "bug", "color": "d73a4a"}]},
+        "commentCount": {"totalCount": 4},
+        "milestone": {"title": "Sprint 3"},
     }
     if kind == "PullRequest":
         node["reviewDecision"] = "REVIEW_REQUIRED"
@@ -110,6 +112,8 @@ def test_items_show_author_assignees_and_age(client, signed_in):
         "url": "https://github.com/Octo-Org/hoot/issues/3",
         "updated_at": "2026-11-20T10:00:00Z",
         "labels": [{"name": "bug", "color": "d73a4a"}],
+        "comment_count": 4,
+        "milestone": "Sprint 3",
         "created_at": "2026-11-01T10:00:00Z",
         "author": "alice",
         "assignees": ["bob", "carol"],

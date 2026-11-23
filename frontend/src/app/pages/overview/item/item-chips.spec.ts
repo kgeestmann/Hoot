@@ -11,6 +11,8 @@ const ISSUE: OverviewItem = {
   url: 'https://github.com/octo/hoot/issues/12',
   updated_at: '2026-11-21T10:00:00Z',
   labels: [],
+  comment_count: 0,
+  milestone: null,
 };
 
 const PULL_REQUEST: PullRequestItem = {
@@ -18,6 +20,9 @@ const PULL_REQUEST: PullRequestItem = {
   kind: 'pull_request',
   ci_status: 'FAILURE',
   review_decision: 'APPROVED',
+  draft: false,
+  reviewers: [],
+  checks: [],
 };
 
 describe('ItemChips', () => {

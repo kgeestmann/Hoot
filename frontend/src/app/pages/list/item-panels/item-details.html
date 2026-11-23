@@ -1,0 +1,63 @@
+<div class="item-details">
+  <dl class="facts">
+    <div class="fact">
+      <dt>Comments</dt>
+      <dd>{{ commentText() }}</dd>
+    </div>
+    <div class="fact">
+      <dt>Milestone</dt>
+      <dd>{{ item().milestone ?? 'None' }}</dd>
+    </div>
+    @if (pullRequest(); as pullRequest) {
+      <div class="fact">
+        <dt>State</dt>
+        <dd>{{ pullRequest.draft ? 'Draft' : 'Ready for review' }}</dd>
+      </div>
+    }
+  </dl>
+
+  @if (pullRequest()) {
+    <section class="group">
+      <h3 class="group-title">Reviewers</h3>
+      @if (reviewers().length > 0) {
+        <ul class="states">
+          @for (reviewer of reviewers(); track reviewer.name) {
+            <li [class]="'state state-' + reviewer.tone">
+              <mat-icon class="state-icon" [svgIcon]="reviewer.icon" />
+              <span class="name">{{ reviewer.name }}</span>
+              <span class="state-text">{{ reviewer.text }}</span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="none">Nobody is reviewing yet.</p>
+      }
+    </section>
+
+    <section class="group">
+      <h3 class="group-title">Checks</h3>
+      @if (checks().length > 0) {
+        <ul class="states">
+          @for (check of checks(); track check.name) {
+            <li [class]="'state state-' + check.tone">
+              <mat-icon class="state-icon" [svgIcon]="check.icon" />
+              @if (check.url) {
+                <a class="name" [href]="check.url">{{ check.name }}</a>
+              } @else {
+                <span class="name">{{ check.name }}</span>
+              }
+              <span class="state-text">{{ check.text }}</span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="none">No checks on the last commit.</p>
+      }
+    </section>
+  }
+
+  <a mat-stroked-button class="open-link" [href]="item().url">
+    <mat-icon svgIcon="open_in_new" />
+    Open on GitHub
+  </a>
+</div>
