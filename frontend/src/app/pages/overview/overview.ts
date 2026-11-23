@@ -62,7 +62,9 @@ export class OverviewPage implements OnInit {
   /** The overview without the items the user marked as done or snoozed. */
   readonly waiting = computed(() => {
     const overview = this.overview();
-    return overview && overviewWithoutSettled(overview, this.itemStates.states(), new Date());
+    return (
+      overview && overviewWithoutSettled(overview, this.itemStates.states(), this.itemStates.now())
+    );
   });
   readonly loadError = signal<string | undefined>(undefined);
   /** `undefined` until loaded; the page works without it. */

@@ -3,7 +3,12 @@ import { Observable, of, Subject, throwError } from 'rxjs';
 
 import { ItemState, ItemStatesService } from '../../../services/item-states';
 import { Overview, OverviewItem } from '../../../services/overview';
-import { isSettled, ItemStateStore, overviewWithoutSettled } from './item-state-store';
+import {
+  isSettled,
+  ItemStateStore,
+  nextSnoozeEnd,
+  overviewWithoutSettled,
+} from './item-state-store';
 
 const NOW = new Date('2026-11-23T12:00:00Z');
 
@@ -46,6 +51,20 @@ describe('isSettled', () => {
 
   it('shows items without a state', () => {
     expect(isSettled(item(1), undefined, NOW)).toBe(false);
+  });
+});
+
+describe('nextSnoozeEnd', () => {
+  it('finds the earliest snooze still ahead', () => {
+    const states = new Map([
+      ['a', snoozed('a', '2026-11-25T09:00:00Z')],
+      ['b', snoozed('b', '2026-11-23T15:00:00Z')],
+      ['c', snoozed('c', '2026-11-23T09:00:00Z')],
+      ['d', done('d', '2026-11-23T00:00:00Z')],
+    ]);
+
+    expect(nextSnoozeEnd(states, NOW)).toEqual(new Date('2026-11-23T15:00:00Z'));
+    expect(nextSnoozeEnd(new Map(), NOW)).toBeUndefined();
   });
 });
 
@@ -158,6 +177,41 @@ describe('ItemStateStore', () => {
 
     expect(calls).toEqual([`put ${item(1).url}`, `delete ${item(1).url}`]);
     expect(store.states().has(item(1).url)).toBe(false);
+  });
+
+  it('does not send a failed change again to a later subscriber', () => {
+    let requests = 0;
+    const store = setUp({
+      markDone: () => {
+        requests++;
+        return throwError(() => new Error('502'));
+      },
+    });
+    const saving = store.markDone(item(1));
+    let failed = false;
+
+    saving.subscribe({ error: () => (failed = true) });
+
+    expect(failed).toBe(true);
+    expect(requests).toBe(1);
+  });
+
+  it('shows a snoozed item again once its snooze ends', () => {
+    vi.useFakeTimers({ now: NOW });
+    try {
+      const store = setUp({});
+      const issue = item(1);
+      store.snooze(issue, new Date(NOW.getTime() + 60_000)).subscribe();
+      TestBed.tick();
+      expect(isSettled(issue, store.states().get(issue.url), store.now())).toBe(true);
+
+      vi.advanceTimersByTime(61_000);
+      TestBed.tick();
+
+      expect(isSettled(issue, store.states().get(issue.url), store.now())).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('keeps saving after an earlier change failed', () => {

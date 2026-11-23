@@ -73,7 +73,7 @@ export class Sidenav {
     }
     return Object.fromEntries(
       summarize(
-        overviewWithoutSettled(overview, this.itemStates.states(), new Date()),
+        overviewWithoutSettled(overview, this.itemStates.states(), this.itemStates.now()),
         this.filterState.filters(),
       ).map((summary) => [summary.page.list, summary.count]),
     );

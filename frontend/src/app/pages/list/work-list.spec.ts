@@ -211,6 +211,7 @@ describe('WorkList', () => {
     const element = await render([of(page([item('octo/hoot', 1), item('octo/hoot', 2)]))]);
 
     expect(rows(element)).toEqual(['Issue 2']);
+    expect(text(element.querySelector('.summary'))).toBe('Showing 1 of 1');
   });
 
   it('applies the shared filters', async () => {

@@ -181,12 +181,9 @@ class OrgOverview(BaseModel):
     stale: TeamList
 
 
-ItemUrl = Annotated[
-    str,
-    StringConstraints(
-        max_length=300, pattern=r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(issues|pull)/[0-9]+$"
-    ),
-]
+ITEM_URL_PATTERN = r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(issues|pull)/[0-9]+$"
+ITEM_URL_MAX_LENGTH = 300
+ItemUrl = Annotated[str, StringConstraints(max_length=ITEM_URL_MAX_LENGTH, pattern=ITEM_URL_PATTERN)]
 
 
 class ItemState(BaseModel):

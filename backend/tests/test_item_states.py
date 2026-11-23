@@ -160,3 +160,10 @@ def test_only_the_newest_states_are_kept_beyond_the_limit(client, user, monkeypa
         client.put("/item-states", json={"url": url, "state": "done"})
 
     assert sorted(stored_urls(client)) == urls[1:]
+
+
+@pytest.mark.parametrize("url", ["https://example.com/octo/hoot/issues/1", "not a url"])
+def test_forgetting_needs_a_github_item_url(client, user, url):
+    sign_in_as(client, user["id"])
+
+    assert client.delete("/item-states", params={"url": url}).status_code == 422

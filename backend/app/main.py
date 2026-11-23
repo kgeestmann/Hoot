@@ -407,7 +407,7 @@ def put_item_state(
 
 @app.delete("/item-states", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item_state(
-    url: str = Query(max_length=300),
+    url: str = Query(max_length=schemas.ITEM_URL_MAX_LENGTH, pattern=schemas.ITEM_URL_PATTERN),
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

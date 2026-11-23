@@ -1,8 +1,30 @@
-import { inject, Injectable, signal } from '@angular/core';
-import { catchError, concatMap, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
+import { effect, inject, Injectable, signal } from '@angular/core';
+import {
+  catchError,
+  concatMap,
+  map,
+  Observable,
+  of,
+  ReplaySubject,
+  share,
+  shareReplay,
+  tap,
+  throwError,
+} from 'rxjs';
 
 import { ItemState, ItemStatesService } from '../../../services/item-states';
 import { Overview, OverviewItem } from '../../../services/overview';
+
+/** The longest wait for the next snooze end before checking again; also keeps timers in range. */
+const MAX_WAIT_MS = 24 * 60 * 60 * 1000;
+
+/** The earliest moment after `now` at which a snooze ends, if any. */
+export function nextSnoozeEnd(states: ReadonlyMap<string, ItemState>, now: Date): Date | undefined {
+  const ends = [...states.values()]
+    .map((state) => (state.snoozed_until ? new Date(state.snoozed_until) : undefined))
+    .filter((end): end is Date => !!end && end > now);
+  return ends.length ? new Date(Math.min(...ends.map((end) => end.getTime()))) : undefined;
+}
 
 /** Whether a done or snoozed state still hides the item at `now`. */
 export function isSettled(item: OverviewItem, state: ItemState | undefined, now: Date): boolean {
@@ -53,6 +75,21 @@ export class ItemStateStore {
   private queue: Observable<unknown> = of(undefined);
 
   readonly states = signal<ReadonlyMap<string, ItemState>>(new Map());
+  /** The time hiding is judged by; moves on when a snooze ends, so the item shows again. */
+  readonly now = signal(new Date());
+
+  constructor() {
+    effect((onCleanup) => {
+      const now = this.now();
+      const next = nextSnoozeEnd(this.states(), now);
+      if (!next) {
+        return;
+      }
+      const wait = Math.min(next.getTime() - now.getTime() + 1, MAX_WAIT_MS);
+      const timer = setTimeout(() => this.now.set(new Date()), wait);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
 
   /** Load the stored states once; if that fails, nothing is hidden and the next call asks again. */
   load(): Observable<void> {
@@ -105,7 +142,14 @@ export class ItemStateStore {
         this.put(url, before);
         return throwError(() => error);
       }),
-      shareReplay(1),
+      // Replays the outcome, failure included, to late subscribers such as the undo snack bar,
+      // instead of running the request again.
+      share({
+        connector: () => new ReplaySubject(1),
+        resetOnError: false,
+        resetOnComplete: false,
+        resetOnRefCountZero: false,
+      }),
     );
     this.queue = saving;
     saving.subscribe({ error: () => undefined });

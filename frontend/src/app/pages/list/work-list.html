@@ -7,7 +7,7 @@
           [owners]="filterOptions().owners"
           [labels]="filterOptions().labels"
           [shownCount]="visible().length"
-          [totalCount]="items().length"
+          [totalCount]="waiting().length"
           [saveFailed]="filterState.saveFailed()"
           (toggleScope)="filterState.toggleScope($event)"
           (toggleLabel)="filterState.toggleLabel($event)"
