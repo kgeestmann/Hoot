@@ -84,6 +84,8 @@ Every change (feature, fix or docs) starts from a GitHub issue and gets its own 
 5. **PR:** put `Closes #<n>` in the description so the merge closes the issue and links it to the PR.
 6. **Review and merge:** the `claude-code-review` workflow reviews each PR automatically, and GitHub Copilot reviews too when its quota allows. Read both, act on valid findings, and reply to the ones you don't adopt with the reason. For an on-demand review or a question, write `@claude` in a PR or issue comment. Then merge with `gh pr merge <n> --merge --delete-branch`.
 
+`main` is protected by the ruleset *Protect main*: pull requests only, the `backend` and `frontend` checks required, no force pushes or deletion, no bypass. A direct push to `main` is rejected.
+
 No confirmation is needed in this repo to commit, push, open or merge your own PRs (approved by the owner). Force-push and history rewrites still need explicit approval.
 
 Gotchas for the review workflow:
