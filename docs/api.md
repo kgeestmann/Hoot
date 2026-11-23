@@ -81,7 +81,7 @@ Mentions whose latest comment comes from a bot (or, without comments, that a bot
 }
 ```
 
-`totals` per list: `total` is how many items GitHub found, `has_more` is true when that's more than the list holds (50), `search_url` is the same search on github.com.
+`totals` per list: `total` is how many items GitHub found, `has_more` is true when GitHub has another page beyond the 50 loaded (its `pageInfo.hasNextPage`; the count alone can lag behind, e.g. right after a merge), `search_url` is the same search on github.com.
 
 ### Items
 
