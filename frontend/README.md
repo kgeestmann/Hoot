@@ -1,59 +1,64 @@
-# Frontend
+# Hoot frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.0.
+The Angular app that shows everything waiting on you on GitHub. Angular 22 with standalone components and Angular Material 3, running without zone.js. It talks to the FastAPI backend in `../backend` (see the [root README](../README.md)).
 
-## Development server
+## Commands
 
-To start a local development server, run:
+Needs Node.js 24 LTS (at least 24.15; Node 25+ breaks `localStorage` in the tests).
 
-```bash
-ng serve
+| Command | Does |
+| --- | --- |
+| `npm install` | Install dependencies |
+| `npm start` | Dev server on `http://localhost:4200`, reloads on changes; needs the backend on `localhost:8000` |
+| `npm run demo` | Dev server with made-up data, no backend or GitHub (`?scenario=full\|empty\|not-installed\|errors`) |
+| `npm test` | Unit tests (Vitest and jsdom) |
+| `npm run build` | Production build into `dist/` |
+| `npx prettier --write <files>` | Format; the config is in `.prettierrc` |
+
+Open the app as `http://localhost:4200`, not `127.0.0.1`, or the session cookie isn't sent.
+
+## Where things are
+
+```
+src/
+├── main.ts                 bootstrapping: router, title, icons, HTTP, session
+├── index.html              favicons, colour scheme
+├── styles.css              Hoot's design tokens (--hoot-*)
+├── material-theme.scss     Material 3 theme (--mat-sys-*)
+├── _theme-colors.scss      tonal palettes, don't edit by hand
+├── test-providers.ts       registers the icons for every spec
+└── app/
+    ├── app.routes.ts       lazy routes and guards
+    ├── api.ts              API_URL, the backend's base URL
+    ├── icons.ts            Material Symbols paths and the logo
+    ├── pages/              one folder per route
+    │   ├── overview/       dashboard, plus filters, items, lists, refresh shared by other pages
+    │   ├── list/           the four list pages and their expandable entries
+    │   ├── organization/   team view
+    │   ├── github-access/  where Hoot is installed
+    │   ├── login/
+    │   └── profile/
+    ├── layout/             sidenav (app shell), load-error, list-skeleton, install-banner
+    ├── services/           one per backend resource, auth, session interceptor, page title
+    ├── guards/             authGuard, publicGuard
+    └── demo/               the in-browser demo backend for npm run demo
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Guides
 
-## Code scaffolding
+| Guide | Covers |
+| --- | --- |
+| [Architecture](../docs/frontend/architecture.md) | Signals without zone.js, bootstrapping, routing, shared state, talking to the backend, demo mode, test patterns |
+| [Design system](../docs/frontend/design-system.md) | Theme, colours and dark mode, type, spacing, buttons, icons, logo, loading/empty/error states |
+| [Components](../docs/frontend/components.md) | Every reusable component with its inputs and outputs, and the data helpers |
+| [Pages](../docs/frontend/pages.md) | What each page shows and how it behaves |
+| [Design rules](../docs/specs/design-rules.md) | The rules behind the design system, and their sources |
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Essentials
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **Signals for everything a template reads.** Without zone.js, a plain field set in `subscribe` doesn't re-render.
+- **Angular Material components** before custom HTML and CSS.
+- **Tokens only:** `--mat-sys-*` and `--hoot-*`, never hard-coded colours, sizes or spacing. A new colour needs a light and a dark value.
+- **Icons** are `<mat-icon svgIcon="…">` from `icons.ts`; no icon font, no emojis.
+- **No tokens in the browser:** the session is an HttpOnly cookie; never use `localStorage` for it.
+- **A backend change** to a route or response also updates `src/app/demo/`.

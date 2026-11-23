@@ -15,7 +15,7 @@ def read_required(name: str) -> str:
     if not value:
         raise RuntimeError(
             f"{name} is not set. For a local setup run python backend/setup_github_app.py, "
-            "or add it to .env (see README)."
+            "or add it to .env (see .env.example and docs/configuration.md)."
         )
     return value
 
@@ -26,7 +26,7 @@ def read_secret_key() -> str:
     if len(secret_key.encode("utf-8")) < MIN_SECRET_KEY_BYTES:
         raise RuntimeError(
             f"SECRET_KEY must be at least {MIN_SECRET_KEY_BYTES} bytes. "
-            "Generate one as described in the README."
+            "Create one as described in docs/configuration.md."
         )
     return secret_key
 
