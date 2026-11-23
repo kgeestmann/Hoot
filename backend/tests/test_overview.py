@@ -52,6 +52,8 @@ def issue(number=1, last_commenter="User", author="User", labels=(), **fields):
     comments = [{"author": {"__typename": last_commenter}}] if last_commenter else []
     return {
         "labels": {"nodes": [{"name": name, "color": color} for name, color in labels]},
+        "commentCount": {"totalCount": 0},
+        "milestone": None,
         "__typename": "Issue",
         "title": "Login button does nothing",
         "number": number,
@@ -64,15 +66,21 @@ def issue(number=1, last_commenter="User", author="User", labels=(), **fields):
     }
 
 
-def pull_request(number=2, ci_status="SUCCESS", review_decision="APPROVED", **fields):
-    """A GraphQL search result for a pull request."""
-    rollup = {"state": ci_status} if ci_status else None
+def pull_request(
+    number=2, ci_status="SUCCESS", review_decision="APPROVED", contexts=(), draft=False,
+    requested=(), reviews=(), **fields,
+):
+    """A GraphQL search result for a pull request; `reviews` are (login, state) pairs."""
+    rollup = {"state": ci_status, "contexts": {"nodes": list(contexts)}} if ci_status else None
     return {
         **issue(number, **fields),
         "__typename": "PullRequest",
         "title": "Add the overview API",
         "url": f"https://github.com/octo/hoot/pull/{number}",
+        "isDraft": draft,
         "reviewDecision": review_decision,
+        "reviewRequests": {"nodes": [{"requestedReviewer": reviewer} for reviewer in requested]},
+        "latestReviews": {"nodes": [{"author": {"login": login}, "state": state} for login, state in reviews]},
         "commits": {"nodes": [{"commit": {"statusCheckRollup": rollup}}]},
     }
 
@@ -163,6 +171,8 @@ def test_overview_lists_everything_waiting_on_the_user(client, fake_github):
             "url": "https://github.com/octo/hoot/issues/1",
             "updated_at": "2026-11-20T10:00:00Z",
             "labels": [],
+            "comment_count": 0,
+            "milestone": None,
         }
     ]
     assert body["pull_requests"] == [
@@ -174,8 +184,13 @@ def test_overview_lists_everything_waiting_on_the_user(client, fake_github):
             "url": "https://github.com/octo/hoot/pull/2",
             "updated_at": "2026-11-20T10:00:00Z",
             "labels": [],
+            "comment_count": 0,
+            "milestone": None,
             "ci_status": "FAILURE",
             "review_decision": "CHANGES_REQUESTED",
+            "draft": False,
+            "reviewers": [],
+            "checks": [],
         }
     ]
     assert [item["number"] for item in body["review_requests"]] == [3]
@@ -316,6 +331,65 @@ def test_a_list_cut_off_by_github_says_so(client, fake_github):
 
 def test_the_query_asks_for_the_totals():
     assert overview.OVERVIEW_QUERY.count("issueCount") == 4
+
+
+def test_items_carry_their_comment_count_and_milestone(client, fake_github):
+    fake_github.graphql_responses = [
+        graphql_response(
+            assigned_issues=[issue(1, commentCount={"totalCount": 7}, milestone={"title": "v1.0"})]
+        )
+    ]
+
+    [item] = get_overview(client, store_user()).json()["assigned_issues"]
+
+    assert item["comment_count"] == 7
+    assert item["milestone"] == "v1.0"
+
+
+def test_pull_requests_list_each_check_with_a_simple_state(client, fake_github):
+    contexts = [
+        {"__typename": "CheckRun", "name": "backend", "status": "COMPLETED", "conclusion": "SUCCESS", "detailsUrl": "https://ci/1"},
+        {"__typename": "CheckRun", "name": "lint", "status": "COMPLETED", "conclusion": "TIMED_OUT", "detailsUrl": "https://ci/2"},
+        {"__typename": "CheckRun", "name": "e2e", "status": "IN_PROGRESS", "conclusion": None, "detailsUrl": None},
+        {"__typename": "CheckRun", "name": "docs", "status": "COMPLETED", "conclusion": "SKIPPED", "detailsUrl": None},
+        {"__typename": "StatusContext", "context": "deploy", "state": "PENDING", "targetUrl": "https://ci/3"},
+        {"__typename": "StatusContext", "context": "coverage", "state": "ERROR", "targetUrl": None},
+    ]
+    fake_github.graphql_responses = [graphql_response(pull_requests=[pull_request(contexts=contexts)])]
+
+    [item] = get_overview(client, store_user()).json()["pull_requests"]
+
+    assert item["checks"] == [
+        {"name": "backend", "state": "success", "url": "https://ci/1"},
+        {"name": "lint", "state": "failure", "url": "https://ci/2"},
+        {"name": "e2e", "state": "pending", "url": None},
+        {"name": "docs", "state": "neutral", "url": None},
+        {"name": "deploy", "state": "pending", "url": "https://ci/3"},
+        {"name": "coverage", "state": "failure", "url": None},
+    ]
+
+
+def test_pull_requests_show_reviewers_and_draft_state(client, fake_github):
+    fake_github.graphql_responses = [
+        graphql_response(
+            pull_requests=[
+                pull_request(
+                    draft=True,
+                    reviews=[("alice", "APPROVED"), ("bob", "CHANGES_REQUESTED")],
+                    requested=[{"login": "bob"}, {"name": "frontend-team"}],
+                )
+            ]
+        )
+    ]
+
+    [item] = get_overview(client, store_user()).json()["pull_requests"]
+
+    assert item["draft"] is True
+    assert item["reviewers"] == [
+        {"name": "alice", "state": "APPROVED"},
+        {"name": "bob", "state": "REQUESTED"},
+        {"name": "frontend-team", "state": "REQUESTED"},
+    ]
 
 
 def test_github_tokens_never_appear_in_the_overview(client, fake_github):

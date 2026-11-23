@@ -1,0 +1,18 @@
+<mat-accordion class="panels" multi displayMode="flat">
+  @for (row of rows(); track row.item.url) {
+    <mat-expansion-panel class="panel">
+      <mat-expansion-panel-header class="panel-header">
+        <div class="header">
+          <span class="title">{{ row.item.title }}</span>
+          <span class="meta"><app-item-meta [item]="row.item" /></span>
+          @if (row.hasChips) {
+            <app-item-chips [item]="row.item" />
+          }
+        </div>
+      </mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <app-item-details [item]="row.item" />
+      </ng-template>
+    </mat-expansion-panel>
+  }
+</mat-accordion>

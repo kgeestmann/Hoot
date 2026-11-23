@@ -14,7 +14,11 @@ export const TONE_ICONS: Record<StatusTone, IconName> = {
 export interface StatusChip {
   label: string;
   tone: StatusTone;
+  /** Overrides the tone's icon from TONE_ICONS. */
+  icon?: IconName;
 }
+
+const DRAFT_CHIP: StatusChip = { label: 'Draft', tone: 'neutral', icon: 'draft' };
 
 const CI_CHIPS: Record<string, StatusChip> = {
   SUCCESS: { label: 'CI passing', tone: 'success' },
@@ -36,6 +40,7 @@ export function statusChips(item: OverviewItem | PullRequestItem): StatusChip[] 
     return [];
   }
   return [
+    item.draft ? DRAFT_CHIP : undefined,
     item.ci_status ? CI_CHIPS[item.ci_status] : undefined,
     item.review_decision ? REVIEW_CHIPS[item.review_decision] : undefined,
   ].filter((chip): chip is StatusChip => chip !== undefined);

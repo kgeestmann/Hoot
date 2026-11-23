@@ -33,6 +33,8 @@ function item(repository: string, number: number, labels: string[] = []): Overvi
     url: `https://github.com/${repository}/issues/${number}`,
     updated_at: '2026-11-21T10:00:00Z',
     labels: labels.map((name) => ({ name, color: 'd73a4a' })),
+    comment_count: 0,
+    milestone: null,
   };
 }
 

@@ -317,6 +317,8 @@ number
 url
 updated_at
 labels        list of { name, color }; color is GitHub's six hex digits, e.g. "d73a4a" (first 10 labels)
+comment_count number of comments
+milestone     the milestone's title, or null
 ```
 
 Next to the four lists, `totals` holds one entry per list:
@@ -359,7 +361,7 @@ install_url      GitHub's page for installing the app on more accounts
 installations    list of { account, account_type ("User" or "Organization"), all_repositories, settings_url }
 ```
 
-Items in `pull_requests` of the overview also carry `ci_status` (GitHub's `SUCCESS`, `FAILURE`, `PENDING`, `ERROR`, `EXPECTED`, or `null` without checks) and `review_decision` (`APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED`, or `null`).
+Items in `pull_requests` of the overview also carry `ci_status` (GitHub's `SUCCESS`, `FAILURE`, `PENDING`, `ERROR`, `EXPECTED`, or `null` without checks) and `review_decision` (`APPROVED`, `CHANGES_REQUESTED`, `REVIEW_REQUIRED`, or `null`). They also carry `draft`, `reviewers` (list of `{ name, state }`: `REQUESTED`, or the latest review `APPROVED`, `CHANGES_REQUESTED`, `COMMENTED`, `DISMISSED`, `PENDING`; a new request wins over an older review) and `checks` (list of `{ name, state, url }` for each check run and commit status of the last commit, with `state` reduced to `success`, `failure`, `pending` or `neutral`: cancelled, skipped and stale count as neutral).
 
 ---
 
@@ -702,6 +704,7 @@ List Pages
 
 Each of the overview's lists on its own page (`pages/list/work-list`), linked in the sidebar under *Overview* with its icon (`pages/list/list-pages.ts` holds the paths, titles, icons and empty texts for the routes and the sidebar):
 
+* **Expandable entries** (`pages/list/item-panels`, Material expansion panels): collapsed, an item reads like an overview row (title, meta line, status and label chips, *Draft* for draft pull requests). Expanded, it shows the comment count and milestone, and for pull requests the draft state, every reviewer with their state and every CI check with its result and a link (each with an icon and words, never colour alone), plus *Open on GitHub*.
 * **Every item:** the first 50 load with the page; *Load more* appends the next 50 ("Loaded 50 of 120"). If that fails, the loaded items stay with "Couldn't load more".
 * **Sort** menu: *Recently updated*, *Oldest first*, *Recently created*. Changing it reloads from the start while the current items stay visible.
 * **Group by repository** (a Material slide toggle): one section per repository, sorted by name, with its count.

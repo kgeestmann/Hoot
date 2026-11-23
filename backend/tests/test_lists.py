@@ -17,12 +17,19 @@ def node(number, kind="Issue", last_commenter="User", **fields):
         "updatedAt": "2026-11-20T10:00:00Z",
         "repository": {"nameWithOwner": "octo/hoot"},
         "labels": {"nodes": []},
+        "commentCount": {"totalCount": 0},
+        "milestone": None,
         "author": {"__typename": "User"},
         "comments": {"nodes": [{"author": {"__typename": last_commenter}}]},
     }
     if kind == "PullRequest":
         result["reviewDecision"] = "APPROVED"
-        result["commits"] = {"nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS"}}}]}
+        result["isDraft"] = False
+        result["reviewRequests"] = {"nodes": []}
+        result["latestReviews"] = {"nodes": []}
+        result["commits"] = {
+            "nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS", "contexts": {"nodes": []}}}}]
+        }
     return {**result, **fields}
 
 

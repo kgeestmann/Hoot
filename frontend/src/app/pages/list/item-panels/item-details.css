@@ -1,0 +1,82 @@
+.item-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--hoot-space-4);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hoot-space-2) var(--hoot-space-8);
+  margin: 0;
+}
+
+.fact dt,
+.group-title {
+  margin: 0;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fact dd {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hoot-space-1);
+}
+
+.states {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hoot-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: var(--hoot-space-2);
+  font: var(--mat-sys-body-medium);
+}
+
+.state-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.state-success .state-icon,
+.state-success .state-text {
+  color: var(--hoot-status-success);
+}
+
+.state-danger .state-icon,
+.state-danger .state-text {
+  color: var(--hoot-status-danger);
+}
+
+.state-neutral .state-icon,
+.state-neutral .state-text {
+  color: var(--hoot-status-neutral);
+}
+
+.name {
+  color: var(--mat-sys-on-surface);
+}
+
+a.name {
+  color: var(--mat-sys-primary);
+}
+
+.none {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}

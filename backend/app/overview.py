@@ -30,6 +30,8 @@ fragment Item on SearchResultItem {
     labels(first: 10) { nodes { name color } }
     author { __typename }
     comments(last: 1) { nodes { author { __typename } } }
+    commentCount: comments { totalCount }
+    milestone { title }
   }
   ... on PullRequest {
     title
@@ -40,8 +42,37 @@ fragment Item on SearchResultItem {
     labels(first: 10) { nodes { name color } }
     author { __typename }
     comments(last: 1) { nodes { author { __typename } } }
+    commentCount: comments { totalCount }
+    milestone { title }
+    isDraft
     reviewDecision
-    commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
+    reviewRequests(first: 10) {
+      nodes {
+        requestedReviewer {
+          ... on User { login }
+          ... on Bot { login }
+          ... on Mannequin { login }
+          ... on Team { name }
+        }
+      }
+    }
+    latestReviews(first: 10) { nodes { author { login } state } }
+    commits(last: 1) {
+      nodes {
+        commit {
+          statusCheckRollup {
+            state
+            contexts(first: 30) {
+              nodes {
+                __typename
+                ... on CheckRun { name status conclusion detailsUrl }
+                ... on StatusContext { context state targetUrl }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 """
@@ -138,11 +169,14 @@ def overview_item(node: dict) -> schemas.OverviewItem:
 
 
 def pull_request_item(node: dict) -> schemas.PullRequestItem:
-    """Turn a pull request search result into an item with CI status and review state."""
+    """Turn a pull request search result into an item with CI, review and draft state."""
     return schemas.PullRequestItem(
         **item_fields(node),
         ci_status=ci_status(node),
         review_decision=node["reviewDecision"],
+        draft=node["isDraft"],
+        reviewers=_reviewers(node),
+        checks=_checks(node),
     )
 
 
@@ -163,6 +197,8 @@ def item_fields(node: dict) -> dict:
         "url": node["url"],
         "updated_at": node["updatedAt"],
         "labels": _labels(node),
+        "comment_count": node["commentCount"]["totalCount"],
+        "milestone": node["milestone"]["title"] if node["milestone"] else None,
     }
 
 
@@ -176,3 +212,53 @@ def _labels(node: dict) -> list[dict]:
         for label in node["labels"]["nodes"]
         if label
     ]
+
+
+# GitHub's check run conclusions and status context states, reduced to four for the item rows.
+CHECK_STATES = {
+    "SUCCESS": "success",
+    "FAILURE": "failure",
+    "ERROR": "failure",
+    "TIMED_OUT": "failure",
+    "ACTION_REQUIRED": "failure",
+    "STARTUP_FAILURE": "failure",
+    "CANCELLED": "neutral",
+    "NEUTRAL": "neutral",
+    "SKIPPED": "neutral",
+    "STALE": "neutral",
+}
+
+
+def _checks(pull_request: dict) -> list[dict]:
+    """The checks and statuses of the last commit, each with a state Hoot can show."""
+    commits = pull_request["commits"]["nodes"]
+    rollup = commits[0]["commit"]["statusCheckRollup"] if commits else None
+    if not rollup:
+        return []
+    checks = []
+    for context in rollup["contexts"]["nodes"]:
+        if not context:
+            continue
+        if context["__typename"] == "CheckRun":
+            finished = context["status"] == "COMPLETED" and context["conclusion"]
+            state = CHECK_STATES.get(context["conclusion"], "neutral") if finished else "pending"
+            checks.append({"name": context["name"], "state": state, "url": context["detailsUrl"]})
+        elif context["__typename"] == "StatusContext":
+            state = CHECK_STATES.get(context["state"], "pending")
+            checks.append({"name": context["context"], "state": state, "url": context["targetUrl"]})
+    return checks
+
+
+def _reviewers(pull_request: dict) -> list[dict]:
+    """Who reviewed (with their latest verdict) and who is asked to; a new request wins."""
+    states = {}
+    for review in pull_request["latestReviews"]["nodes"]:
+        if review and review["author"]:
+            states[review["author"]["login"]] = review["state"]
+    for request in pull_request["reviewRequests"]["nodes"]:
+        reviewer = request and request["requestedReviewer"]
+        name = reviewer and (reviewer.get("login") or reviewer.get("name"))
+        if name:
+            states[name] = "REQUESTED"
+    return [{"name": name, "state": state} for name, state in states.items()]
+

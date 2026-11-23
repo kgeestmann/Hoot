@@ -21,8 +21,8 @@ import { OverviewItem } from '../../services/overview';
 import { FilterBar } from '../overview/filters/filter-bar';
 import { FilterState } from '../overview/filters/filter-state';
 import { filterItems, filterOptionsFor } from '../overview/filters/filtering';
-import { OverviewSection } from '../overview/overview-section/overview-section';
 import { RefreshStatus } from '../overview/refresh-status/refresh-status';
+import { ItemPanels } from './item-panels/item-panels';
 import { ListPageConfig, SORT_OPTIONS } from './list-pages';
 
 /** Items of one repository, for the grouped view. */
@@ -39,6 +39,7 @@ export interface RepositoryGroup {
   selector: 'app-work-list',
   imports: [
     FilterBar,
+    ItemPanels,
     ListSkeleton,
     LoadError,
     MatButtonModule,
@@ -46,7 +47,6 @@ export interface RepositoryGroup {
     MatMenuModule,
     MatPseudoCheckboxModule,
     MatSlideToggleModule,
-    OverviewSection,
     RefreshStatus,
   ],
   templateUrl: './work-list.html',

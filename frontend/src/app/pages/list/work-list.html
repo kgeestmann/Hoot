@@ -54,14 +54,22 @@
       <span class="total">{{ page.total }} on GitHub</span>
     </div>
 
-    @if (grouped() && visible().length > 0) {
+    @if (visible().length === 0) {
+      <p class="empty">{{ emptyText() }}</p>
+    } @else if (grouped()) {
       <div class="groups">
         @for (group of groups(); track group.repository) {
-          <app-overview-section [heading]="group.repository" [items]="group.items" emptyText="" />
+          <section class="group">
+            <h2 class="group-heading">
+              {{ group.repository }}
+              <span class="group-count">{{ group.items.length }}</span>
+            </h2>
+            <app-item-panels [items]="group.items" />
+          </section>
         }
       </div>
     } @else {
-      <app-overview-section [items]="visible()" [emptyText]="emptyText()" />
+      <app-item-panels [items]="visible()" />
     }
 
     @if (page.has_more) {
