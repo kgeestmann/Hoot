@@ -22,6 +22,10 @@ import { GitHubAccess, GitHubAccessService } from '../../services/github-access'
 import { PageTitle } from '../../services/page-title';
 import { LIST_PAGES } from '../../pages/list/list-pages';
 import { FilterState } from '../../pages/overview/filters/filter-state';
+import {
+  ItemStateStore,
+  overviewWithoutSettled,
+} from '../../pages/overview/item-state/item-state-store';
 import { OverviewStore } from '../../pages/overview/overview-store';
 import { summarize } from '../../pages/overview/summary';
 import { InstallBanner } from '../install-banner/install-banner';
@@ -59,6 +63,7 @@ export class Sidenav {
 
   private readonly overviewStore = inject(OverviewStore);
   private readonly filterState = inject(FilterState);
+  private readonly itemStates = inject(ItemStateStore);
   readonly listPages = LIST_PAGES;
   /** Each list's count after the filters, by list; empty until the overview has loaded. */
   readonly listCounts = computed(() => {
@@ -67,10 +72,10 @@ export class Sidenav {
       return {} as Record<string, string>;
     }
     return Object.fromEntries(
-      summarize(overview, this.filterState.filters()).map((summary) => [
-        summary.page.list,
-        summary.count,
-      ]),
+      summarize(
+        overviewWithoutSettled(overview, this.itemStates.states(), this.itemStates.now()),
+        this.filterState.filters(),
+      ).map((summary) => [summary.page.list, summary.count]),
     );
   });
   /** Where Hoot is installed for the user; `undefined` until loaded or when that failed. */
@@ -128,6 +133,7 @@ export class Sidenav {
   private loadCounts(): void {
     this.overviewStore.load().subscribe({ error: () => undefined });
     this.filterState.load().subscribe();
+    this.itemStates.load().subscribe();
   }
 
   private loadAccess(): void {

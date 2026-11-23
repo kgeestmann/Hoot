@@ -1,0 +1,29 @@
+<button
+  mat-icon-button
+  class="trigger"
+  [matMenuTriggerFor]="actions"
+  [attr.aria-label]="'Actions for ' + item().title"
+>
+  <mat-icon svgIcon="more_vert" />
+</button>
+
+<mat-menu #actions="matMenu">
+  <button mat-menu-item (click)="markDone()">
+    <mat-icon svgIcon="check" />
+    Mark as done
+  </button>
+  <button mat-menu-item [matMenuTriggerFor]="snoozeMenu">
+    <mat-icon svgIcon="snooze" />
+    Snooze
+  </button>
+</mat-menu>
+
+<mat-menu #snoozeMenu="matMenu">
+  <button mat-menu-item (click)="snooze(laterToday(now()))">Later today</button>
+  <button mat-menu-item (click)="snooze(tomorrow(now()))">Tomorrow</button>
+  <button mat-menu-item (click)="snooze(nextWeek(now()))">Next week</button>
+  <button mat-menu-item (click)="pickDate()">
+    <mat-icon svgIcon="event" />
+    Pick a date
+  </button>
+</mat-menu>

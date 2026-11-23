@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { API_URL } from '../api';
 import { GitHubAccess } from '../services/github-access';
+import { ItemState } from '../services/item-states';
 import { ListPage } from '../services/lists';
 import { OrgOverview } from '../services/organizations';
 import { Overview } from '../services/overview';
@@ -90,6 +91,18 @@ describe('demo backend', () => {
       hidden: ['demo-labs'],
       labels: ['bug'],
     });
+  });
+
+  it('keeps done and snoozed items until one is brought back', async () => {
+    const http = client('full');
+    const url = 'https://github.com/demo-labs/rocket/issues/12';
+
+    await firstValueFrom(http.put(`${API_URL}/item-states`, { url, state: 'done' }));
+    const stored = await get<ItemState[]>(http, '/item-states');
+    await firstValueFrom(http.delete(`${API_URL}/item-states`, { params: { url } }));
+
+    expect(stored.map((state) => [state.url, !!state.done_at])).toEqual([[url, true]]);
+    expect(await get<ItemState[]>(http, '/item-states')).toEqual([]);
   });
 
   it('has a team view for its organizations and 404 for others', async () => {

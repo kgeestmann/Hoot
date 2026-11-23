@@ -21,6 +21,7 @@ import { OverviewItem } from '../../services/overview';
 import { FilterBar } from '../overview/filters/filter-bar';
 import { FilterState } from '../overview/filters/filter-state';
 import { filterItems, filterOptionsFor } from '../overview/filters/filtering';
+import { ItemStateStore, withoutSettled } from '../overview/item-state/item-state-store';
 import { RefreshStatus } from '../overview/refresh-status/refresh-status';
 import { ItemPanels } from './item-panels/item-panels';
 import { ListPageConfig, SORT_OPTIONS } from './list-pages';
@@ -60,6 +61,7 @@ export class WorkList implements OnInit {
 
   readonly config: ListPageConfig = inject(ActivatedRoute).snapshot.data['page'];
   readonly filterState = inject(FilterState);
+  private readonly itemStates = inject(ItemStateStore);
   readonly sortOptions = SORT_OPTIONS;
 
   /** Every item loaded so far, in the chosen order. */
@@ -75,9 +77,13 @@ export class WorkList implements OnInit {
   readonly refreshing = signal(false);
   readonly refreshFailed = signal(false);
 
-  readonly visible = computed(() => filterItems(this.items(), this.filterState.filters()));
+  /** The loaded items without the ones the user marked as done or snoozed. */
+  readonly waiting = computed(() =>
+    withoutSettled(this.items(), this.itemStates.states(), this.itemStates.now()),
+  );
+  readonly visible = computed(() => filterItems(this.waiting(), this.filterState.filters()));
   readonly filterOptions = computed(() =>
-    filterOptionsFor(this.items(), this.filterState.filters()),
+    filterOptionsFor(this.waiting(), this.filterState.filters()),
   );
   /** Without items the filter menus would be empty; an active filter stays clearable. */
   readonly showFilters = computed(() => {
@@ -89,7 +95,7 @@ export class WorkList implements OnInit {
     () => this.sortOptions.find((option) => option.value === this.sort())!.label,
   );
   readonly emptyText = computed(() => {
-    const hidden = this.items().length - this.visible().length;
+    const hidden = this.waiting().length - this.visible().length;
     return hidden > 0 ? `All ${hidden} loaded hidden by your filters.` : this.config.emptyText;
   });
 
@@ -105,6 +111,7 @@ export class WorkList implements OnInit {
     forkJoin({
       page: this.lists.load(this.config.list, this.sort()),
       filters: this.filterState.load(),
+      itemStates: this.itemStates.load(),
     }).subscribe({
       next: ({ page }) => generation === this.generation && this.showFirstPage(page),
       error: (error: unknown) =>

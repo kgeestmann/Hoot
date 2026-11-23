@@ -12,6 +12,7 @@ Everything waiting on you on GitHub, on one page: your open pull requests, revie
 
 - **Overview:** one card per list with its count and newest items, and the counts in the sidebar
 - **List pages:** every item with load more, sorting, grouping by repository, and the details of each item (reviewers, CI checks, milestone)
+- **Done and snooze:** hide an item until something new happens on it, or until later today, tomorrow, next week or a picked day
 - **Filters** by owner, repository and label, saved per user and shared by every page
 - **Team view** per organization: waiting for review, failing CI, unassigned, stale. Work items and team totals only, no numbers per person.
 - Sign-in with GitHub, read-only; light and dark mode
