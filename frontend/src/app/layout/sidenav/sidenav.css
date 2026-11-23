@@ -19,8 +19,15 @@
 .sidebar-header {
   display: flex;
   align-items: center;
+  gap: var(--hoot-space-3);
   min-height: 64px;
   padding: 0 var(--hoot-space-6);
+}
+
+.logo {
+  width: var(--hoot-space-8);
+  height: var(--hoot-space-8);
+  color: var(--mat-sys-primary);
 }
 
 .sidebar-header h3 {

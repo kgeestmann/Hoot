@@ -1,3 +1,5 @@
+<img src="docs/logo.svg" alt="" width="96" height="96">
+
 # Hoot
 
 One page for everything that is waiting on you on GitHub: assigned issues, your open pull requests, review requests and mentions, across all your repositories and organizations.
@@ -787,6 +789,11 @@ The UI uses an Angular Material 3 theme built from the brand orange `#fea034` an
 * `frontend/src/styles.css`: Hoot's own tokens: `--hoot-brand` / `--hoot-on-brand` (bright orange fill with dark text, because white text on it fails contrast), the `--hoot-status-*` colours for GitHub states, the `--hoot-space-*` spacing scale, the focus ring and transitions.
 * **Dark mode** follows the system setting (`color-scheme: light dark`). Every `--mat-sys-*` colour has a light and a dark value (`light-dark()`), and so do Hoot's own colours where they differ, e.g. `--hoot-status-success: light-dark(#1a7f37, #3fb950)`. The brand orange with its dark text works in both modes.
 * Roboto is self-hosted via `@fontsource/roboto`, so the app loads nothing from Google or other CDNs.
+* **Logo:** an outline owl (V-shaped brow, two eyes, beak) on the 24 px grid with a 2 px stroke, like the Material Symbols. The same drawing exists in four places, so change them together:
+  * `icons.ts` (`LOGO_SHAPES`): the icon `hoot` in `currentColor`, shown in `--mat-sys-primary` in the sidebar header and on the sign-in card
+  * `frontend/public/favicon.svg`: the favicon, with the primary tone for light and dark mode (`prefers-color-scheme`)
+  * `frontend/public/favicon.ico`: 16, 32 and 48 px fallback for browsers without SVG favicons
+  * `docs/logo.svg`: the app tile (dark owl on the brand orange) at the top of this README. `docs/social-preview.png` (1280 x 640) is built from it and uploaded by hand under *Settings → General → Social preview*, since GitHub has no API for it.
 
 ---
 

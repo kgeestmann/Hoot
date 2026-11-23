@@ -177,6 +177,14 @@ describe('Sidenav', () => {
     ).toEqual(['merge', 'rate_review', 'assignment_ind', 'alternate_email']);
   });
 
+  it('shows the logo next to the name', async () => {
+    const element = await render(OCTOCAT);
+
+    const header = element.querySelector('.sidebar-header')!;
+    expect(header.querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('hoot');
+    expect(header.textContent?.trim()).toBe('Hoot');
+  });
+
   it('shows how many items wait in each list', async () => {
     const issue = (number: number) => ({
       kind: 'issue' as const,
