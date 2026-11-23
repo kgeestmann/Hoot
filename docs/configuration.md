@@ -43,10 +43,19 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | How long a session lasts **without requests**. Requests in the second half of that time renew it (sliding session), so an active user stays signed in. |
 | `SESSION_MAX_DAYS` | `7` | However active, a session ends this many days after signing in, so a stolen cookie can't be kept alive forever. |
 | `COOKIE_SECURE` | `true` | `true` or `false`: whether the session cookie gets the `Secure` flag. Chrome, Edge and Firefox accept Secure cookies on `http://localhost`, so local development works with the default. Safari doesn't; set `false` there. |
-| `DATABASE_URL` | `sqlite:///<repo>/backend/hoot.db` | SQLAlchemy connection string. |
+| `DATABASE_URL` | `sqlite:///<repo>/backend/hoot.db` | SQLAlchemy connection string. `docker-compose.yml` sets `sqlite:////data/hoot.db` on a volume. |
+| `ROOT_PATH` | empty | Path prefix under which a reverse proxy serves the backend, with the proxy stripping it (`docker-compose.yml` sets `/api`). Must start with `/`. The OAuth cookie path and `/docs` include it. |
+
+## Docker setup only
+
+| Variable | What it does |
+| --- | --- |
+| `DOMAIN` | The domain Hoot is served on, e.g. `hoot.example.com`. Caddy gets the HTTPS certificate for it. Required by `docker-compose.yml`. |
+
+The production values for the other settings are in [deployment.md](deployment.md#configuration).
 
 ## The frontend
 
-The frontend has no configuration file. The backend URL is the constant `API_URL` in `frontend/src/app/api.ts` (`http://localhost:8000`).
+The frontend has no configuration file. The backend URL is the constant `API_URL`: `http://localhost:8000` in `frontend/src/app/api.ts` for development, and `/api` in `api.production.ts`, which the production build uses instead (`fileReplacements` in `angular.json`).
 
 Open the frontend as `http://localhost:4200`, not `127.0.0.1`: the session cookie belongs to `localhost`, and only the same site gets it. If you change `FRONTEND_URL` or `CORS_ORIGINS`, the frontend's origin must still be in `CORS_ORIGINS` exactly.

@@ -1,0 +1,36 @@
+# Hoot on one server: docker compose up -d --build (see docs/deployment.md).
+# Settings come from .env in this folder, including DOMAIN.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: .env
+    environment:
+      ROOT_PATH: /api
+      DATABASE_URL: sqlite:////data/hoot.db
+    volumes:
+      - hoot-data:/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env, e.g. hoot.example.com}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  hoot-data:
+  caddy-data:
+  caddy-config:

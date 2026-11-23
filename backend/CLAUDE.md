@@ -6,7 +6,7 @@ Rules for working in `backend/`. The full guide is `docs/backend.md`; routes are
 
 A small FastAPI app in `app/`:
 
-- `config.py` loads `.env` and holds every setting; required ones raise at import. A new setting also goes into `.env.example` and `docs/configuration.md`.
+- `config.py` loads `.env` and holds every setting; required ones raise at import. `ROOT_PATH` (`/api` in Docker) is the prefix a reverse proxy strips: pass it to anything the browser sees as a path, like cookie paths (`OAUTH_COOKIE_PATH`). A new setting also goes into `.env.example` and `docs/configuration.md`.
 - `main.py` holds CORS, JWT creation and validation (PyJWT), the GitHub sign-in flow, all routes and the exception handlers: `/auth/github/login`, `/auth/github/callback`, `/logout`, `/profile`, `/overview`, `/lists/{name}`, `/overview/filters` (GET and PUT), `/orgs/{organization}/overview`, `/github/installations` (all but the first three protected).
 - `github.py` makes the HTTP calls to GitHub through an `httpx.Client` that routes get via the `get_github_client` dependency.
 - `github_tokens.py` (`call_as_user`, `store_tokens`), `crypto.py` (Fernet), `overview.py` (the `/overview` searches and item helpers), `lists.py` (`/lists/{name}`), `overview_filters.py`, `org_overview.py` (team view), `models.py`, `schemas.py`, `database.py`.

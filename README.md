@@ -54,6 +54,7 @@ The full setup, the manual GitHub App steps and troubleshooting are in [docs/dev
 | [API](docs/api.md) | Routes and response shapes |
 | [Security](docs/security.md) | Tokens, cookies, privacy |
 | [Backend](docs/backend.md) | Modules, adding a route, tests |
+| [Deployment](docs/deployment.md) | Running Hoot on a server: Docker Compose, HTTPS |
 | [Frontend](frontend/README.md) | Architecture, design system, components, pages |
 | [Specs](docs/specs/README.md) | The rules and decisions Hoot is built on |
 | [Contributing](CONTRIBUTING.md) | Issues, branches, commits, pull requests |

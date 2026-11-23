@@ -19,6 +19,8 @@ npm start                                             # ng serve → http://loca
 npm run demo                                          # same with made-up data, no backend or GitHub (?scenario=full|empty|not-installed|errors)
 npm test                                              # ng test (Vitest + jsdom)
 npm run build
+
+docker compose up -d --build                          # the server setup (backend + Caddy with HTTPS), needs DOMAIN in .env; see docs/deployment.md
 ```
 
 Settings come from `.env` in the repo root (`backend/app/config.py`, every variable in `.env.example`). Prettier is configured in `frontend/.prettierrc`; there is no linter. The `Tests` workflow (`.github/workflows/tests.yml`) runs `pytest` and the frontend tests on every PR and on pushes to `main`. Don't merge while it is red.
@@ -37,6 +39,7 @@ The docs are part of the code: update them **in the same PR** as the change. If 
 | --- | --- |
 | Setup, commands, versions, the GitHub App, demo mode, tests | `docs/development.md` (and the quick start in `README.md` if it changes) |
 | A setting in `config.py` | `.env.example` and `docs/configuration.md` |
+| Docker, Caddy, the server setup | `docs/deployment.md` |
 | A route, request or response | `docs/api.md`, the demo backend (`frontend/src/app/demo/`) |
 | Sign-in, session, token handling, the database model | `docs/architecture.md`, `docs/security.md` if security-relevant |
 | A backend module or how to extend the backend | `docs/backend.md`, `backend/CLAUDE.md` |

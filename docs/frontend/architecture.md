@@ -38,7 +38,7 @@ The app runs **without zone.js**. The view only re-renders on a signal update, a
 | `guards/` | `authGuard` and `publicGuard` |
 | `demo/` | The demo backend for `npm run demo` (below) |
 | `icons.ts` | Material Symbols paths and the logo |
-| `api.ts` | `API_URL`, the backend's base URL |
+| `api.ts` | `API_URL`, the backend's base URL (`http://localhost:8000`); the production build swaps in `api.production.ts` (`/api`) |
 
 ## Routing
 

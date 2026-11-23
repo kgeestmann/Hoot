@@ -12,7 +12,7 @@ flowchart LR
     API -- "users, encrypted tokens, filters" --> DB[(SQLite<br/>backend/hoot.db)]
 ```
 
-- **Frontend** (`frontend/`): an Angular 22 single-page app with Angular Material. It never sees a token: the session lives in an HttpOnly cookie.
+- **Frontend** (`frontend/`): an Angular 22 single-page app with Angular Material. On a server, Caddy serves it and the backend under one domain ([deployment.md](deployment.md)). It never sees a token: the session lives in an HttpOnly cookie.
 - **Backend** (`backend/app/`): a small FastAPI app. It signs users in with GitHub, keeps the session, stores the users' GitHub tokens encrypted, and asks GitHub on each user's behalf.
 - **Database**: one SQLite file for users, their encrypted GitHub tokens and their overview filters. Created on first start.
 - **GitHub**: Hoot keeps no copy of GitHub data. Every page load asks GitHub with the signed-in user's own token, so a user only ever sees what they could see on GitHub.
@@ -113,11 +113,15 @@ The overview filters, one row per entry:
 ```
 Hoot
 ├── .env.example            every backend setting, copy to .env
+├── docker-compose.yml      the server setup: backend + Caddy (deployment.md)
+├── deploy/Caddyfile        HTTPS, frontend files, /api/* to the backend
 ├── backend
+│   ├── Dockerfile          the backend image
 │   ├── setup_github_app.py one-time local setup: creates the GitHub App, fills .env
 │   ├── app                 the FastAPI app (modules: backend.md)
 │   └── tests               pytest, with a fake GitHub
 ├── frontend
+│   ├── Dockerfile          builds the frontend, serves it with Caddy
 │   ├── public              favicons
 │   └── src
 │       ├── app             the Angular app (folders: frontend/architecture.md)

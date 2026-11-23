@@ -1,0 +1,25 @@
+# Serves Hoot on one domain: the frontend at /, the backend at /api/.
+# Caddy gets and renews the HTTPS certificate for {$DOMAIN} by itself.
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# The backend runs with ROOT_PATH=/api, so the prefix is stripped here.
+	handle_path /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# Angular routes like /mentions are client-side: unknown paths get index.html.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
