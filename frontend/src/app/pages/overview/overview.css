@@ -70,7 +70,9 @@
   flex: 1;
 }
 
+/* Full card width, so the rows' own inset lines up with the card's padding. */
 .card-items {
+  margin: 0 calc(-1 * var(--hoot-space-4));
   padding: 0;
 }
 
