@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
+import { ItemState, ItemStatesService } from '../../services/item-states';
 
 import { ListName, ListPage, ListSort, ListsService } from '../../services/lists';
 import { OverviewItem } from '../../services/overview';
@@ -41,6 +42,12 @@ function page(items: OverviewItem[], options: Partial<ListPage> = {}): ListPage 
 }
 
 type LoadCall = [ListName, ListSort, string | undefined];
+
+function storedStates(states: ItemState[]): void {
+  TestBed.configureTestingModule({
+    providers: [{ provide: ItemStatesService, useValue: { load: () => of(states) } }],
+  });
+}
 
 describe('WorkList', () => {
   let fixture: ComponentFixture<WorkList>;
@@ -191,6 +198,19 @@ describe('WorkList', () => {
 
     const headings = Array.from(element.querySelectorAll('.group-heading')).map(text);
     expect(headings).toEqual(['octo/hoot 1', 'octo/zoo 2']);
+  });
+
+  it('leaves out what the user marked as done', async () => {
+    storedStates([
+      {
+        url: 'https://github.com/octo/hoot/issues/1',
+        done_at: '2099-01-01T00:00:00Z',
+        snoozed_until: null,
+      },
+    ]);
+    const element = await render([of(page([item('octo/hoot', 1), item('octo/hoot', 2)]))]);
+
+    expect(rows(element)).toEqual(['Issue 2']);
   });
 
   it('applies the shared filters', async () => {

@@ -19,6 +19,8 @@ import { GitHubAccess, GitHubAccessService } from '../../services/github-access'
 import { FilterBar } from './filters/filter-bar';
 import { FilterState } from './filters/filter-state';
 import { applyFilters, countItems, filterOptions } from './filters/filtering';
+import { ItemActions } from './item-state/item-actions';
+import { ItemStateStore, overviewWithoutSettled } from './item-state/item-state-store';
 import { ItemMeta } from './item/item-meta';
 import { OverviewStore } from './overview-store';
 import { RefreshStatus } from './refresh-status/refresh-status';
@@ -32,6 +34,7 @@ import { summarize } from './summary';
   selector: 'app-overview-page',
   imports: [
     FilterBar,
+    ItemActions,
     ItemMeta,
     ListSkeleton,
     LoadError,
@@ -52,8 +55,15 @@ export class OverviewPage implements OnInit {
   /** The user's filters, shared with the list pages. */
   readonly filterState = inject(FilterState);
 
+  private readonly itemStates = inject(ItemStateStore);
+
   /** The shared overview; `undefined` until it first arrived. */
   readonly overview = this.store.overview;
+  /** The overview without the items the user marked as done or snoozed. */
+  readonly waiting = computed(() => {
+    const overview = this.overview();
+    return overview && overviewWithoutSettled(overview, this.itemStates.states(), new Date());
+  });
   readonly loadError = signal<string | undefined>(undefined);
   /** `undefined` until loaded; the page works without it. */
   readonly access = signal<GitHubAccess | undefined>(undefined);
@@ -64,19 +74,19 @@ export class OverviewPage implements OnInit {
   readonly refreshFailed = signal(false);
 
   readonly totalCount = computed(() => {
-    const overview = this.overview();
+    const overview = this.waiting();
     return overview ? countItems(overview) : 0;
   });
   readonly shownCount = computed(() => {
-    const overview = this.overview();
+    const overview = this.waiting();
     return overview ? countItems(applyFilters(overview, this.filters())) : 0;
   });
   readonly filterOptions = computed(() => {
-    const overview = this.overview();
+    const overview = this.waiting();
     return overview ? filterOptions(overview, this.filters()) : { owners: [], labels: [] };
   });
   readonly cards = computed(() => {
-    const overview = this.overview();
+    const overview = this.waiting();
     return overview ? summarize(overview, this.filters()) : [];
   });
 
@@ -100,6 +110,8 @@ export class OverviewPage implements OnInit {
       overview: this.store.load(),
       // Without stored filters the overview is still useful, just unfiltered.
       filters: this.filterState.load(),
+      // Without the stored states nothing is hidden; the overview is still useful.
+      itemStates: this.itemStates.load(),
     }).subscribe({
       next: () => this.loadedAt.set(new Date()),
       error: (error: unknown) => this.loadError.set(loadErrorMessage(error)),

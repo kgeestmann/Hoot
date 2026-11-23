@@ -21,6 +21,7 @@ FastAPI, SQLAlchemy on SQLite, Pydantic v2, PyJWT, httpx (calls to GitHub), cryp
 | `overview.py` | The GraphQL searches behind `/overview`, the shared item fragment and the helpers that turn GitHub's nodes into items (CI state, checks, reviewers). |
 | `lists.py` | One list page by page (`/lists/{name}`), reusing `overview.py`'s searches and item helpers. |
 | `overview_filters.py` | Read and replace the user's stored filters. |
+| `item_states.py` | Store, list and forget done and snoozed items; prunes states that no longer apply. |
 | `org_overview.py` | The four team searches behind `/orgs/{organization}/overview`. |
 
 `backend/fake_github_server/` is a stand-in for GitHub for local development ([development.md](development.md#fake-github)), not imported by the app: `data.py` (the made-up items), `search.py` (GitHub's search qualifiers Hoot uses), `nodes.py` (items as GraphQL nodes with every field of Hoot's fragments), `server.py` (the endpoints) and `__main__.py` (starts it together with the backend). `config.py`'s `GITHUB_URL` and `GITHUB_API_URL` point the backend at it.

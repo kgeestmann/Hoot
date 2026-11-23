@@ -76,6 +76,22 @@
   padding: 0;
 }
 
+/* The actions sit beside the row's link, not inside it, so the link stays one target. */
+.card-row {
+  position: relative;
+}
+
+.card-row .card-item {
+  padding-inline-end: calc(var(--hoot-space-10) + var(--hoot-space-4));
+}
+
+.row-actions {
+  position: absolute;
+  inset-inline-end: var(--hoot-space-2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .item-title {
   font: var(--mat-sys-title-small);
 }

@@ -18,6 +18,7 @@ All routes except the first four need a valid session cookie (`hoot_session`) an
 | [`GET /lists/{name}`](#one-list-page-by-page) | One list, page by page |
 | [`GET`/`PUT /overview/filters`](#filters) | The user's filters |
 | [`GET /orgs/{organization}/overview`](#team-view) | The team view of an organization |
+| [`GET`/`PUT`/`DELETE /item-states`](#done-and-snoozed-items) | Items the user marked as done or snoozed |
 | [`GET /github/installations`](#github-access) | Where the GitHub App is installed |
 
 ## Status
@@ -163,6 +164,33 @@ The organization must be one where the GitHub App is installed for the user (oth
 ```
 
 Items are like the overview's, plus `created_at`, `author` (`null` for deleted accounts), `assignees`, and `ci_status` / `review_decision` for pull requests. Deliberately no statistics per person: [specs/team-view.md](specs/team-view.md).
+
+## Done and snoozed items
+
+`GET /item-states` returns the items the user marked as done or snoozed, while that still applies (ended snoozes are left out):
+
+```json
+[
+  { "url": "https://github.com/octo/hoot/issues/12", "done_at": "2026-11-23T12:00:00Z", "snoozed_until": null },
+  { "url": "https://github.com/octo/hoot/pull/7", "done_at": null, "snoozed_until": "2026-11-24T09:00:00Z" }
+]
+```
+
+`PUT /item-states` marks an item as done or snoozes it, replacing any earlier state, and returns the stored state:
+
+```json
+{ "url": "https://github.com/octo/hoot/issues/12", "state": "done" }
+{ "url": "https://github.com/octo/hoot/pull/7", "state": "snoozed", "until": "2026-11-24T09:00:00Z" }
+```
+
+- `url`: the item's GitHub URL (`https://github.com/<owner>/<repo>/issues/<n>` or `/pull/<n>`), at most 300 characters
+- `done`: the backend stores the current time as `done_at`. The frontend hides the item until GitHub updates it after that moment, so new activity brings it back.
+- `snoozed`: `until` is required, must lie in the future and within a year; a time without a zone counts as UTC.
+- Anything else answers `422`.
+
+`DELETE /item-states?url=<url>` shows the item again (`204`, also when it had no state).
+
+The backend drops ended snoozes and done states older than 180 days, and keeps at most 2000 states per user (the oldest go first). Hiding happens in the frontend; `/overview` and `/lists/{name}` always return everything.
 
 ## GitHub access
 

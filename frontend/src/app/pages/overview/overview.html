@@ -42,10 +42,13 @@
             @if (card.newest.length > 0) {
               <mat-nav-list class="card-items">
                 @for (item of card.newest; track item.url) {
-                  <a mat-list-item class="card-item" [href]="item.url" [lines]="2">
-                    <span matListItemTitle class="item-title">{{ item.title }}</span>
-                    <span matListItemLine><app-item-meta [item]="item" /></span>
-                  </a>
+                  <div class="card-row">
+                    <a mat-list-item class="card-item" [href]="item.url" [lines]="2">
+                      <span matListItemTitle class="item-title">{{ item.title }}</span>
+                      <span matListItemLine><app-item-meta [item]="item" /></span>
+                    </a>
+                    <app-item-actions class="row-actions" [item]="item" />
+                  </div>
                 }
               </mat-nav-list>
             } @else {

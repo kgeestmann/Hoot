@@ -21,7 +21,17 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import APIKeyCookie
 from sqlalchemy.orm import Session
 
-from . import github, github_tokens, lists, models, org_overview, overview, overview_filters, schemas
+from . import (
+    github,
+    github_tokens,
+    item_states,
+    lists,
+    models,
+    org_overview,
+    overview,
+    overview_filters,
+    schemas,
+)
 from .config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
@@ -368,6 +378,41 @@ def put_overview_filters(
     """Replace the user's overview filters and return them as stored."""
     overview_filters.replace_filters(db, current_user, filters.hidden, filters.labels)
     return overview_filters.stored_filters(db, current_user)
+
+
+@app.get("/item-states", response_model=list[schemas.ItemState])
+def get_item_states(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the items the user marked as done or snoozed, while that still applies."""
+    return item_states.stored_states(db, current_user, datetime.now(timezone.utc))
+
+
+@app.put("/item-states", response_model=schemas.ItemState)
+def put_item_state(
+    change: schemas.ItemStateChange,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mark an item as done or snooze it, replacing any earlier state; returns the stored state."""
+    now = datetime.now(timezone.utc)
+    if change.state == "done":
+        return item_states.mark_done(db, current_user, change.url, now)
+    try:
+        return item_states.snooze(db, current_user, change.url, change.until, now)
+    except item_states.InvalidSnooze as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
+
+
+@app.delete("/item-states", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item_state(
+    url: str = Query(max_length=300),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Show the item again; succeeds also when it had no state."""
+    item_states.forget(db, current_user, url)
 
 
 @app.get("/orgs/{organization}/overview", response_model=schemas.OrgOverview)

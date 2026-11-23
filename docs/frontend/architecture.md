@@ -65,6 +65,7 @@ Data that several views share lives in root services, each loading once and shar
 | The overview | `pages/overview/overview-store.ts` (`overview` signal; `load` shares one request, `reload` replaces it while the current data stays) | Dashboard, sidebar counts |
 | Filters | `pages/overview/filters/filter-state.ts` (`filters` signal; changes apply at once and are saved one after the other) | Dashboard, list pages, sidebar counts |
 | Where Hoot is installed | `services/github-access.ts` (cached request) | Sidebar (teams, install banner), dashboard, GitHub access page |
+| Done and snoozed items | `pages/overview/item-state/item-state-store.ts` (`states` signal; a change shows at once, is saved after the earlier ones, and is taken back if saving fails). `withoutSettled` and `overviewWithoutSettled` leave the hidden items out. | Dashboard, sidebar counts, list pages |
 
 The rules these follow:
 

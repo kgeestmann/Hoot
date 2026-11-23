@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
+import { ItemState, ItemStatesService } from '../../services/item-states';
 
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { Overview, OverviewItem, OverviewService } from '../../services/overview';
@@ -66,6 +67,12 @@ const OVERVIEW: Overview = {
   ],
   mentions: [item('kgeestmann/hoot', 6)],
 };
+
+function storedStates(states: ItemState[]): void {
+  TestBed.configureTestingModule({
+    providers: [{ provide: ItemStatesService, useValue: { load: () => of(states) } }],
+  });
+}
 
 describe('OverviewPage', () => {
   let fixture: ComponentFixture<OverviewPage>;
@@ -148,6 +155,31 @@ describe('OverviewPage', () => {
       'Assigned issues 4',
       'Mentions 1',
     ]);
+  });
+
+  it('leaves out what the user marked as done or snoozed, with actions on each row', async () => {
+    storedStates([
+      {
+        url: 'https://github.com/dipt-pa1469-ht26/team-14/issues/3',
+        done_at: '2099-01-01T00:00:00Z',
+        snoozed_until: null,
+      },
+      {
+        url: 'https://github.com/kgeestmann/hoot/issues/6',
+        done_at: null,
+        snoozed_until: '2099-01-01T00:00:00Z',
+      },
+    ]);
+    const element = await render(() => of(OVERVIEW), of(INSTALLED));
+
+    expect(cards(element)).toEqual([
+      'Pull requests 0',
+      'Review requests 0',
+      'Assigned issues 3',
+      'Mentions 0',
+    ]);
+    expect(newest(element, 'Assigned issues')).toEqual(['Issue 4', 'Issue 5', 'Issue 7']);
+    expect(card(element, 'Assigned issues').querySelectorAll('app-item-actions').length).toBe(3);
   });
 
   it('shows the three most recently updated items of a list', async () => {

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
+import { ItemActions } from '../../overview/item-state/item-actions';
 import { IconName } from '../../../icons';
 import { Check, OverviewItem, PullRequestItem } from '../../../services/overview';
 
@@ -31,7 +32,7 @@ const CHECK_STATES: Record<Check['state'], StateView> = {
 /** The details of an item, shown when its entry on a list page is expanded. */
 @Component({
   selector: 'app-item-details',
-  imports: [MatButtonModule, MatIconModule],
+  imports: [ItemActions, MatButtonModule, MatIconModule],
   templateUrl: './item-details.html',
   styleUrl: './item-details.css',
   changeDetection: ChangeDetectionStrategy.Eager,

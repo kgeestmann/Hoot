@@ -21,6 +21,7 @@ import { OverviewItem } from '../../services/overview';
 import { FilterBar } from '../overview/filters/filter-bar';
 import { FilterState } from '../overview/filters/filter-state';
 import { filterItems, filterOptionsFor } from '../overview/filters/filtering';
+import { ItemStateStore, withoutSettled } from '../overview/item-state/item-state-store';
 import { RefreshStatus } from '../overview/refresh-status/refresh-status';
 import { ItemPanels } from './item-panels/item-panels';
 import { ListPageConfig, SORT_OPTIONS } from './list-pages';
@@ -60,6 +61,7 @@ export class WorkList implements OnInit {
 
   readonly config: ListPageConfig = inject(ActivatedRoute).snapshot.data['page'];
   readonly filterState = inject(FilterState);
+  private readonly itemStates = inject(ItemStateStore);
   readonly sortOptions = SORT_OPTIONS;
 
   /** Every item loaded so far, in the chosen order. */
@@ -75,7 +77,12 @@ export class WorkList implements OnInit {
   readonly refreshing = signal(false);
   readonly refreshFailed = signal(false);
 
-  readonly visible = computed(() => filterItems(this.items(), this.filterState.filters()));
+  readonly visible = computed(() =>
+    filterItems(
+      withoutSettled(this.items(), this.itemStates.states(), new Date()),
+      this.filterState.filters(),
+    ),
+  );
   readonly filterOptions = computed(() =>
     filterOptionsFor(this.items(), this.filterState.filters()),
   );
@@ -105,6 +112,7 @@ export class WorkList implements OnInit {
     forkJoin({
       page: this.lists.load(this.config.list, this.sort()),
       filters: this.filterState.load(),
+      itemStates: this.itemStates.load(),
     }).subscribe({
       next: ({ page }) => generation === this.generation && this.showFirstPage(page),
       error: (error: unknown) =>
