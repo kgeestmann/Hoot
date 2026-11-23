@@ -10,6 +10,7 @@ A small FastAPI app in `app/`:
 - `main.py` holds CORS, JWT creation and validation (PyJWT), the GitHub sign-in flow, all routes and the exception handlers: `/auth/github/login`, `/auth/github/callback`, `/logout`, `/profile`, `/overview`, `/lists/{name}`, `/overview/filters` (GET and PUT), `/orgs/{organization}/overview`, `/github/installations` (all but the first three protected).
 - `github.py` makes the HTTP calls to GitHub through an `httpx.Client` that routes get via the `get_github_client` dependency.
 - `github_tokens.py` (`call_as_user`, `store_tokens`), `crypto.py` (Fernet), `overview.py` (the `/overview` searches and item helpers), `lists.py` (`/lists/{name}`), `overview_filters.py`, `org_overview.py` (team view), `models.py`, `schemas.py`, `database.py`.
+- `fake_github_server/` (next to `app/`) stands in for GitHub in local development: `python -m backend.fake_github_server` starts it with a backend pointed at it (`GITHUB_URL`, `GITHUB_API_URL`). It answers only what Hoot asks: a new GraphQL field or search qualifier in a query needs the same in `fake_github_server/nodes.py` or `search.py`, or `tests/test_fake_github_server.py` fails.
 - `setup_github_app.py` (next to `app/`) is a standalone one-time script, not imported by the app. It registers the GitHub App via the manifest flow and writes the credentials and two random keys to `.env`, never overwriting existing values.
 
 ## Rules

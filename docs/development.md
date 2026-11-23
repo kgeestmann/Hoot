@@ -7,6 +7,7 @@ Everything you need to run, test and change Hoot on your machine. The main dev m
 - [GitHub App](#github-app)
 - [Running Hoot](#running-hoot)
 - [Demo mode](#demo-mode)
+- [Fake GitHub](#fake-github)
 - [Tests](#tests)
 - [Troubleshooting](#troubleshooting)
 
@@ -118,6 +119,38 @@ Pick a scenario with `?scenario=` in the URL. It is kept for the browser tab unt
 | `errors` | Every GitHub call fails with 502, so the error boxes show |
 
 Filters, sorting, grouping and *Load more* behave like the real backend; filters are kept until the page reloads. All names are fictional (`demo-…`). Links to GitHub lead nowhere useful, and *Sign out* followed by *Sign in with GitHub* needs the real backend.
+
+## Fake GitHub
+
+To run the **whole stack** (real backend, real database, real sign-in flow) without a GitHub account or live data, stop your normal backend and run from the repo root:
+
+```
+python -m backend.fake_github_server
+```
+
+It starts two servers:
+
+| Port | Server |
+| --- | --- |
+| `localhost:8100` | A fake GitHub (`backend/fake_github_server/`): its sign-in page approves at once, token exchange and refresh work, and `/user`, `/user/installations` and the GraphQL searches answer from fixed made-up data |
+| `localhost:8000` | The Hoot backend with reload, pointed at the fake through `GITHUB_URL` and `GITHUB_API_URL`, with its own database `backend/hoot-fake.db` (emptied on every start) |
+
+Then run `npm start` in `frontend/` as usual and sign in. You are `demo-user`, with Hoot installed on `demo-user`, `demo-labs` and `demo-orbit`, and the same kind of data as the demo mode: pull requests with failing and running CI, a draft, review requests, 62 assigned issues, mentions (one hidden because a bot wrote last), and team views with every list filled.
+
+When to use which:
+
+| | Demo mode (`npm run demo`) | Fake GitHub |
+| --- | --- | --- |
+| Runs | Frontend only; the backend is played in the browser | Frontend, backend and database |
+| For | UI work, all states via `?scenario=` | Features that change backend and frontend together: new routes, tables, the sign-in |
+
+Notes:
+
+- The command refuses to start when port 8000 or 8100 is in use; on Windows a second server could otherwise share the port.
+- Settings come from your `.env` where present; the GitHub App credentials aren't checked by the fake, and missing keys are filled with random ones.
+- `FAKE_GITHUB_TOKEN_SECONDS=60` before the command makes access tokens expire after a minute, to watch the backend refresh them.
+- The fake answers only the search qualifiers Hoot uses. An unknown one comes back as a GraphQL error, so a backend query the fake doesn't know fails loudly; extend `backend/fake_github_server/search.py` then.
+- Links to items still point at github.com, where the `demo-` repositories don't exist.
 
 ## Tests
 

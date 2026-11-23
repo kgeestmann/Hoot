@@ -23,6 +23,8 @@ FastAPI, SQLAlchemy on SQLite, Pydantic v2, PyJWT, httpx (calls to GitHub), cryp
 | `overview_filters.py` | Read and replace the user's stored filters. |
 | `org_overview.py` | The four team searches behind `/orgs/{organization}/overview`. |
 
+`backend/fake_github_server/` is a stand-in for GitHub for local development ([development.md](development.md#fake-github)), not imported by the app: `data.py` (the made-up items), `search.py` (GitHub's search qualifiers Hoot uses), `nodes.py` (items as GraphQL nodes with every field of Hoot's fragments), `server.py` (the endpoints) and `__main__.py` (starts it together with the backend). `config.py`'s `GITHUB_URL` and `GITHUB_API_URL` point the backend at it.
+
 `backend/setup_github_app.py` is a standalone one-time script (not imported by the app) that registers the GitHub App via GitHub's manifest flow on `localhost:8000` and writes the credentials and two new random keys to `.env`, never overwriting existing values.
 
 ## Errors
@@ -40,7 +42,8 @@ Routes don't catch them themselves.
 2. In `main.py`, depend on `get_current_user`, `get_db` and `get_github_client`, and run the call through `github_tokens.call_as_user(db, client, user, lambda token: ...)`.
 3. Add the response model to `schemas.py`.
 4. Test it with the `fake_github` fixture (below), including the `401`/`502` paths if the route has its own.
-5. Document it in [api.md](api.md), and add it to the demo backend (`frontend/src/app/demo/demo-backend.ts`) if the frontend uses it.
+5. If it uses a new GraphQL field or search qualifier, add it to the fake GitHub (`backend/fake_github_server/nodes.py`, `search.py`); `test_fake_github_server.py` fails otherwise.
+6. Document it in [api.md](api.md), and add it to the demo backend (`frontend/src/app/demo/demo-backend.ts`) if the frontend uses it.
 
 ## Tests
 
@@ -48,7 +51,7 @@ Routes don't catch them themselves.
 
 - `conftest.py` sets every required setting, points the database at a temporary SQLite file, and provides the fixtures `client` (a `TestClient`), `user` (a signed-in user) and `fake_github`.
 - `fake_github.py` replaces the `httpx.Client` behind `get_github_client`, so tests script GitHub's answers and never call the real GitHub.
-- One file per area: `test_auth.py` (sessions), `test_github_auth.py` (sign-in flow), `test_overview.py`, `test_lists.py`, `test_org_overview.py`, `test_overview_filters.py`, `test_github_installations.py`, `test_token_refresh_race.py`, `test_config.py`, `test_setup_github_app.py`.
+- One file per area: `test_auth.py` (sessions), `test_github_auth.py` (sign-in flow), `test_overview.py`, `test_lists.py`, `test_org_overview.py`, `test_overview_filters.py`, `test_github_installations.py`, `test_token_refresh_race.py`, `test_config.py`, `test_setup_github_app.py`, and `test_fake_github_server.py`, which signs in and loads every route against the fake GitHub.
 
 ## Database changes
 

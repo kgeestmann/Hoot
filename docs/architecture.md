@@ -118,6 +118,7 @@ Hoot
 ├── backend
 │   ├── Dockerfile          the backend image
 │   ├── setup_github_app.py one-time local setup: creates the GitHub App, fills .env
+│   ├── fake_github_server  a stand-in for GitHub for local development
 │   ├── app                 the FastAPI app (modules: backend.md)
 │   └── tests               pytest, with a fake GitHub
 ├── frontend

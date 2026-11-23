@@ -27,7 +27,11 @@ from .config import (
     ALGORITHM,
     COOKIE_SECURE,
     CORS_ORIGINS,
+    DEFAULT_GITHUB_API_URL,
+    DEFAULT_GITHUB_URL,
     FRONTEND_URL,
+    GITHUB_API_URL,
+    GITHUB_URL,
     ROOT_PATH,
     SECRET_KEY,
     SESSION_MAX_DAYS,
@@ -35,6 +39,9 @@ from .config import (
 from .database import engine, SessionLocal
 
 logger = logging.getLogger(__name__)
+
+if (GITHUB_URL, GITHUB_API_URL) != (DEFAULT_GITHUB_URL, DEFAULT_GITHUB_API_URL):
+    logger.warning("Not using github.com: GitHub is %s, its API %s", GITHUB_URL, GITHUB_API_URL)
 
 models.Base.metadata.create_all(bind=engine)
 

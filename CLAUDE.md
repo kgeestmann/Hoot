@@ -10,6 +10,7 @@ Hoot shows everything that is waiting on the user on GitHub (assigned issues, op
 pip install -r backend/requirements-dev.txt           # in venv/ in the repo root (gitignored); runtime deps are in requirements.txt
 python backend/setup_github_app.py                    # once: creates the GitHub App from a manifest and fills .env
 python backend/app/main.py                            # → http://localhost:8000 with reload; same as uvicorn backend.app.main:app --reload
+python -m backend.fake_github_server                  # instead: the backend plus a fake GitHub on :8100, no GitHub account needed
 pytest                                                # backend tests (backend/tests/, temp SQLite DB, fake GitHub)
 pytest backend/tests/test_auth.py::test_profile_returns_the_logged_in_user   # single test
 
@@ -41,6 +42,7 @@ The docs are part of the code: update them **in the same PR** as the change. If 
 | A setting in `config.py` | `.env.example` and `docs/configuration.md` |
 | Docker, Caddy, the server setup | `docs/deployment.md` |
 | A route, request or response | `docs/api.md`, the demo backend (`frontend/src/app/demo/`) |
+| A GraphQL query, field or search qualifier | The fake GitHub (`backend/fake_github_server/`) |
 | Sign-in, session, token handling, the database model | `docs/architecture.md`, `docs/security.md` if security-relevant |
 | A backend module or how to extend the backend | `docs/backend.md`, `backend/CLAUDE.md` |
 | Frontend structure, routing, shared state, services | `docs/frontend/architecture.md`, `frontend/CLAUDE.md` |

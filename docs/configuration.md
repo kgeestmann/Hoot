@@ -44,6 +44,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | `SESSION_MAX_DAYS` | `7` | However active, a session ends this many days after signing in, so a stolen cookie can't be kept alive forever. |
 | `COOKIE_SECURE` | `true` | `true` or `false`: whether the session cookie gets the `Secure` flag. Chrome, Edge and Firefox accept Secure cookies on `http://localhost`, so local development works with the default. Safari doesn't; set `false` there. |
 | `DATABASE_URL` | `sqlite:///<repo>/backend/hoot.db` | SQLAlchemy connection string. `docker-compose.yml` sets `sqlite:////data/hoot.db` on a volume. |
+| `GITHUB_URL` / `GITHUB_API_URL` | `https://github.com` / `https://api.github.com` | Where GitHub lives. Only changed by `python -m backend.fake_github_server`, which points them at the fake GitHub; the backend logs a warning when they differ from github.com. Never change them on a server. |
 | `ROOT_PATH` | empty | Path prefix under which a reverse proxy serves the backend, with the proxy stripping it (`docker-compose.yml` sets `/api`). Must start with `/`. The OAuth cookie path and `/docs` include it. |
 
 ## Docker setup only
