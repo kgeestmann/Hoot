@@ -4,6 +4,7 @@ import { provideRouter, TitleStrategy } from '@angular/router';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 
 import { App } from './app/app';
+import { DEMO_INTERCEPTORS } from './app/demo/demo-interceptors';
 import { routes } from './app/app.routes';
 import { provideIcons } from './app/icons';
 import { AuthService } from './app/services/auth';
@@ -15,7 +16,7 @@ bootstrapApplication(App, {
     provideRouter(routes),
     { provide: TitleStrategy, useExisting: PageTitle },
     provideIcons(),
-    provideHttpClient(withXhr(), withInterceptors([sessionInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([sessionInterceptor, ...DEMO_INTERCEPTORS])),
     // The sidenav shows Login or Profile, so the session has to be known before the first render.
     provideAppInitializer(() => inject(AuthService).loadSession()),
   ],

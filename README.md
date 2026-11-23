@@ -846,6 +846,25 @@ http://localhost:4200
 
 ---
 
+Demo mode (no backend, no GitHub):
+
+```
+cd frontend
+npm run demo
+```
+
+Starts the frontend at `http://localhost:4200` with made-up data, for checking the UI in a browser. The `demo` build configuration swaps `src/app/demo/demo-interceptors.ts` for `demo-interceptors.demo.ts` (`fileReplacements` in `angular.json`), so an HTTP interceptor (`demo/demo-backend.ts`) answers every backend request in the browser from `demo/demo-data.ts`, after a short delay so the loading states show. You are signed in as `demo-user`. Every normal build leaves the demo code out.
+
+* **Scenarios** via `?scenario=` in the URL (kept for the browser tab until you pick another):
+  * `full` (default): items in all four lists across several owners, failing, running and passing CI with single checks, a draft, reviewers, labels and milestones, 62 assigned issues (so the overview says "50+" and the list page needs *Load more*), and the team views `/orgs/demo-labs` and `/orgs/demo-orbit`.
+  * `empty`: installed, but nothing waiting.
+  * `not-installed`: no installation, so the install banner shows.
+  * `errors`: every GitHub call fails with 502, so the error boxes show.
+* Filters, sorting, grouping and *Load more* work as with the real backend; filters are kept until the page reloads.
+* All names are fictional (`demo-…`). Links to GitHub lead nowhere useful, and *Sign out* followed by *Sign in with GitHub* needs the real backend.
+
+---
+
 # Authentication Flow
 
 1. User opens the Angular login page and clicks "Sign in with GitHub"
