@@ -4,13 +4,13 @@
 
 Everything waiting on you on GitHub, on one page: your open pull requests, review requests, assigned issues and mentions, across all your repositories and organizations. Plus a team view per organization that shows what needs the team's attention.
 
-![The Hoot overview: four cards with pull requests, review requests, assigned issues and mentions](docs/screenshot.png)
+![The Hoot overview: four tiles with the counts of pull requests, review requests, assigned issues and mentions, and the latest activity below](docs/screenshot.png)
 
 *The overview in dark mode, with made-up data from the demo mode.*
 
 ## Features
 
-- **Overview:** one card per list with its count and newest items, and the counts in the sidebar
+- **Overview:** a tile with the count of each list, and the latest activity across all of them
 - **List pages:** every item with load more, sorting, grouping by repository, and the details of each item (reviewers, CI checks, milestone)
 - **Done and snooze:** hide an item until something new happens on it, or until later today, tomorrow, next week or a picked day
 - **Filters** by owner, repository and label, saved per user and shared by every page

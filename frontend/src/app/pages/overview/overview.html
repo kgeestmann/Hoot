@@ -28,42 +28,54 @@
         Nothing waiting on you.
       </p>
     }
-    <div class="cards">
+    <nav class="tiles" aria-label="Lists">
       @for (card of cards(); track card.page.path) {
-        <mat-card appearance="outlined" class="summary-card">
-          <mat-card-header class="card-header">
-            <mat-icon mat-card-avatar class="card-icon" [svgIcon]="card.page.icon" />
-            <h2 mat-card-title class="card-title">
-              <span class="card-name">{{ card.page.title }}</span>
-              <span class="card-count">{{ card.count }}</span>
-            </h2>
-          </mat-card-header>
-          <mat-card-content class="card-content">
-            @if (card.newest.length > 0) {
-              <mat-nav-list class="card-items">
-                @for (item of card.newest; track item.url) {
-                  <div class="card-row">
-                    <a mat-list-item class="card-item" [href]="item.url" [lines]="2">
-                      <span matListItemTitle class="item-title">{{ item.title }}</span>
-                      <span matListItemLine><app-item-meta [item]="item" /></span>
-                    </a>
-                    <app-item-actions class="row-actions" [item]="item" />
-                  </div>
-                }
-              </mat-nav-list>
-            } @else {
-              <p class="empty">{{ card.emptyText }}</p>
-            }
-          </mat-card-content>
-          <mat-card-actions align="end">
-            <a mat-button class="show-all" [routerLink]="['/', card.page.path]">
-              Show all
-              <mat-icon iconPositionEnd svgIcon="chevron_right" />
-            </a>
-          </mat-card-actions>
-        </mat-card>
+        <a class="tile" [routerLink]="['/', card.page.path]">
+          <mat-card appearance="outlined" class="summary-card">
+            <mat-icon class="card-icon" [svgIcon]="card.page.icon" />
+            <span class="card-count">{{ card.count }}</span>
+            <span class="card-name">{{ card.page.title }}</span>
+          </mat-card>
+        </a>
       }
-    </div>
+    </nav>
+
+    @if (!nothingWaiting()) {
+      <mat-card appearance="outlined" class="feed">
+        <div class="feed-header">
+          <mat-icon class="card-icon" svgIcon="schedule" />
+          <h2 class="feed-title">Latest activity</h2>
+        </div>
+        @if (latest().length > 0) {
+          <mat-nav-list class="card-items">
+            @for (entry of latest(); track entry.item.url) {
+              <ng-container
+                [ngTemplateOutlet]="row"
+                [ngTemplateOutletContext]="{ $implicit: entry.item, from: entry.page.itemLabel }"
+              />
+            }
+          </mat-nav-list>
+        } @else {
+          <p class="empty">Your filters hide everything that is waiting.</p>
+        }
+      </mat-card>
+    }
+
+    <!-- One item row: a link to GitHub, with the done and snooze menu beside it. -->
+    <ng-template #row let-item let-from="from">
+      <div class="card-row">
+        <a mat-list-item class="card-item" [href]="item.url" [lines]="2">
+          <span matListItemTitle class="item-title">{{ item.title }}</span>
+          <span matListItemLine>
+            @if (from) {
+              <span class="from">{{ from }}</span> ·
+            }
+            <app-item-meta [item]="item" />
+          </span>
+        </a>
+        <app-item-actions class="row-actions" [item]="item" />
+      </div>
+    </ng-template>
   } @else if (loadError(); as message) {
     <app-load-error [message]="message" (retry)="load()" />
   } @else {

@@ -159,8 +159,8 @@ The logic is in plain functions in `filtering.ts` (`applyFilters`, `filterItems`
 
 | File | Exports |
 | --- | --- |
-| `pages/overview/summary.ts` | `summarize(overview, filters)`: per list its count ("+" when GitHub cut it off), 3 newest items and empty text. Used by the dashboard and the sidebar. |
-| `pages/list/list-pages.ts` | `LIST_PAGES` (path, list, title, icon, empty text of each list page) and `SORT_OPTIONS` |
+| `pages/overview/summary.ts` | `summarize(overview, filters)`: per list its count ("+" when GitHub cut it off), used by the overview's tiles and the sidebar. `latest(overview, filters)`: the 8 most recently updated items across all lists, each with its list, every item once. |
+| `pages/list/list-pages.ts` | `LIST_PAGES` (path, list, title, item label, icon, empty text of each list page) and `SORT_OPTIONS` |
 | `pages/list/work-list.ts` | `groupByRepository(items)` |
 
 ## Adding a component

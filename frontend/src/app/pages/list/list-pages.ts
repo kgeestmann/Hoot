@@ -6,6 +6,8 @@ export interface ListPageConfig {
   path: string;
   list: ListName;
   title: string;
+  /** What one of its items is, e.g. in the overview's latest activity. */
+  itemLabel: string;
   icon: IconName;
   emptyText: string;
 }
@@ -16,6 +18,7 @@ export const LIST_PAGES: readonly ListPageConfig[] = [
     path: 'pull-requests',
     list: 'pull_requests',
     title: 'Pull requests',
+    itemLabel: 'By you',
     icon: 'merge',
     emptyText: 'You have no open pull requests.',
   },
@@ -23,6 +26,7 @@ export const LIST_PAGES: readonly ListPageConfig[] = [
     path: 'review-requests',
     list: 'review_requests',
     title: 'Review requests',
+    itemLabel: 'Review request',
     icon: 'rate_review',
     emptyText: 'No reviews are waiting on you.',
   },
@@ -30,6 +34,7 @@ export const LIST_PAGES: readonly ListPageConfig[] = [
     path: 'assigned',
     list: 'assigned_issues',
     title: 'Assigned issues',
+    itemLabel: 'Assigned to you',
     icon: 'assignment_ind',
     emptyText: 'No open issues are assigned to you.',
   },
@@ -37,6 +42,7 @@ export const LIST_PAGES: readonly ListPageConfig[] = [
     path: 'mentions',
     list: 'mentions',
     title: 'Mentions',
+    itemLabel: 'Mention',
     icon: 'alternate_email',
     emptyText: 'Nobody mentioned you in an open issue or pull request.',
   },
