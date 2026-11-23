@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -179,3 +179,32 @@ class OrgOverview(BaseModel):
     failing_ci: TeamList
     unassigned_issues: TeamList
     stale: TeamList
+
+
+ITEM_URL_PATTERN = r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(issues|pull)/[0-9]+$"
+ITEM_URL_MAX_LENGTH = 300
+ItemUrl = Annotated[str, StringConstraints(max_length=ITEM_URL_MAX_LENGTH, pattern=ITEM_URL_PATTERN)]
+
+
+class ItemState(BaseModel):
+    """An item the user marked as done (until it changes) or snoozed (until a time)."""
+
+    url: ItemUrl
+    done_at: datetime | None = None
+    snoozed_until: datetime | None = None
+
+
+class ItemStateChange(BaseModel):
+    """Mark an item as done, or snooze it until a time in the next year."""
+
+    url: ItemUrl
+    state: Literal["done", "snoozed"]
+    # Required for "snoozed"; a time without a zone counts as UTC.
+    until: datetime | None = None
+
+    @model_validator(mode="after")
+    def snooze_needs_a_time(self) -> "ItemStateChange":
+        """A snooze needs `until`; marking as done doesn't take one."""
+        if (self.state == "snoozed") != (self.until is not None):
+            raise ValueError('"until" is required for "snoozed" and not allowed for "done"')
+        return self

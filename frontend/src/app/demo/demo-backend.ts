@@ -8,6 +8,7 @@ import {
 import { mergeMap, Observable, of, throwError, timer } from 'rxjs';
 
 import { API_URL } from '../api';
+import { ItemState } from '../services/item-states';
 import { ListName, ListSort } from '../services/lists';
 import { Overview } from '../services/overview';
 import { OverviewFilters } from '../services/overview-filters';
@@ -36,6 +37,7 @@ export function createDemoBackend(
 ): HttpInterceptorFn {
   const world = demoWorld(scenario, now);
   let filters: OverviewFilters = { hidden: [], labels: [] };
+  const itemStates = new Map<string, ItemState>();
 
   const failing = scenario === 'errors';
   const ok = (body: unknown) => of(new HttpResponse({ status: 200, body }));
@@ -55,6 +57,9 @@ export function createDemoBackend(
         filters = normalizeFilters(request.body as OverviewFilters);
       }
       return ok(filters);
+    }
+    if (path === '/item-states') {
+      return itemStatesRoute(request, itemStates);
     }
     if (path === '/github/installations') {
       return failing ? fail(502, request) : ok(world.access);
@@ -99,6 +104,28 @@ export function currentScenario(location: Location, storage: Storage): DemoScena
   return kept && (DEMO_SCENARIOS as readonly string[]).includes(kept)
     ? (kept as DemoScenario)
     : 'full';
+}
+
+/** Done and snoozed items, kept until the page reloads; like the backend, a new state replaces the old one. */
+function itemStatesRoute(
+  request: HttpRequest<unknown>,
+  states: Map<string, ItemState>,
+): Observable<HttpEvent<unknown>> {
+  if (request.method === 'DELETE') {
+    states.delete(request.params.get('url') ?? '');
+    return of(new HttpResponse({ status: 204 }));
+  }
+  if (request.method === 'PUT') {
+    const change = request.body as { url: string; state: 'done' | 'snoozed'; until?: string };
+    const state: ItemState = {
+      url: change.url,
+      done_at: change.state === 'done' ? new Date().toISOString() : null,
+      snoozed_until: change.state === 'snoozed' ? (change.until ?? null) : null,
+    };
+    states.set(change.url, state);
+    return of(new HttpResponse({ status: 200, body: state }));
+  }
+  return of(new HttpResponse({ status: 200, body: [...states.values()] }));
 }
 
 function overview(lists: Record<ListName, DemoItem[]>): Overview {

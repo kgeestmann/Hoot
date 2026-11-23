@@ -115,6 +115,20 @@ The details of one item: comment count and milestone, and for pull requests the 
 | --- | --- |
 | `item` (input, required) | The item |
 
+## Done and snooze (`pages/overview/item-state/`)
+
+### `app-item-actions`
+
+A three-dot menu (`more_vert`) for one item: *Mark as done*, and *Snooze* with *Later today* (in 3 hours), *Tomorrow*, *Next week* (Monday) and *Pick a date* (9:00 in the user's time). Confirms with a snack bar offering *Undo*, and says so when saving fails (the item then shows again). On the overview it sits beside each row's link; on the list pages next to *Open on GitHub*.
+
+| | |
+| --- | --- |
+| `item` (input, required) | The item the menu acts on |
+
+The snack bar and the date dialog (`snooze-dialog.ts`, a `mat-calendar` from tomorrow up to a year ahead) live in `item-feedback.ts`, which the menu loads on first use, so they stay out of the page bundles. The menu reaches them through the environment injector: its row, and the menu with it, disappears as soon as the item is marked, before the snack bar has loaded.
+
+Helpers: `snooze-times.ts` (`laterToday`, `tomorrow`, `nextWeek`, `morningOf`, `pickableDays`) and `item-state-store.ts` (`isSettled`, `withoutSettled`, `overviewWithoutSettled`, `ItemStateStore`).
+
 ## Filters and refresh
 
 ### `app-filter-bar` (`pages/overview/filters/filter-bar`)

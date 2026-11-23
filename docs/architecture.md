@@ -79,7 +79,7 @@ flowchart TD
 ## Data flow of a page
 
 1. The frontend loads the overview once (`GET /overview`, four GitHub searches in one GraphQL query) and shares it between the dashboard and the sidebar counts.
-2. The user's filters come from `GET /overview/filters` and are applied in the browser; `/overview` always returns everything.
+2. The user's filters (`GET /overview/filters`) and done and snoozed items (`GET /item-states`) are applied in the browser; `/overview` always returns everything.
 3. The list pages load one list page by page (`GET /lists/{name}`, 50 items per page).
 4. The team view loads one organization (`GET /orgs/{organization}/overview`).
 
@@ -107,6 +107,12 @@ The overview filters, one row per entry:
 | --- | --- | --- |
 | `hidden_scopes` | `id`, `user_id`, `scope` | Hidden owners (`octo-org`) and repositories (`octo-org/hoot`), lowercase |
 | `shown_labels` | `id`, `user_id`, `label` | Labels picked in the label filter, lowercase |
+
+Done and snoozed items, one row per item:
+
+| Table | Columns | Holds |
+| --- | --- | --- |
+| `item_states` | `id`, `user_id`, `url`, `done_at`, `snoozed_until` | The item's GitHub URL and either when it was marked as done or until when it is snoozed (Unix timestamps) |
 
 ## Repository layout
 

@@ -56,8 +56,11 @@
     </section>
   }
 
-  <a mat-stroked-button class="open-link" [href]="item().url">
-    <mat-icon svgIcon="open_in_new" />
-    Open on GitHub
-  </a>
+  <div class="actions">
+    <a mat-stroked-button class="open-link" [href]="item().url">
+      <mat-icon svgIcon="open_in_new" />
+      Open on GitHub
+    </a>
+    <app-item-actions [item]="item()" />
+  </div>
 </div>

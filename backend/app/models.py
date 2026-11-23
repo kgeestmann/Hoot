@@ -38,3 +38,18 @@ class ShownLabel(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     # Lowercase, because GitHub label names are case-insensitive.
     label = Column(String, nullable=False)
+
+
+class ItemState(Base):
+    """An item the user marked as done or snoozed; it is hidden while the state applies."""
+
+    __tablename__ = "item_states"
+    __table_args__ = (UniqueConstraint("user_id", "url"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    # The item's GitHub URL, which identifies it across lists.
+    url = Column(String, nullable=False)
+    # Unix timestamps; exactly one is set. Done hides the item until it is updated after done_at.
+    done_at = Column(Integer)
+    snoozed_until = Column(Integer)

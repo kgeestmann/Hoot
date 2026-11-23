@@ -11,6 +11,7 @@ A card with the logo, a short description and *Sign in with GitHub*. The button 
 The start page: a dashboard of everything waiting on the user. It loads `GET /overview` through `OverviewStore` (shared with the sidebar counts) and the filters through `FilterState`.
 
 - **Four cards** (`mat-card`, data from `summary.ts`): *Pull requests*, *Review requests*, *Assigned issues* and *Mentions*. Each has its icon, the number of items the filters let through ("50+" when GitHub cut the list off), the 3 most recently updated items as rows linking to GitHub (title and `item-meta`), and *Show all*, which opens the list page.
+- **Done and snooze:** each row has a three-dot menu ([components.md](components.md#app-item-actions)). A done item stays hidden until GitHub updates it again; a snoozed one until its time. Counts on the cards and in the sidebar leave them out, and "Nothing waiting on you." shows when everything is done.
 - **Filter bar** above the cards. Unchecking an owner or repository hides it; new owners and repositories show up automatically, and a hidden owner's repositories are disabled. Picking labels shows only items carrying at least one of them. Card counts follow the filters, and a card whose items are all filtered out says so. Changes are saved per user, one after the other; if saving fails, the filters still apply until the page is reloaded.
 - **Refresh status** beside the filters. A refresh keeps the cards visible under a progress bar and updates the sidebar counts too. Coming back to the tab after more than 5 minutes refreshes on its own, which also keeps the session alive.
 - **States:** skeleton while loading; an empty text per card; "Nothing waiting on you." with the `task_alt` icon above the cards when all four are empty (the cards stay, the filter bar only while a filter is active); an error with *Try again*. While Hoot is installed nowhere, the install banner explains the empty lists instead.
@@ -20,7 +21,7 @@ The start page: a dashboard of everything waiting on the user. It loads `GET /ov
 Each list on its own page, configured in `list-pages.ts` (path, title, icon, empty text) and linked in the sidebar with its count.
 
 - **Every item:** the first 50 load with the page; *Load more* appends the next 50 ("Loaded 50 of 120"). If that fails, the loaded items stay with "Couldn't load more".
-- **Expandable entries** (`item-panels`): collapsed, an item reads like an overview row (title, meta line, status and label chips, *Draft* for drafts); expanded, it shows its details (`item-details`).
+- **Expandable entries** (`item-panels`): collapsed, an item reads like an overview row (title, meta line, status and label chips, *Draft* for drafts); expanded, it shows its details (`item-details`), *Open on GitHub* and the done and snooze menu. Done and snoozed items are left out of the list.
 - **Sort** menu: *Recently updated*, *Oldest first*, *Recently created*. Changing it reloads from the start while the current items stay visible. An answer that arrives after a newer request is dropped.
 - **Group by repository** (slide toggle): one section per repository, sorted by name, with its count.
 - **Filter bar** and **refresh status** as on the overview. Filters are shared, so a change on one page applies everywhere and is saved once.
