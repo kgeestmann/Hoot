@@ -191,3 +191,16 @@ def test_forgetting_also_prunes(client, user):
 
     with SessionLocal() as db:
         assert db.query(models.ItemState).count() == 0
+
+
+def test_an_item_whose_snooze_ended_can_be_marked_again(client, user):
+    sign_in_as(client, user["id"])
+    with SessionLocal() as db:
+        db.add(models.ItemState(user_id=user["id"], url=ISSUE, snoozed_until=1))
+        db.commit()
+
+    response = client.put("/item-states", json={"url": ISSUE, "state": "done"})
+
+    assert response.status_code == 200
+    [state] = client.get("/item-states").json()
+    assert state["url"] == ISSUE and state["done_at"] is not None

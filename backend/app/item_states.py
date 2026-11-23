@@ -62,20 +62,23 @@ def forget(db: Session, user: models.User, url: str, now: datetime) -> None:
     db.query(models.ItemState).filter(
         models.ItemState.user_id == user.id, models.ItemState.url == url
     ).delete()
-    _prune(db, user, now, keep=MAX_STATES)
+    _drop_ended(db, user, now)
+    _cap(db, user, keep=MAX_STATES)
     db.commit()
 
 
 def _save(
     db: Session, user: models.User, url: str, done_at: int | None, snoozed_until: int | None, now: datetime
 ) -> dict:
+    # First, so the lookup below never finds a row that is about to be deleted.
+    _drop_ended(db, user, now)
     existing = (
         db.query(models.ItemState)
         .filter(models.ItemState.user_id == user.id, models.ItemState.url == url)
         .one_or_none()
     )
     # A new state needs room for itself; replacing one doesn't grow the collection.
-    _prune(db, user, now, keep=MAX_STATES if existing else MAX_STATES - 1)
+    _cap(db, user, keep=MAX_STATES if existing else MAX_STATES - 1)
     state = existing or models.ItemState(user_id=user.id, url=url)
     state.done_at = done_at
     state.snoozed_until = snoozed_until
@@ -84,14 +87,18 @@ def _save(
     return {"url": url, "done_at": _moment(done_at), "snoozed_until": _moment(snoozed_until)}
 
 
-def _prune(db: Session, user: models.User, now: datetime, keep: int) -> None:
-    """Drop states that no longer apply, and the oldest beyond `keep`."""
+def _drop_ended(db: Session, user: models.User, now: datetime) -> None:
+    """Drop ended snoozes and done states kept long enough."""
     current = int(now.timestamp())
     mine = db.query(models.ItemState).filter(models.ItemState.user_id == user.id)
     mine.filter(models.ItemState.snoozed_until <= current).delete()
     mine.filter(models.ItemState.done_at < current - int(DONE_KEPT.total_seconds())).delete()
-    surplus = mine.order_by(models.ItemState.id.desc()).offset(keep).all()
-    for state in surplus:
+
+
+def _cap(db: Session, user: models.User, keep: int) -> None:
+    """Drop the oldest states beyond `keep`."""
+    mine = db.query(models.ItemState).filter(models.ItemState.user_id == user.id)
+    for state in mine.order_by(models.ItemState.id.desc()).offset(keep).all():
         db.delete(state)
 
 
