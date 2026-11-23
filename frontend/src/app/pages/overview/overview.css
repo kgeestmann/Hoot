@@ -36,8 +36,6 @@
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
-  /* Each card as tall as its own content, not stretched to the fullest card in its row. */
-  align-items: start;
   gap: var(--hoot-space-4);
 }
 
@@ -68,8 +66,12 @@
   text-align: center;
 }
 
+/* Fills the card, so an empty card's message sits in the middle and Show all stays at the
+   bottom, level with the fuller card beside it. */
 .card-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Full card width, so the rows' own inset lines up with the card's padding. */
@@ -83,7 +85,24 @@
 }
 
 .empty {
-  margin: var(--hoot-space-3) 0 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hoot-space-2);
+  padding: var(--hoot-space-4) 0;
+  text-align: center;
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
+}
+
+.empty p {
+  margin: 0;
+}
+
+.empty-icon {
+  width: var(--hoot-space-8);
+  height: var(--hoot-space-8);
+  color: var(--mat-sys-outline);
 }

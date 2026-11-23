@@ -49,7 +49,10 @@
                 }
               </mat-nav-list>
             } @else {
-              <p class="empty">{{ card.emptyText }}</p>
+              <div class="empty">
+                <mat-icon class="empty-icon" svgIcon="task_alt" />
+                <p>{{ card.emptyText }}</p>
+              </div>
             }
           </mat-card-content>
           <mat-card-actions align="end">
