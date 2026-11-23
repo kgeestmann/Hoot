@@ -57,23 +57,26 @@ def snooze(db: Session, user: models.User, url: str, until: datetime, now: datet
     return _save(db, user, url, done_at=None, snoozed_until=int(until.timestamp()), now=now)
 
 
-def forget(db: Session, user: models.User, url: str) -> None:
+def forget(db: Session, user: models.User, url: str, now: datetime) -> None:
     """Show the item again; nothing happens if it had no state."""
     db.query(models.ItemState).filter(
         models.ItemState.user_id == user.id, models.ItemState.url == url
     ).delete()
+    _prune(db, user, now, keep=MAX_STATES)
     db.commit()
 
 
 def _save(
     db: Session, user: models.User, url: str, done_at: int | None, snoozed_until: int | None, now: datetime
 ) -> dict:
-    _prune(db, user, now)
-    state = (
+    existing = (
         db.query(models.ItemState)
         .filter(models.ItemState.user_id == user.id, models.ItemState.url == url)
         .one_or_none()
-    ) or models.ItemState(user_id=user.id, url=url)
+    )
+    # A new state needs room for itself; replacing one doesn't grow the collection.
+    _prune(db, user, now, keep=MAX_STATES if existing else MAX_STATES - 1)
+    state = existing or models.ItemState(user_id=user.id, url=url)
     state.done_at = done_at
     state.snoozed_until = snoozed_until
     db.add(state)
@@ -81,13 +84,13 @@ def _save(
     return {"url": url, "done_at": _moment(done_at), "snoozed_until": _moment(snoozed_until)}
 
 
-def _prune(db: Session, user: models.User, now: datetime) -> None:
-    """Drop states that no longer apply, and the oldest beyond MAX_STATES."""
+def _prune(db: Session, user: models.User, now: datetime, keep: int) -> None:
+    """Drop states that no longer apply, and the oldest beyond `keep`."""
     current = int(now.timestamp())
     mine = db.query(models.ItemState).filter(models.ItemState.user_id == user.id)
     mine.filter(models.ItemState.snoozed_until <= current).delete()
     mine.filter(models.ItemState.done_at < current - int(DONE_KEPT.total_seconds())).delete()
-    surplus = mine.order_by(models.ItemState.id.desc()).offset(MAX_STATES - 1).all()
+    surplus = mine.order_by(models.ItemState.id.desc()).offset(keep).all()
     for state in surplus:
         db.delete(state)
 

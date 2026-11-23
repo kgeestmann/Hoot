@@ -412,7 +412,7 @@ def delete_item_state(
     db: Session = Depends(get_db),
 ):
     """Show the item again; succeeds also when it had no state."""
-    item_states.forget(db, current_user, url)
+    item_states.forget(db, current_user, url, datetime.now(timezone.utc))
 
 
 @app.get("/orgs/{organization}/overview", response_model=schemas.OrgOverview)

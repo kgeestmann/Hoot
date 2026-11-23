@@ -167,3 +167,27 @@ def test_forgetting_needs_a_github_item_url(client, user, url):
     sign_in_as(client, user["id"])
 
     assert client.delete("/item-states", params={"url": url}).status_code == 422
+
+
+def test_replacing_a_state_at_the_limit_keeps_the_others(client, user, monkeypatch):
+    monkeypatch.setattr(item_states, "MAX_STATES", 2)
+    sign_in_as(client, user["id"])
+    first, second = (f"https://github.com/octo/hoot/issues/{number}" for number in (1, 2))
+    client.put("/item-states", json={"url": first, "state": "done"})
+    client.put("/item-states", json={"url": second, "state": "done"})
+
+    client.put("/item-states", json={"url": first, "state": "snoozed", "until": in_hours(3)})
+
+    assert sorted(stored_urls(client)) == [first, second]
+
+
+def test_forgetting_also_prunes(client, user):
+    sign_in_as(client, user["id"])
+    with SessionLocal() as db:
+        db.add(models.ItemState(user_id=user["id"], url=ISSUE, snoozed_until=1))
+        db.commit()
+
+    client.delete("/item-states", params={"url": PULL_REQUEST})
+
+    with SessionLocal() as db:
+        assert db.query(models.ItemState).count() == 0
