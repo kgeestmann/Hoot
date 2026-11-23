@@ -51,6 +51,17 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "demo": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/app/demo/demo-interceptors.ts",
+                  "with": "src/app/demo/demo-interceptors.demo.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -63,6 +74,9 @@
             },
             "development": {
               "buildTarget": "frontend:build:development"
+            },
+            "demo": {
+              "buildTarget": "frontend:build:demo"
             }
           },
           "defaultConfiguration": "development"
