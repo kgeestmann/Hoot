@@ -108,7 +108,10 @@
   font: var(--mat-sys-title-large);
 }
 
+/* Its own stacking context: z-indexes inside a page, like Material's button labels, stay below
+   the sticky top bar instead of competing with it. */
 .content {
+  isolation: isolate;
   padding: var(--hoot-space-8);
 }
 
