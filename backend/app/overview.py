@@ -87,18 +87,22 @@ query Overview(
 ) {
   assigned_issues: search(type: ISSUE, query: $assigned_issues, first: 50) {
     issueCount
+    pageInfo { hasNextPage }
     nodes { ...Item }
   }
   pull_requests: search(type: ISSUE, query: $pull_requests, first: 50) {
     issueCount
+    pageInfo { hasNextPage }
     nodes { ...Item }
   }
   review_requests: search(type: ISSUE, query: $review_requests, first: 50) {
     issueCount
+    pageInfo { hasNextPage }
     nodes { ...Item }
   }
   mentions: search(type: ISSUE, query: $mentions, first: 50) {
     issueCount
+    pageInfo { hasNextPage }
     nodes { ...Item }
   }
 }
@@ -140,10 +144,14 @@ def github_search_url(query: str) -> str:
 
 
 def _list_total(search: dict | None, query: str) -> dict:
-    """How many items GitHub found for a list, and whether some weren't loaded."""
+    """How many items GitHub found for a list, and whether some weren't loaded.
+
+    `has_more` comes from GitHub's next page, not from comparing the count with the items: the
+    count can still include items the search no longer returns, e.g. right after a merge.
+    """
     total = search["issueCount"] if search else 0
-    loaded = len(search["nodes"]) if search else 0
-    return {"total": total, "has_more": total > loaded, "search_url": github_search_url(query)}
+    has_more = bool(search and search["pageInfo"]["hasNextPage"])
+    return {"total": total, "has_more": has_more, "search_url": github_search_url(query)}
 
 
 def search_nodes(search: dict | None) -> list[dict]:

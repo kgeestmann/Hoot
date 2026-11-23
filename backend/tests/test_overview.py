@@ -95,7 +95,11 @@ def graphql_response(assigned_issues=(), pull_requests=(), review_requests=(), m
         "mentions": mentions,
     }
     data = {
-        name: {"issueCount": totals.get(name, len(nodes)), "nodes": list(nodes)}
+        name: {
+            "issueCount": totals.get(name, len(nodes)),
+            "pageInfo": {"hasNextPage": totals.get(name, len(nodes)) > len(nodes)},
+            "nodes": list(nodes),
+        }
         for name, nodes in lists.items()
     }
     return httpx.Response(200, json={"data": data})
@@ -331,6 +335,20 @@ def test_a_list_cut_off_by_github_says_so(client, fake_github):
 
 def test_the_query_asks_for_the_totals():
     assert overview.OVERVIEW_QUERY.count("issueCount") == 4
+    assert overview.OVERVIEW_QUERY.count("pageInfo { hasNextPage }") == 4
+
+
+def test_a_count_that_includes_items_github_no_longer_returns_is_not_more(client, fake_github):
+    response = graphql_response().json()
+    # Right after a merge GitHub's search can still count the pull request without returning it.
+    response["data"]["pull_requests"] = {"issueCount": 1, "pageInfo": {"hasNextPage": False}, "nodes": []}
+    fake_github.graphql_responses = [httpx.Response(200, json=response)]
+
+    body = get_overview(client, store_user()).json()
+
+    assert body["pull_requests"] == []
+    assert body["totals"]["pull_requests"]["total"] == 1
+    assert body["totals"]["pull_requests"]["has_more"] is False
 
 
 def test_items_carry_their_comment_count_and_milestone(client, fake_github):
