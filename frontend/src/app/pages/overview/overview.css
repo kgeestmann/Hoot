@@ -36,6 +36,8 @@
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+  /* Each card as tall as its own content, not stretched to the fullest card in its row. */
+  align-items: start;
   gap: var(--hoot-space-4);
 }
 
