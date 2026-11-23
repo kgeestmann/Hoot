@@ -25,7 +25,7 @@ describe('PageTitle', () => {
     await TestBed.inject(Router).navigateByUrl('/profile');
 
     expect(TestBed.inject(PageTitle).current()).toBe('Profile');
-    expect(TestBed.inject(Title).getTitle()).toBe('Profile · Hoot');
+    expect(TestBed.inject(Title).getTitle()).toBe('Hoot: Profile');
   });
 
   it('falls back to Hoot for pages without a title', async () => {
