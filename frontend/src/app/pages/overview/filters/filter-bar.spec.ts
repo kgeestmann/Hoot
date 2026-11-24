@@ -73,7 +73,9 @@ describe('FilterBar', () => {
       'Repository: 1 of 3',
       'Label: bug',
     ]);
-    expect(buttons(element).every((button) => button.classList.contains('active'))).toBe(true);
+    expect(
+      buttons(element).every((button) => button.classList.contains('hoot-chip-selected')),
+    ).toBe(true);
   });
 
   it('keeps plain button names while nothing is filtered', async () => {

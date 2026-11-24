@@ -13,16 +13,9 @@
   justify-content: flex-end;
 }
 
-.total,
 .loaded {
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
-}
-
-/* Reads on from the filter header's summary: "Showing 50 of 50 · 62 on GitHub". */
-.total::before {
-  content: '·' / '';
-  margin-right: var(--hoot-space-2);
 }
 
 .groups {

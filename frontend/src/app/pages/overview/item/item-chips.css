@@ -5,26 +5,47 @@
   --mat-chip-label-text-size: var(--mat-sys-label-medium-size);
 }
 
+/* Statuses first, then GitHub's labels, on one wrapping row that starts on the text's edge. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hoot-space-1) var(--hoot-space-3);
+}
+
+/* A status reads as an icon and a word in its colour, as on GitHub, without a pill; only
+   GitHub's labels keep their filled pill. */
 .status {
-  --mat-chip-outline-color: currentColor;
-  --mat-chip-with-icon-icon-color: currentColor;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hoot-space-1);
+  min-height: 24px;
+  font: var(--mat-sys-label-medium);
+}
+
+.status mat-icon {
+  width: var(--hoot-space-4);
+  height: var(--hoot-space-4);
 }
 
 .status-success {
   color: var(--hoot-status-success);
-  --mat-chip-label-text-color: var(--hoot-status-success);
 }
 
 .status-danger {
   color: var(--hoot-status-danger);
-  --mat-chip-label-text-color: var(--hoot-status-danger);
 }
 
 .status-neutral {
   color: var(--hoot-status-neutral);
-  --mat-chip-label-text-color: var(--hoot-status-neutral);
 }
 
 .label {
   --mat-chip-outline-width: 0;
+}
+
+/* Material puts 8px above and below each chip; pulling the set in keeps a row with labels as
+   high as one with statuses only. */
+mat-chip-set {
+  margin-block: calc(-1 * var(--hoot-space-2));
 }

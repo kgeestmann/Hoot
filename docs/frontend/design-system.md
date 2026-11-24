@@ -56,10 +56,11 @@ Each page has exactly one `h1`: the route's title in the top bar. Sections and c
 ## Spacing and shape
 
 - Spacing: `--hoot-space-N` is N × 4 px (`-1` 4 px, `-2` 8 px, `-3` 12 px, `-4` 16 px, `-6` 24 px, `-8` 32 px, `-10` 40 px). Also used for icon sizes.
-- Corners: `--mat-sys-corner-*` (`small` for boxes such as error messages, `medium` for panels and skeletons, `full` for pills such as counts).
-- Elevation: Material levels 0–2 only; cards are `appearance="outlined"`.
+- Corners: `--mat-sys-corner-*` (`small` for every box: controls, cards, panels, skeletons and error messages; `full` for pills such as counts).
+- Elevation: Material levels 0–2 only.
+- Separation: boxes stand out by a background step, not by a border. Cards are `appearance="filled"` on `--mat-sys-surface-container-low` (set in `material-theme.scss`), and lists of items (`item-panels`, the team view's lists) use the same layer with no lines or shadows between items: their spacing separates them. CI and review status show as an icon and a word in their colour, without a pill; only GitHub's labels are filled pills. The top bar has no line under it either. The sidebar is set apart by its own background. Stroked buttons keep their outline; the toolbar controls have none (see Buttons).
 - Pages have a maximum content width: 960 px for the overview, list pages and team view, narrower (420–720 px) for single-card pages.
-- Motion: `--hoot-transition` (150 ms), turned off with `prefers-reduced-motion`.
+- Motion: `--hoot-transition` (150 ms), turned off with `prefers-reduced-motion`. Everything clickable answers the pointer without lifting (design rule 4): a fill on hover, Material's ripple on buttons and list rows, and a step darker fill on press. The overview tiles also give way a little when pressed (`scale(0.98)`), and a tile's chevron moves 4 px towards where it leads on hover.
 
 ## Buttons
 
@@ -69,10 +70,15 @@ Each page has exactly one `h1`: the route's title in the top bar. Sections and c
 | Secondary | `mat-stroked-button` | Other actions, menu triggers |
 | Tertiary | `mat-button` | Low-emphasis links such as *Show all* |
 | Icon only | `mat-icon-button` with an `aria-label` | Refresh, menu |
+| Toolbar control | `mat-button` with the global class `hoot-chip` | Controls in the top bar that filter or change the view: the filter menus, *Sort*, *Group* |
+
+Toolbar controls are quiet text buttons, like GitHub's filter row: 32 px high (the touch target stays 48 px), small corners, a grey label and no outline at rest, a fill on hover and a ripple on click, no orange. While a control narrows the list, changes the view from its default or is switched on, add `hoot-chip-selected`: it fills with `--mat-sys-secondary-container`, and its label or accessible name says the state ("Owner: 2 of 3", "Sort: Oldest first"), or a toggle swaps its leading icon for `check` and sets `aria-pressed`. A toggle keeps a leading icon in both states, so it doesn't change width when clicked.
 
 ## Icons
 
 Material Symbols Outlined (weight 400, 24 px) as SVG paths in `icons.ts`, used as `<mat-icon svgIcon="inbox" />`. No icon font. To add one, copy its path from [google/material-design-icons](https://github.com/google/material-design-icons) into `ICON_PATHS`; `src/test-providers.ts` registers them for every spec.
+
+`styles.css` renders the SVG inside every `mat-icon` as a block. Inline, an SVG sits on the text baseline and shows above the centre of buttons and chips.
 
 Decorative icons next to text need no label; an icon that is the only content of a button needs an `aria-label` on the button.
 

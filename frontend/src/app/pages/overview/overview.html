@@ -1,23 +1,25 @@
 <div class="overview-page">
   @if (overview()) {
-    @if (showFilters()) {
-      <app-filter-bar
-        [owners]="filterOptions().owners"
-        [labels]="filterOptions().labels"
-        [shownCount]="shownCount()"
-        [totalCount]="totalCount()"
-        [saveFailed]="filterState.saveFailed()"
-        (toggleScope)="filterState.toggleScope($event)"
-        (toggleLabel)="filterState.toggleLabel($event)"
-        (clear)="filterState.clear()"
-      >
-        <ng-container ngProjectAs="app-refresh-status" [ngTemplateOutlet]="refreshStatus" />
-      </app-filter-bar>
-    } @else {
-      <div class="toolbar">
-        <ng-container [ngTemplateOutlet]="refreshStatus" />
-      </div>
-    }
+    <ng-template appPageToolbar>
+      @if (showFilters()) {
+        <app-filter-bar
+          [owners]="filterOptions().owners"
+          [labels]="filterOptions().labels"
+          [shownCount]="shownCount()"
+          [totalCount]="totalCount()"
+          [saveFailed]="filterState.saveFailed()"
+          (toggleScope)="filterState.toggleScope($event)"
+          (toggleLabel)="filterState.toggleLabel($event)"
+          (clear)="filterState.clear()"
+        >
+          <ng-container ngProjectAs="app-refresh-status" [ngTemplateOutlet]="refreshStatus" />
+        </app-filter-bar>
+      } @else {
+        <div class="toolbar">
+          <ng-container [ngTemplateOutlet]="refreshStatus" />
+        </div>
+      }
+    </ng-template>
     <ng-template #refreshStatus>
       <app-refresh-status
         [loadedAt]="loadedAt()"
@@ -35,9 +37,10 @@
     <nav class="tiles" aria-label="Lists">
       @for (card of cards(); track card.page.path) {
         <a class="tile" [routerLink]="['/', card.page.path]">
-          <mat-card appearance="outlined" class="summary-card">
+          <mat-card appearance="filled" class="summary-card">
             <mat-icon class="card-icon" [svgIcon]="card.page.icon" />
             <span class="card-count">{{ card.count }}</span>
+            <mat-icon class="card-arrow" svgIcon="chevron_right" />
             <span class="card-name">{{ card.page.title }}</span>
           </mat-card>
         </a>
@@ -45,7 +48,7 @@
     </nav>
 
     @if (!nothingWaiting()) {
-      <mat-card appearance="outlined" class="feed">
+      <mat-card appearance="filled" class="feed">
         <div class="feed-header">
           <mat-icon class="card-icon" svgIcon="schedule" />
           <h2 class="feed-title">Latest activity</h2>

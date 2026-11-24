@@ -2,59 +2,36 @@
   display: block;
 }
 
-/* Positioned so the refresh progress bar lies just under the header. */
+/* One row in the top bar after the page title: filters, view options, then the status on the
+   right. It wraps onto more lines when the bar is too narrow. Positioned so the refresh
+   progress bar lies just under it. */
 .filter-header {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: var(--hoot-space-2);
-  padding: var(--hoot-space-3) var(--hoot-space-4);
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
-  background: var(--mat-sys-surface-container-low);
-  /* Narrower buttons, so the filters and the view options fit one row. */
-  --mat-button-outlined-horizontal-padding: var(--hoot-space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hoot-space-2) var(--hoot-space-6);
 }
 
-.controls,
 .filters,
 .view-options,
 .status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-}
-
-/* The wider gap sets the filters apart from the page's view options. */
-.controls {
-  gap: var(--hoot-space-2) var(--hoot-space-8);
-}
-
-.filters,
-.view-options {
-  gap: var(--hoot-space-2) var(--hoot-space-4);
+  gap: var(--hoot-space-2);
 }
 
 .view-options:empty {
   display: none;
 }
 
+/* The refresh button's padding would set its icon in from the edge the items below end at. */
 .status {
-  gap: 0 var(--hoot-space-2);
-  min-height: var(--hoot-space-10);
-  padding-top: var(--hoot-space-2);
-  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin-inline-start: auto;
+  margin-inline-end: calc(-1 * var(--hoot-space-2));
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
-}
-
-.refresh {
-  margin-left: auto;
-}
-
-.filter-button.active {
-  border-color: var(--mat-sys-primary);
-  background: color-mix(in srgb, var(--hoot-brand) 18%, transparent);
 }
 
 .save-error {

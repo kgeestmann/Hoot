@@ -111,17 +111,22 @@
 
   <mat-sidenav-content class="content-area">
     <mat-toolbar class="top-bar">
-      @if (!isWide()) {
-        <button
-          mat-icon-button
-          type="button"
-          aria-label="Open navigation"
-          (click)="openNavigation()"
-        >
-          <mat-icon svgIcon="menu" />
-        </button>
-      }
-      <h1 class="page-title">{{ pageTitle() }}</h1>
+      <div class="top-bar-row">
+        @if (!isWide()) {
+          <button
+            mat-icon-button
+            type="button"
+            aria-label="Open navigation"
+            (click)="openNavigation()"
+          >
+            <mat-icon svgIcon="menu" />
+          </button>
+        }
+        <h1 class="page-title">{{ pageTitle() }}</h1>
+        <div class="page-toolbar">
+          <ng-template [cdkPortalOutlet]="pageToolbar.portal()" />
+        </div>
+      </div>
     </mat-toolbar>
     <main class="content">
       @if (showInstallBanner()) {

@@ -107,7 +107,6 @@ describe('WorkList', () => {
 
     expect(calls).toEqual([['assigned_issues', 'updated', undefined]]);
     expect(rows(element)).toEqual(['Issue 1', 'Issue 2']);
-    expect(text(element.querySelector('.total'))).toBe('2 on GitHub');
   });
 
   it("shows the list's empty text", async () => {
@@ -118,13 +117,12 @@ describe('WorkList', () => {
     expect(element.querySelector('app-refresh-status')).not.toBeNull();
   });
 
-  it('puts sort, grouping, the total and the refresh status in the filter header', async () => {
+  it('puts sort, grouping and the refresh status in the filter header', async () => {
     const element = await render([of(page([item('octo/hoot', 1)]))]);
 
     const header = element.querySelector('app-filter-bar')!;
     expect(header.querySelector('.view-options .sort-button')).not.toBeNull();
     expect(header.querySelector('.view-options .group-toggle')).not.toBeNull();
-    expect(text(header.querySelector('.status .total'))).toBe('1 on GitHub');
     expect(header.querySelector('.status app-refresh-status')).not.toBeNull();
   });
 
@@ -168,7 +166,9 @@ describe('WorkList', () => {
 
     expect(calls[1]).toEqual(['assigned_issues', 'oldest', undefined]);
     expect(rows(element)).toEqual(['Issue 2', 'Issue 1']);
-    expect(text(element.querySelector('.sort-button'))).toBe('Sort: Oldest first');
+    const sortButton = element.querySelector('.sort-button')!;
+    expect(sortButton.getAttribute('aria-label')).toBe('Sort: Oldest first');
+    expect(sortButton.classList).toContain('hoot-chip-selected');
   });
 
   it('keeps the items visible while a new order loads', async () => {
@@ -205,7 +205,10 @@ describe('WorkList', () => {
       of(page([item('octo/zoo', 1), item('octo/hoot', 2), item('octo/zoo', 3)])),
     ]);
 
-    await click(element.querySelector<HTMLElement>('.group-toggle button'));
+    const toggle = element.querySelector<HTMLElement>('.group-toggle')!;
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    await click(toggle);
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
 
     const headings = Array.from(element.querySelectorAll('.group-heading')).map(text);
     expect(headings).toEqual(['octo/hoot 1', 'octo/zoo 2']);

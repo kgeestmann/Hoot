@@ -1,18 +1,17 @@
 <div class="organization-page">
-  <div class="toolbar">
-    <p class="subtitle">
-      What needs the team's attention. Lists of work only, no statistics per person.
-    </p>
+  <p class="subtitle">
+    What needs the team's attention. Lists of work only, no statistics per person.
+  </p>
+  <ng-template appPageToolbar>
     @if (overview()) {
       <app-refresh-status
-        class="refresh"
         [loadedAt]="loadedAt()"
         [refreshing]="refreshing()"
         [failed]="refreshFailed()"
         (refresh)="refresh()"
       />
     }
-  </div>
+  </ng-template>
 
   @if (overview()) {
     <app-list-tabs [tabs]="tabs()" [(selectedIndex)]="selectedTab" />

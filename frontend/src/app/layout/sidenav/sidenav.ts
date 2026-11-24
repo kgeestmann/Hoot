@@ -1,4 +1,5 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { PortalModule } from '@angular/cdk/portal';
 import {
   Component,
   ChangeDetectionStrategy,
@@ -29,6 +30,7 @@ import {
 import { OverviewStore } from '../../pages/overview/overview-store';
 import { summarize } from '../../pages/overview/summary';
 import { InstallBanner } from '../install-banner/install-banner';
+import { PageToolbar } from '../page-toolbar/page-toolbar';
 
 const WIDE_SCREEN = '(min-width: 840px)';
 
@@ -43,6 +45,7 @@ const WIDE_SCREEN = '(min-width: 840px)';
     MatMenuModule,
     MatSidenavModule,
     MatToolbarModule,
+    PortalModule,
     RouterModule,
   ],
   templateUrl: './sidenav.html',
@@ -93,10 +96,12 @@ export class Sidenav {
       this.access()?.installations.length === 0 && !this.currentUrl().startsWith('/github-access'),
   );
   readonly pageTitle = inject(PageTitle).current;
+  readonly pageToolbar = inject(PageToolbar);
   /** First letter of the GitHub login, shown instead of loading the avatar from GitHub. */
   readonly initial = computed(() => this.auth.user()?.login.charAt(0).toUpperCase() ?? '');
 
   constructor(public auth: AuthService) {
+    this.pageToolbar.hosted = true;
     effect(() => {
       this.access.set(undefined);
       if (this.auth.isLoggedIn()) {

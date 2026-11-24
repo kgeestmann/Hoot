@@ -33,7 +33,7 @@ The app runs **without zone.js**. The view only re-renders on a signal update, a
 | `pages/` | One folder per route, lazy-loaded. Components used by only one page live in its folder. |
 | `pages/overview/` | The dashboard, plus the pieces shared with the list pages and the team view: `filters/`, `item/`, `overview-section/`, `list-tabs/`, `refresh-status/`, `overview-store.ts`, `summary.ts` |
 | `pages/list/` | The four list pages (`work-list`), their config (`list-pages.ts`) and the expandable entries (`item-panels/`) |
-| `layout/` | The app shell (`sidenav`) and shared UI states: `load-error`, `list-skeleton`, `install-banner` |
+| `layout/` | The app shell (`sidenav`), the slot pages use to put controls into its top bar (`page-toolbar`), and shared UI states: `load-error`, `list-skeleton`, `install-banner` |
 | `services/` | One service per backend resource, plus auth, the session interceptor and the page title |
 | `guards/` | `authGuard` and `publicGuard` |
 | `demo/` | The demo backend for `npm run demo` (below) |

@@ -6,7 +6,7 @@ import { OverviewItem, PullRequestItem } from '../../../services/overview';
 import { labelColors } from './label-colors';
 import { statusChips, TONE_ICONS } from './status-chips';
 
-/** An item's CI and review status (icon + text + colour) followed by its GitHub labels. */
+/** An item's CI and review status (icon + text + colour) followed by its GitHub labels as chips. */
 @Component({
   selector: 'app-item-chips',
   imports: [MatChipsModule, MatIconModule],

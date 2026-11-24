@@ -1,42 +1,50 @@
 <div class="work-list">
   @if (page(); as page) {
-    @if (showFilters()) {
-      <app-filter-bar
-        [owners]="filterOptions().owners"
-        [labels]="filterOptions().labels"
-        [shownCount]="visible().length"
-        [totalCount]="waiting().length"
-        [saveFailed]="filterState.saveFailed()"
-        (toggleScope)="filterState.toggleScope($event)"
-        (toggleLabel)="filterState.toggleLabel($event)"
-        (clear)="filterState.clear()"
-      >
-        <button
-          filterBarViewOption
-          mat-stroked-button
-          type="button"
-          class="sort-button"
-          [matMenuTriggerFor]="sortMenu"
+    <ng-template appPageToolbar>
+      @if (showFilters()) {
+        <app-filter-bar
+          [owners]="filterOptions().owners"
+          [labels]="filterOptions().labels"
+          [shownCount]="visible().length"
+          [totalCount]="waiting().length"
+          [saveFailed]="filterState.saveFailed()"
+          (toggleScope)="filterState.toggleScope($event)"
+          (toggleLabel)="filterState.toggleLabel($event)"
+          (clear)="filterState.clear()"
         >
-          Sort: {{ sortLabel() }}
-          <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
-        </button>
-        <mat-slide-toggle
-          filterBarViewOption
-          class="group-toggle"
-          [checked]="grouped()"
-          (change)="grouped.set($event.checked)"
-        >
-          Group by repository
-        </mat-slide-toggle>
-        <span filterBarStatus class="total">{{ page.total }} on GitHub</span>
-        <ng-container ngProjectAs="app-refresh-status" [ngTemplateOutlet]="refreshStatus" />
-      </app-filter-bar>
-    } @else {
-      <div class="toolbar">
-        <ng-container [ngTemplateOutlet]="refreshStatus" />
-      </div>
-    }
+          <button
+            filterBarViewOption
+            mat-button
+            type="button"
+            class="hoot-chip sort-button"
+            [class.hoot-chip-selected]="sort() !== defaultSort"
+            [attr.aria-label]="'Sort: ' + sortLabel()"
+            [matMenuTriggerFor]="sortMenu"
+          >
+            Sort
+            <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
+          </button>
+          <button
+            filterBarViewOption
+            mat-button
+            type="button"
+            class="hoot-chip group-toggle"
+            aria-label="Group by repository"
+            [class.hoot-chip-selected]="grouped()"
+            [attr.aria-pressed]="grouped()"
+            (click)="grouped.set(!grouped())"
+          >
+            <mat-icon [svgIcon]="grouped() ? 'check' : 'view_agenda'" />
+            Group
+          </button>
+          <ng-container ngProjectAs="app-refresh-status" [ngTemplateOutlet]="refreshStatus" />
+        </app-filter-bar>
+      } @else {
+        <div class="toolbar">
+          <ng-container [ngTemplateOutlet]="refreshStatus" />
+        </div>
+      }
+    </ng-template>
     <ng-template #refreshStatus>
       <app-refresh-status
         [loadedAt]="loadedAt()"

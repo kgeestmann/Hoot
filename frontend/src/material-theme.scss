@@ -33,6 +33,15 @@ html {
     )
   );
 
+  // Cards are one raised layer without an outline: the background step sets them apart, so the
+  // page doesn't need a border around every box. They share the controls' small corners.
+  @include mat.card-overrides(
+    (
+      filled-container-color: var(--mat-sys-surface-container-low),
+      filled-container-shape: var(--mat-sys-corner-small),
+    )
+  );
+
   // The active nav item carries the brand as a tint, so its label keeps the normal text colour,
   // which stays readable in light and dark mode.
   @include mat.list-overrides(
