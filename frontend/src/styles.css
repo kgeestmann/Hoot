@@ -67,3 +67,28 @@ p {
   outline: 2px solid var(--hoot-focus-ring);
   outline-offset: 2px;
 }
+
+/* An inline SVG sits on the text baseline, which leaves descender space under it and lifts the
+   glyph above the icon's centre. */
+.mat-icon svg {
+  display: block;
+}
+
+/* Toolbar controls (filters, sort, view toggles) as quiet text buttons, like GitHub's filter
+   row: no outline at rest, a fill on hover and a ripple on click, and filled while the control
+   narrows or changes the view. Used on mat-button. */
+.hoot-chip {
+  --mat-button-text-container-height: 32px;
+  --mat-button-text-container-shape: var(--mat-sys-corner-small);
+  --mat-button-text-horizontal-padding: var(--hoot-space-3);
+  --mat-button-text-with-icon-horizontal-padding: var(--hoot-space-3);
+  --mat-button-text-label-text-color: var(--mat-sys-on-surface-variant);
+  --mat-button-text-state-layer-color: var(--mat-sys-on-surface);
+  --mat-button-text-ripple-color: color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent);
+  transition: background-color var(--hoot-transition);
+}
+
+.hoot-chip.hoot-chip-selected {
+  --mat-button-text-label-text-color: var(--mat-sys-on-secondary-container);
+  background: var(--mat-sys-secondary-container);
+}

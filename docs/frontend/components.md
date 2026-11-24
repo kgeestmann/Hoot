@@ -6,13 +6,17 @@ The reusable building blocks of the frontend. Before writing new UI, check here:
 
 ### `app-sidenav` (`layout/sidenav`)
 
-The app shell: a `mat-sidenav` beside a top bar with the page title and the `router-outlet`.
+The app shell: a `mat-sidenav` beside a top bar and the `router-outlet`. The top bar is one bar for the page: its title, then what the page puts there with `<ng-template appPageToolbar>` (filters, view options, status; see the page toolbar below). It shares the content's left edge and 960 px column, has no line under it, and grows a line when its content doesn't fit.
 
 - Header: the logo and "Hoot".
 - Navigation (`mat-nav-list`): *Overview*, the four list pages from `LIST_PAGES` with their counts (after the filters, from `OverviewStore`), *Teams* with every organization where Hoot is installed, and *GitHub access* at the bottom.
 - Account button: the login's initial and login, opening a menu with *Profile* and *Sign out*.
 - Shows `app-install-banner` above every page except *GitHub access* while Hoot is installed nowhere.
 - Open beside the content from 840 px, a drawer below that closes once a page is chosen.
+
+### Page toolbar (`layout/page-toolbar`)
+
+How a page puts its own controls into the top bar, after the title. The page wraps them in `<ng-template appPageToolbar>` (directive `PageToolbarContent`); the template hands itself to the root service `PageToolbar` as a CDK `TemplatePortal`, and `app-sidenav` shows it with a `cdkPortalOutlet`. Bindings and template references keep working, since the template still belongs to the page. When the page goes, the top bar empties, unless the next page has already put its own content there. Without the app layout, as in a page's unit test, the template renders in place.
 
 ### `app-load-error` (`layout/load-error`)
 
@@ -64,7 +68,7 @@ Its template starts right after the backtick on purpose: a leading line break wo
 
 ### `app-item-chips`
 
-An item's CI and review status (icon, text and colour) followed by its GitHub labels in their colours. Use `hasChips(item)` to skip the row when there is nothing to show.
+An item's CI and review status, each as an icon and a word in its colour without a pill (as on GitHub), followed by its GitHub labels as filled `mat-chip`s in their colours. The row is 24 px high, with or without labels, and starts on the text's edge. Use `hasChips(item)` to skip the row when there is nothing to show.
 
 | | |
 | --- | --- |
@@ -133,7 +137,20 @@ Helpers: `snooze-times.ts` (`laterToday`, `tomorrow`, `nextWeek`, `morningOf`, `
 
 ### `app-filter-bar` (`pages/overview/filters/filter-bar`)
 
-*Owner*, *Repository* and *Label* buttons opening Material menus of `menuitemcheckbox` options (with `mat-pseudo-checkbox`), then "Showing 12 of 15 · 3 hidden" and *Clear filters*. A button names its state ("Owner: 2 of 3", "Label: bug").
+The page's filters, view options and status, shown in the top bar after the page title (the page wraps it in `<ng-template appPageToolbar>`, see the page toolbar under layout). Its controls are quiet text buttons (`hoot-chip`, see [design-system.md](design-system.md#buttons)), laid out in one flex row that wraps when the bar is too narrow:
+
+- **Filters**: *Owner*, *Repository* and *Label* buttons opening Material menus of `menuitemcheckbox` options (with `mat-pseudo-checkbox`; the label options also show the label's colour), and *Clear filters* while a filter is active. A button names its state ("Owner: 2 of 3", "Label: bug") and is filled while it narrows the list.
+- **View options**, after the filters, like the list pages' *Sort* and *Group by repository*.
+- **Status**, on the right: "Showing 12 of 15 · 3 hidden · Updated 5 minutes ago" with the refresh button, whose icon ends on the items' right edge.
+
+The page fills two slots by content projection:
+
+| Slot | For |
+| --- | --- |
+| `filterBarViewOption` attribute | View options, like the list pages' *Sort* and *Group by repository* |
+| `app-refresh-status` | The page's refresh status |
+
+A page shows the filter bar only while there is something to filter (or a filter to clear); otherwise its refresh status stands alone in the top bar.
 
 | | |
 | --- | --- |

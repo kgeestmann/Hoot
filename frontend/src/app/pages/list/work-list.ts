@@ -6,16 +6,17 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatPseudoCheckboxModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
+import { PageToolbarContent } from '../../layout/page-toolbar/page-toolbar';
 import { ListPage, ListSort, ListsService } from '../../services/lists';
 import { OverviewItem } from '../../services/overview';
 import { FilterBar } from '../overview/filters/filter-bar';
@@ -47,7 +48,8 @@ export interface RepositoryGroup {
     MatIconModule,
     MatMenuModule,
     MatPseudoCheckboxModule,
-    MatSlideToggleModule,
+    NgTemplateOutlet,
+    PageToolbarContent,
     RefreshStatus,
   ],
   templateUrl: './work-list.html',
@@ -69,7 +71,8 @@ export class WorkList implements OnInit {
   /** The latest page from GitHub; `undefined` while loading or after an error. */
   readonly page = signal<ListPage | undefined>(undefined);
   readonly loadError = signal<string | undefined>(undefined);
-  readonly sort = signal<ListSort>('updated');
+  readonly defaultSort: ListSort = 'updated';
+  readonly sort = signal<ListSort>(this.defaultSort);
   readonly grouped = signal(false);
   readonly loadingMore = signal(false);
   readonly loadMoreFailed = signal(false);

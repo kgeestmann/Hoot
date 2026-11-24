@@ -23,16 +23,12 @@
   text-align: center;
 }
 
+/* One raised layer like the cards; spacing separates the items, not lines. */
 .items {
   padding: 0;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
-  background: var(--mat-sys-surface-container-lowest);
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-low);
   overflow: hidden;
-}
-
-.items mat-divider:last-child {
-  display: none;
 }
 
 .title {

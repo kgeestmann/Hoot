@@ -5,40 +5,17 @@
   max-width: 960px;
 }
 
-/* Filters and the refresh status share one row; it's positioned so the refresh progress bar
+/* Without filters the refresh status stands alone; it's positioned so the refresh progress bar
    can lie just under it. */
 .toolbar {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--hoot-space-2) var(--hoot-space-4);
+  justify-content: flex-end;
 }
 
-.filters {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.refresh {
-  margin-left: auto;
-}
-
-.view-options {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--hoot-space-2) var(--hoot-space-6);
-}
-
-.total,
 .loaded {
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
-}
-
-.total {
-  margin-left: auto;
 }
 
 .groups {

@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 
@@ -12,7 +11,7 @@ import { ItemMeta } from '../item/item-meta';
 /** One list (e.g. review requests) with its items or an empty message. */
 @Component({
   selector: 'app-overview-section',
-  imports: [ItemChips, ItemMeta, MatButtonModule, MatDividerModule, MatIconModule, MatListModule],
+  imports: [ItemChips, ItemMeta, MatButtonModule, MatIconModule, MatListModule],
   templateUrl: './overview-section.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overview-section.css',

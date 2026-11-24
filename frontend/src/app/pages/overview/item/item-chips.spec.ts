@@ -38,10 +38,10 @@ describe('ItemChips', () => {
     return Array.from(element.querySelectorAll<HTMLElement>('mat-chip'));
   }
 
-  it('shows CI and review status as chips with icon, text and colour', async () => {
+  it('shows CI and review status as icon, text and colour', async () => {
     const element = await render(PULL_REQUEST);
 
-    const statuses = chips(element).filter((chip) => chip.classList.contains('status'));
+    const statuses = Array.from(element.querySelectorAll<HTMLElement>('.status'));
     expect(statuses.map((chip) => chip.textContent!.trim())).toEqual(['CI failing', 'Approved']);
     expect(statuses.map((chip) => chip.classList.contains('status-danger'))).toEqual([true, false]);
     expect(

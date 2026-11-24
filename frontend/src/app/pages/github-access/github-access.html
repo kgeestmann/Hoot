@@ -1,6 +1,6 @@
 @let gitHubAccess = access();
 @if (gitHubAccess.installations.length === 0) {
-  <mat-card appearance="outlined">
+  <mat-card appearance="filled">
     <mat-card-header>
       <h2 mat-card-title>Install Hoot on GitHub</h2>
       <p mat-card-subtitle>Hoot can't see any of your repositories yet.</p>
@@ -16,7 +16,7 @@
     </mat-card-content>
   </mat-card>
 } @else {
-  <mat-card appearance="outlined">
+  <mat-card appearance="filled">
     <mat-card-header>
       <h2 mat-card-title>GitHub access</h2>
       <p mat-card-subtitle>Hoot only sees repositories in these accounts.</p>

@@ -5,7 +5,7 @@
   align-items: center;
   gap: var(--hoot-space-2) var(--hoot-space-4);
   padding: var(--hoot-space-3) var(--hoot-space-4);
-  border-radius: var(--mat-sys-corner-medium);
+  border-radius: var(--mat-sys-corner-small);
   background: var(--mat-sys-tertiary-container);
   color: var(--mat-sys-on-tertiary-container);
 }

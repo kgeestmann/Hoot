@@ -16,6 +16,7 @@ import { finalize, forkJoin } from 'rxjs';
 
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
 import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
+import { PageToolbarContent } from '../../layout/page-toolbar/page-toolbar';
 import { GitHubAccess, GitHubAccessService } from '../../services/github-access';
 import { FilterBar } from './filters/filter-bar';
 import { FilterState } from './filters/filter-state';
@@ -44,6 +45,7 @@ import { latest, summarize } from './summary';
     MatIconModule,
     MatListModule,
     NgTemplateOutlet,
+    PageToolbarContent,
     RefreshStatus,
     RouterLink,
   ],

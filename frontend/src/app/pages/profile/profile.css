@@ -6,5 +6,5 @@
   padding: 0;
   margin-top: var(--hoot-space-4);
   border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
+  border-radius: var(--mat-sys-corner-small);
 }

@@ -6,6 +6,7 @@ import { catchError, map, of, Subject, switchMap, tap } from 'rxjs';
 
 import { LoadError, loadErrorMessage } from '../../layout/load-error/load-error';
 import { ListSkeleton } from '../../layout/list-skeleton/list-skeleton';
+import { PageToolbarContent } from '../../layout/page-toolbar/page-toolbar';
 import { OrganizationsService, OrgOverview, TeamList } from '../../services/organizations';
 import { firstTabWithItems, ListTab, ListTabs } from '../overview/list-tabs/list-tabs';
 import { RefreshStatus } from '../overview/refresh-status/refresh-status';
@@ -13,7 +14,7 @@ import { RefreshStatus } from '../overview/refresh-status/refresh-status';
 /** The team view of one organization: what needs the team's attention, no per-person numbers. */
 @Component({
   selector: 'app-organization-page',
-  imports: [ListSkeleton, ListTabs, LoadError, RefreshStatus],
+  imports: [ListSkeleton, ListTabs, LoadError, PageToolbarContent, RefreshStatus],
   templateUrl: './organization.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './organization.css',

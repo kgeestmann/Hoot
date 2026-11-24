@@ -1,17 +1,35 @@
-.filter-bar {
+:host {
+  display: block;
+}
+
+/* One row in the top bar after the page title: filters, view options, then the status on the
+   right. It wraps onto more lines when the bar is too narrow. Positioned so the refresh
+   progress bar lies just under it. */
+.filter-header {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hoot-space-2) var(--hoot-space-6);
+}
+
+.filters,
+.view-options,
+.status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--hoot-space-2);
 }
 
-.filter-button.active {
-  border-color: var(--mat-sys-primary);
-  background: color-mix(in srgb, var(--hoot-brand) 18%, transparent);
+.view-options:empty {
+  display: none;
 }
 
-.summary {
-  margin-left: var(--hoot-space-2);
+/* The refresh button's padding would set its icon in from the edge the items below end at. */
+.status {
+  margin-inline-start: auto;
+  margin-inline-end: calc(-1 * var(--hoot-space-2));
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
 }
@@ -22,11 +40,18 @@
   color: var(--mat-sys-error);
 }
 
+/* Material's menu item wraps its content in inline text; a row keeps checkbox, dot and name
+   centred with even gaps. */
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--hoot-space-3);
+}
+
 .label-dot {
-  display: inline-block;
+  flex-shrink: 0;
   width: 12px;
   height: 12px;
-  margin-right: var(--hoot-space-2);
   border-radius: var(--mat-sys-corner-full);
   outline: 1px solid var(--mat-sys-outline-variant);
 }

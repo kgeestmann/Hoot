@@ -1,7 +1,6 @@
 .panels {
   display: block;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
+  border-radius: var(--mat-sys-corner-small);
   overflow: hidden;
 }
 
@@ -10,16 +9,23 @@
   --mat-expansion-header-collapsed-state-height: auto;
   --mat-expansion-header-expanded-state-height: auto;
   --mat-expansion-container-shape: 0;
-  background: var(--mat-sys-surface-container-lowest);
+  /* Material's panel shadow would draw a line wherever two items meet. */
+  --mat-expansion-container-elevation-shadow: none;
+  background: var(--mat-sys-surface-container-low);
 }
 
-.panel + .panel {
-  border-top: 1px solid var(--mat-sys-outline-variant);
-}
-
+/* Without lines between the items, their spacing sets them apart. Hovering one fills it, and
+   pressing it fills it one step more. */
 .panel-header {
-  padding-top: var(--hoot-space-3);
-  padding-bottom: var(--hoot-space-3);
+  --mat-expansion-header-hover-state-layer-color: var(--mat-sys-surface-container-high);
+  padding-top: var(--hoot-space-4);
+  padding-bottom: var(--hoot-space-4);
+  transition: background-color var(--hoot-transition);
+}
+
+/* As specific as Material's hover rule, which would otherwise keep the hover fill. */
+.panel:not(.mat-expanded) .panel-header:not([aria-disabled='true']):active {
+  background: var(--mat-sys-surface-container-highest);
 }
 
 .header {
