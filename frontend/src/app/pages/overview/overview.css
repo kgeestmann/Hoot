@@ -14,23 +14,12 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-/* Filters (or the subtitle) and the refresh status share one row; it's positioned so the
-   refresh progress bar can lie just under it. */
+/* Without filters the refresh status stands alone; it's positioned so the refresh progress bar
+   can lie just under it. */
 .toolbar {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--hoot-space-2) var(--hoot-space-4);
-}
-
-.refresh {
-  margin-left: auto;
-}
-
-.filters {
-  flex: 1 1 auto;
-  min-width: 0;
+  justify-content: flex-end;
 }
 
 /* One tile per list: count and name, linking to the list's own page. */

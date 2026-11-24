@@ -1,93 +1,112 @@
-<div class="filter-bar" role="toolbar" aria-label="Filters">
-  <button
-    mat-stroked-button
-    type="button"
-    class="filter-button"
-    [class.active]="shownOwners() < owners().length"
-    [matMenuTriggerFor]="ownerMenu"
-  >
-    {{ ownerText() }}
-    <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
-  </button>
-  <mat-menu #ownerMenu="matMenu" class="filter-menu">
-    @for (owner of owners(); track owner.scope) {
+<div class="filter-header">
+  <div class="controls">
+    <div class="filters" role="toolbar" aria-label="Filters">
       <button
-        mat-menu-item
-        role="menuitemcheckbox"
-        [attr.aria-checked]="!owner.hidden"
-        (click)="keepOpen($event); toggleScope.emit(owner.scope)"
+        mat-stroked-button
+        type="button"
+        class="filter-button"
+        [class.active]="shownOwners() < owners().length"
+        [matMenuTriggerFor]="ownerMenu"
       >
-        <mat-pseudo-checkbox [state]="owner.hidden ? 'unchecked' : 'checked'" />
-        <span>{{ owner.name }}</span>
+        {{ ownerText() }}
+        <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
       </button>
-    }
-  </mat-menu>
+      <mat-menu #ownerMenu="matMenu" class="filter-menu">
+        @for (owner of owners(); track owner.scope) {
+          <button
+            mat-menu-item
+            role="menuitemcheckbox"
+            [attr.aria-checked]="!owner.hidden"
+            (click)="keepOpen($event); toggleScope.emit(owner.scope)"
+          >
+            <span class="option">
+              <mat-pseudo-checkbox [state]="owner.hidden ? 'unchecked' : 'checked'" />
+              <span>{{ owner.name }}</span>
+            </span>
+          </button>
+        }
+      </mat-menu>
 
-  <button
-    mat-stroked-button
-    type="button"
-    class="filter-button"
-    [class.active]="shownRepositories() < repositories().length"
-    [matMenuTriggerFor]="repositoryMenu"
-  >
-    {{ repositoryText() }}
-    <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
-  </button>
-  <mat-menu #repositoryMenu="matMenu" class="filter-menu">
-    @for (owner of owners(); track owner.scope) {
-      @for (repository of owner.repositories; track repository.scope) {
-        <button
-          mat-menu-item
-          role="menuitemcheckbox"
-          [attr.aria-checked]="!owner.hidden && !repository.hidden"
-          [disabled]="owner.hidden"
-          (click)="keepOpen($event); toggleScope.emit(repository.scope)"
-        >
-          <mat-pseudo-checkbox
-            [state]="owner.hidden || repository.hidden ? 'unchecked' : 'checked'"
-            [disabled]="owner.hidden"
-          />
-          <span>{{ repository.name }}</span>
-        </button>
+      <button
+        mat-stroked-button
+        type="button"
+        class="filter-button"
+        [class.active]="shownRepositories() < repositories().length"
+        [matMenuTriggerFor]="repositoryMenu"
+      >
+        {{ repositoryText() }}
+        <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
+      </button>
+      <mat-menu #repositoryMenu="matMenu" class="filter-menu">
+        @for (owner of owners(); track owner.scope) {
+          @for (repository of owner.repositories; track repository.scope) {
+            <button
+              mat-menu-item
+              role="menuitemcheckbox"
+              [attr.aria-checked]="!owner.hidden && !repository.hidden"
+              [disabled]="owner.hidden"
+              (click)="keepOpen($event); toggleScope.emit(repository.scope)"
+            >
+              <span class="option">
+                <mat-pseudo-checkbox
+                  [state]="owner.hidden || repository.hidden ? 'unchecked' : 'checked'"
+                  [disabled]="owner.hidden"
+                />
+                <span>{{ repository.name }}</span>
+              </span>
+            </button>
+          }
+        }
+      </mat-menu>
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="filter-button"
+        [class.active]="pickedLabels().length > 0"
+        [matMenuTriggerFor]="labelMenu"
+        [disabled]="labels().length === 0"
+      >
+        {{ labelText() }}
+        <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
+      </button>
+      <mat-menu #labelMenu="matMenu" class="filter-menu">
+        @for (label of labelChips(); track label.key) {
+          <button
+            mat-menu-item
+            role="menuitemcheckbox"
+            [attr.aria-checked]="label.picked"
+            (click)="keepOpen($event); toggleLabel.emit(label.key)"
+          >
+            <span class="option">
+              <mat-pseudo-checkbox [state]="label.picked ? 'checked' : 'unchecked'" />
+              <span
+                class="label-dot"
+                [style.background-color]="label.dot"
+                aria-hidden="true"
+              ></span>
+              <span>{{ label.name }}</span>
+            </span>
+          </button>
+        }
+      </mat-menu>
+    </div>
+    <div class="view-options"><ng-content select="[filterBarViewOption]" /></div>
+  </div>
+
+  <div class="status">
+    <span class="summary" aria-live="polite">
+      Showing {{ shownCount() }} of {{ totalCount() }}
+      @if (hiddenCount() > 0) {
+        · {{ hiddenCount() }} hidden
       }
+    </span>
+    <ng-content select="[filterBarStatus]" />
+    @if (anyFilter()) {
+      <button mat-button type="button" class="clear" (click)="clear.emit()">Clear filters</button>
     }
-  </mat-menu>
-
-  <button
-    mat-stroked-button
-    type="button"
-    class="filter-button"
-    [class.active]="pickedLabels().length > 0"
-    [matMenuTriggerFor]="labelMenu"
-    [disabled]="labels().length === 0"
-  >
-    {{ labelText() }}
-    <mat-icon iconPositionEnd svgIcon="arrow_drop_down" />
-  </button>
-  <mat-menu #labelMenu="matMenu" class="filter-menu">
-    @for (label of labelChips(); track label.key) {
-      <button
-        mat-menu-item
-        role="menuitemcheckbox"
-        [attr.aria-checked]="label.picked"
-        (click)="keepOpen($event); toggleLabel.emit(label.key)"
-      >
-        <mat-pseudo-checkbox [state]="label.picked ? 'checked' : 'unchecked'" />
-        <span class="label-dot" [style.background-color]="label.dot" aria-hidden="true"></span>
-        <span>{{ label.name }}</span>
-      </button>
-    }
-  </mat-menu>
-
-  <span class="summary" aria-live="polite">
-    Showing {{ shownCount() }} of {{ totalCount() }}
-    @if (hiddenCount() > 0) {
-      · {{ hiddenCount() }} hidden
-    }
-  </span>
-  @if (anyFilter()) {
-    <button mat-button type="button" class="clear" (click)="clear.emit()">Clear filters</button>
-  }
+    <div class="refresh"><ng-content select="app-refresh-status" /></div>
+  </div>
 </div>
 @if (saveFailed()) {
   <p class="save-error" role="alert">

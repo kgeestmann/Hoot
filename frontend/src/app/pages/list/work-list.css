@@ -5,30 +5,12 @@
   max-width: 960px;
 }
 
-/* Filters and the refresh status share one row; it's positioned so the refresh progress bar
+/* Without filters the refresh status stands alone; it's positioned so the refresh progress bar
    can lie just under it. */
 .toolbar {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--hoot-space-2) var(--hoot-space-4);
-}
-
-.filters {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.refresh {
-  margin-left: auto;
-}
-
-.view-options {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--hoot-space-2) var(--hoot-space-6);
+  justify-content: flex-end;
 }
 
 .total,
@@ -37,8 +19,10 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.total {
-  margin-left: auto;
+/* Reads on from the filter header's summary: "Showing 50 of 50 · 62 on GitHub". */
+.total::before {
+  content: '·' / '';
+  margin-right: var(--hoot-space-2);
 }
 
 .groups {

@@ -327,12 +327,11 @@ describe('OverviewPage', () => {
       expect(cards(element)).toContain('Mentions 2');
     });
 
-    it('shows the refresh status in the filter row', async () => {
+    it("shows the refresh status in the filter header's status row", async () => {
       const element = await render(() => of(OVERVIEW), of(INSTALLED));
 
-      const toolbar = element.querySelector('.toolbar')!;
-      expect(toolbar.querySelector('app-filter-bar')).not.toBeNull();
-      expect(toolbar.querySelector('app-refresh-status')).not.toBeNull();
+      expect(element.querySelector('app-filter-bar .status app-refresh-status')).not.toBeNull();
+      expect(element.querySelectorAll('app-refresh-status')).toHaveLength(1);
     });
 
     it('keeps the overview and says so when a refresh fails', async () => {

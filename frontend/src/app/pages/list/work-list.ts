@@ -6,6 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatPseudoCheckboxModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
@@ -48,6 +49,7 @@ export interface RepositoryGroup {
     MatMenuModule,
     MatPseudoCheckboxModule,
     MatSlideToggleModule,
+    NgTemplateOutlet,
     RefreshStatus,
   ],
   templateUrl: './work-list.html',

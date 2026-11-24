@@ -1,27 +1,31 @@
 <div class="overview-page">
   @if (overview()) {
-    <div class="toolbar">
-      @if (showFilters()) {
-        <app-filter-bar
-          class="filters"
-          [owners]="filterOptions().owners"
-          [labels]="filterOptions().labels"
-          [shownCount]="shownCount()"
-          [totalCount]="totalCount()"
-          [saveFailed]="filterState.saveFailed()"
-          (toggleScope)="filterState.toggleScope($event)"
-          (toggleLabel)="filterState.toggleLabel($event)"
-          (clear)="filterState.clear()"
-        />
-      }
+    @if (showFilters()) {
+      <app-filter-bar
+        [owners]="filterOptions().owners"
+        [labels]="filterOptions().labels"
+        [shownCount]="shownCount()"
+        [totalCount]="totalCount()"
+        [saveFailed]="filterState.saveFailed()"
+        (toggleScope)="filterState.toggleScope($event)"
+        (toggleLabel)="filterState.toggleLabel($event)"
+        (clear)="filterState.clear()"
+      >
+        <ng-container ngProjectAs="app-refresh-status" [ngTemplateOutlet]="refreshStatus" />
+      </app-filter-bar>
+    } @else {
+      <div class="toolbar">
+        <ng-container [ngTemplateOutlet]="refreshStatus" />
+      </div>
+    }
+    <ng-template #refreshStatus>
       <app-refresh-status
-        class="refresh"
         [loadedAt]="loadedAt()"
         [refreshing]="refreshing()"
         [failed]="refreshFailed()"
         (refresh)="refresh()"
       />
-    </div>
+    </ng-template>
     @if (nothingWaiting() && !installedNowhere()) {
       <p class="all-clear">
         <mat-icon svgIcon="task_alt" />

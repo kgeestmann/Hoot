@@ -115,6 +115,17 @@ describe('WorkList', () => {
 
     expect(text(element.querySelector('.empty'))).toBe(ASSIGNED.emptyText);
     expect(element.querySelector('app-filter-bar')).toBeNull();
+    expect(element.querySelector('app-refresh-status')).not.toBeNull();
+  });
+
+  it('puts sort, grouping, the total and the refresh status in the filter header', async () => {
+    const element = await render([of(page([item('octo/hoot', 1)]))]);
+
+    const header = element.querySelector('app-filter-bar')!;
+    expect(header.querySelector('.view-options .sort-button')).not.toBeNull();
+    expect(header.querySelector('.view-options .group-toggle')).not.toBeNull();
+    expect(text(header.querySelector('.status .total'))).toBe('1 on GitHub');
+    expect(header.querySelector('.status app-refresh-status')).not.toBeNull();
   });
 
   it('loads more after the last cursor and appends the items', async () => {

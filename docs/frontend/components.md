@@ -133,7 +133,20 @@ Helpers: `snooze-times.ts` (`laterToday`, `tomorrow`, `nextWeek`, `morningOf`, `
 
 ### `app-filter-bar` (`pages/overview/filters/filter-bar`)
 
-*Owner*, *Repository* and *Label* buttons opening Material menus of `menuitemcheckbox` options (with `mat-pseudo-checkbox`), then "Showing 12 of 15 · 3 hidden" and *Clear filters*. A button names its state ("Owner: 2 of 3", "Label: bug").
+The filter header above a page's items, bordered like the item lists, in two rows:
+
+- **Controls:** *Owner*, *Repository* and *Label* buttons opening Material menus of `menuitemcheckbox` options (with `mat-pseudo-checkbox`; the label options also show the label's colour), then the page's own view options. A button names its state ("Owner: 2 of 3", "Label: bug").
+- **Status:** "Showing 12 of 15 · 3 hidden", the page's own status detail, *Clear filters* while a filter is active, and the refresh status on the right.
+
+The page fills three slots by content projection:
+
+| Slot | For |
+| --- | --- |
+| `filterBarViewOption` attribute | View options after the filters, like the list pages' *Sort* and *Group by repository* |
+| `filterBarStatus` attribute | Text after the summary, like "· 62 on GitHub" |
+| `app-refresh-status` | The page's refresh status |
+
+A page shows the header only while there is something to filter (or a filter to clear); otherwise its refresh status stands alone.
 
 | | |
 | --- | --- |
