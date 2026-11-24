@@ -136,9 +136,11 @@
 
 /* Its own stacking context: z-indexes inside a page, like Material's button labels, stay below
    the sticky top bar instead of competing with it. */
+/* No top padding: the top bar's own padding already sets the content apart, and more would
+   leave twice as much space under the bar's controls as above them. */
 .content {
   isolation: isolate;
-  padding: var(--hoot-space-4) var(--hoot-space-8) var(--hoot-space-8);
+  padding: 0 var(--hoot-space-8) var(--hoot-space-8);
 }
 
 @media (max-width: 839.98px) {
@@ -147,6 +149,6 @@
   }
 
   .content {
-    padding: var(--hoot-space-4);
+    padding: 0 var(--hoot-space-4) var(--hoot-space-4);
   }
 }
